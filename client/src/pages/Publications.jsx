@@ -16,7 +16,7 @@ const COLUMNS = [
   { header: '', width: '40px' },
 ];
 
-export const STATUS_TONE = { Draft: 'draft', 'In Review': 'active', Cancelled: 'cancelled' };
+export const STATUS_TONE = { Draft: 'draft', Active: 'active', 'In Review': 'active', Cancelled: 'cancelled' };
 
 // SQLite stores UTC as "YYYY-MM-DD HH:MM:SS"; show it as a local US date.
 export const fmtSaved = s => (s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleDateString('en-US') : '—');

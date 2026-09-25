@@ -367,7 +367,12 @@ export function deriveProgress(st) {
 }
 
 /** Lifecycle status stored with the record. */
-export const statusOf = st => (st.cancelled ? 'Cancelled' : openRoundOf(st) ? 'In Review' : 'Draft');
+/** True once any internal or external author has been sent an authorship invitation. */
+export const invitationsSent = st => (st.internal || []).concat(st.external || [])
+  .some(a => a.invite && a.invite.status && a.invite.status !== 'none');
+
+// Draft until the author invitations go out, then Active; In Review while a round is open.
+export const statusOf = st => (st.cancelled ? 'Cancelled' : openRoundOf(st) ? 'In Review' : invitationsSent(st) ? 'Active' : 'Draft');
 
 /**
  * What the dashboards need without loading the whole record. Dates are ISO (YYYY-MM-DD);

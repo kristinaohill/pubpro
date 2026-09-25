@@ -1,7 +1,7 @@
 // Portfolio figures for the dashboard and the Financial Report, worked out from saved records
 // (publications and plans loaded with their full data).
 import { NO_VENDOR, parseDate } from './publication-form/data';
-import { openRoundOf } from './publication-form/state';
+import { invitationsSent, openRoundOf } from './publication-form/state';
 
 // SQLite stores UTC as "YYYY-MM-DD HH:MM:SS".
 export const savedDate = s => (s ? new Date(s.replace(' ', 'T') + 'Z') : null);
@@ -28,7 +28,7 @@ export function pubFacts(p) {
   const submissionRow = rowDone('Submission');
   const approved = !cancelled && !withdrawn
     && (!!rowDone('Internal Release Approval') || !!submissionRow || SUBMITTED_OUTCOMES.includes(outcome));
-  const stage = cancelled ? 'Cancelled' : withdrawn ? 'Withdrawn' : approved ? 'Approved' : openRoundOf(st) ? 'In Review' : 'Draft';
+  const stage = cancelled ? 'Cancelled' : withdrawn ? 'Withdrawn' : approved ? 'Approved' : openRoundOf(st) ? 'In Review' : invitationsSent(st) ? 'Active' : 'Draft';
   const costed = rows.filter(r => r.costed);
   const amt = r => (PAID.includes(r.status) ? (r.paidAmount || r.amount || 0) : (r.amount || 0));
   const money = {
@@ -90,6 +90,7 @@ export function pipeline(facts) {
   return {
     total: facts.length,
     draft: n('Draft'),
+    active: n('Active'),
     inReview: n('In Review'),
     // PubPro has no suspended state yet; the tile stays at zero.
     suspended: 0,

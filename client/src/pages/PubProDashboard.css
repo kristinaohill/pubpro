@@ -91,7 +91,7 @@
 }
 
 /* Pipeline tiles */
-.pd-pipeline { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.pd-pipeline { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
 .pd-tile { border: 1px solid; border-radius: var(--radius-input); padding: 12px 14px 14px; }
 .pd-tile-head { display: flex; align-items: center; gap: 10px; }
 .pd-page .pd-tile-icon { font-size: 22px; }

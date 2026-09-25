@@ -482,7 +482,7 @@ export const summarizeAuthor = a => {
 };
 
 // Publication authors are stored as "Name" (internal) or "Name-Institution" (external).
-const PUB_TONE = { Draft: 'draft', 'In Review': 'hold', Cancelled: 'cancelled' };
+const PUB_TONE = { Draft: 'draft', Active: 'active', 'In Review': 'hold', Cancelled: 'cancelled' };
 function authoredPubs(pubs, person) {
   const who = person.toLowerCase();
   if (!who) return [];

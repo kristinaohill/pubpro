@@ -6,7 +6,15 @@ const { productCode, yearCode, nextSequence } = require('../recordIds');
 
 // Record IDs follow the PubPro pattern: <yy>-<type>-<product>-<seq>-V01, e.g. 26-M-DAX-015-V01.
 const TYPE_CODES = { Abstract: 'A', Poster: 'AP', Manuscript: 'M', 'Congress Presentation': 'CP' };
-const STATUSES = ['Draft', 'In Review', 'Cancelled'];
+const STATUSES = ['Draft', 'Active', 'In Review', 'Cancelled'];
+
+// Publications saved as Draft before 'Active' existed become Active if author invitations have gone out.
+for (const row of db.prepare("SELECT id, data FROM pp_publications WHERE status = 'Draft'").all()) {
+  let d = {};
+  try { d = JSON.parse(row.data || '{}'); } catch (e) { continue; }
+  const sent = (d.internal || []).concat(d.external || []).some(a => a.invite && a.invite.status && a.invite.status !== 'none');
+  if (sent) db.prepare("UPDATE pp_publications SET status = 'Active' WHERE id = ?").run(row.id);
+}
 
 // The design's example publication, seeded once so its links open a real record.
 const SAMPLE_RECORD_ID = '26-A-DAX-004-V01';

@@ -60,6 +60,7 @@ const CHART_COLORS = [
 const PIPELINE_TILES = [
   { key: 'total', label: 'Total Publications', icon: 'content_copy', face: 'var(--blue-tint)', border: 'var(--blue-line)', accent: 'var(--nav)' },
   { key: 'draft', label: 'Draft', icon: 'edit_square', face: 'var(--blue-tint)', border: 'var(--blue-line)', accent: 'var(--nav)' },
+  { key: 'active', label: 'Active', icon: 'play_circle', face: 'var(--blue-tint)', border: 'var(--blue-line)', accent: 'var(--ok)' },
   { key: 'inReview', label: 'In Review', icon: 'rate_review', face: 'var(--blue-tint)', border: 'var(--blue-line)', accent: 'var(--high-emphasis)' },
   { key: 'suspended', label: 'Suspended', icon: 'pause', face: 'var(--tint-suspended-bg)', border: 'var(--tint-suspended-accent)', accent: 'var(--tint-suspended-accent)' },
   { key: 'approved', label: 'Approved', icon: 'verified', face: 'var(--ok-band)', border: 'color-mix(in oklab, var(--ok) 28%, var(--white))', accent: 'var(--ok)' },
