@@ -13,7 +13,7 @@ export default function StudiesTab({ st, set }) {
     .slice(0, 6);
   const selected = st.selectedStudies.map(id => STUDY_DIRECTORY.find(s => s.id === id)).filter(Boolean);
 
-  const studyRef = useDismiss(st.studyOpen, () => set({ studyOpen: false }));
+  const studyRef = useDismiss(st.studyOpen, () => set({ studyOpen: false }), () => set({ studyOpen: true }));
 
   const addStudy = id => set(p => ({ selectedStudies: p.selectedStudies.concat([id]), studyQuery: '', studyOpen: false }));
   const removeStudy = id => set(p => ({ selectedStudies: p.selectedStudies.filter(x => x !== id) }));

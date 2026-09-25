@@ -26,7 +26,7 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
   const linkedPlan = st.parentPlan && planList.find(p => p.id === st.parentPlan.id);
   const planHref = !linkedPlan ? null : linkedPlan.savedId ? '/publication-plan/' + linkedPlan.savedId : '/publication-plan';
   const showPlanSuggestions = st.planFocused && !st.parentPlan;
-  const planRef = useDismiss(showPlanSuggestions, () => set({ planFocused: false }));
+  const planRef = useDismiss(showPlanSuggestions, () => set({ planFocused: false }), () => set({ planFocused: true }));
 
   const ta = bind('therapeuticArea').value;
   // A new area clears a product outside it; picking a product with no area fills the area in.

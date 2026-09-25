@@ -20,9 +20,9 @@ function useMenuReset() {
     const bar = () => ref.current && ref.current.firstElementChild;
     const onDown = e => { if (openNavMenu(bar()) && !bar().contains(e.target)) setKey(k => k + 1); };
     const onKey = e => { if (e.key === 'Escape' && openNavMenu(bar())) setKey(k => k + 1); };
-    document.addEventListener('mousedown', onDown);
+    document.addEventListener('pointerdown', onDown, true);
     document.addEventListener('keydown', onKey);
-    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+    return () => { document.removeEventListener('pointerdown', onDown, true); document.removeEventListener('keydown', onKey); };
   }, []);
   return [ref, key];
 }

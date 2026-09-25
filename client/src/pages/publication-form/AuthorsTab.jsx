@@ -103,7 +103,7 @@ function useProfileOpener(navigate) {
 
 function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval }) {
   const openProfile = useProfileOpener(navigate);
-  const authorRef = useDismiss(st.authorSearchOpen, () => set({ authorSearchOpen: false }));
+  const authorRef = useDismiss(st.authorSearchOpen, () => set({ authorSearchOpen: false }), () => set({ authorSearchOpen: true }));
   const patchAuthor = (group, id, p) => set(s => ({ [group]: s[group].map(x => (x.id === id ? { ...x, ...p } : x)) }));
   const removeAuthor = (group, id) => set(s => ({ [group]: s[group].filter(x => x.id !== id) }));
   const setMeta = (person, p) => set(s => ({

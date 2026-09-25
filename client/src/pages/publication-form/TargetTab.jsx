@@ -7,11 +7,18 @@ import { DetailItem } from './shared';
 const dirEntry = n => CONFERENCE_DIRECTORY.find(c => c.name === n) || { name: n, abbr: '', kind: '', dates: '' };
 const noNav = e => e.preventDefault();
 
+// Manuscripts go to journals; abstracts, posters and presentations go to congresses.
+const TARGET_KIND = { Manuscript: 'Journal', Abstract: 'Congress', Poster: 'Congress', 'Congress Presentation': 'Congress' };
+const KIND_WORDS = { Journal: ['journals', 'journal'], Congress: ['congresses', 'congress'] };
+
 export default function TargetTab({ st, set }) {
   const list = st.targets || [];
-  const targetRef = useDismiss(st.targetOpen, () => set({ targetOpen: false }));
+  const targetRef = useDismiss(st.targetOpen, () => set({ targetOpen: false }), () => set({ targetOpen: true }));
   const q = (st.targetQuery || '').trim().toLowerCase();
+  const kind = TARGET_KIND[st.pubType] || '';
+  const [plural] = KIND_WORDS[kind] || ['journals and congresses'];
   const pool = CONFERENCE_DIRECTORY.filter(c => !list.includes(c.name))
+    .filter(c => !kind || c.kind === kind)
     .filter(c => !q || c.name.toLowerCase().includes(q) || (c.abbr || '').toLowerCase().includes(q));
   const p = list[0] ? dirEntry(list[0]) : null;
   const changed = CONFERENCE_DIRECTORY.find(c => c.prevClose && list.includes(c.name)) || {};
@@ -84,10 +91,10 @@ export default function TargetTab({ st, set }) {
           <Field label="Add to Shortlist" style={{ marginTop: 12 }}>
             <SearchSelect
               value={st.targetQuery}
-              placeholder="Search journals and congresses by name or abbreviation"
+              placeholder={'Search ' + plural + ' by name or abbreviation'}
               suggestions={pool.map(c => ({ label: c.name, meta: [c.abbr, c.kind, c.dates].filter(Boolean).join(' · '), name: c.name }))}
               open={st.targetOpen}
-              emptyLabel={q ? 'No journals or congresses match “' + st.targetQuery + '”.' : 'Every target in the directory is already on the shortlist.'}
+              emptyLabel={q ? 'No ' + plural + ' match “' + st.targetQuery + '”.' : 'Every ' + (kind ? KIND_WORDS[kind][1] : 'target') + ' in the directory is already on the shortlist.'}
               width="460px"
               onChange={e => set({ targetQuery: e.target.value, targetOpen: true })}
               onFocus={() => set({ targetOpen: true })}

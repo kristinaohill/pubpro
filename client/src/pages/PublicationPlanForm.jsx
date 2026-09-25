@@ -448,7 +448,7 @@ function StudiesTab({ noStudy, onToggleNoStudy, studyQuery, setStudyQuery, study
     .filter(s => !sq || (s.id + ' ' + s.title + ' ' + s.product).toLowerCase().includes(sq))
     .slice(0, 6);
   const selected = selectedStudies.map(id => STUDY_DIRECTORY.find(s => s.id === id)).filter(Boolean);
-  const studyRef = useDismiss(studyOpen, () => setStudyOpen(false));
+  const studyRef = useDismiss(studyOpen, () => setStudyOpen(false), () => setStudyOpen(true));
 
   return (
     <div>

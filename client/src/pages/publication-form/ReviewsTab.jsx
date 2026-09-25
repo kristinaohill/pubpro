@@ -59,7 +59,7 @@ function roundRecipients(st) {
 
 export default function ReviewsTab({ st, set, bind, commit, saving, userName }) {
   const readiness = deriveReadiness(st);
-  const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }));
+  const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }), () => set({ searchOpen: true }));
   const flow = REVIEW_FLOW[st.reviewType];
   const methodLocked = st.reviewType === 'Author Approval';
   const rounds = st.rounds || [];
