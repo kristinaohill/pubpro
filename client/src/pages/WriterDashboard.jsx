@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Checkbox, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro';
+import { Button, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import './WriterDashboard.css';
@@ -144,7 +144,6 @@ export default function WriterDashboard() {
   }, []);
 
   const [filter, setFilter] = useState('All');
-  const [weeklyEmail, setWeeklyEmail] = useState(true);
 
 
   const model = saved.map(p => {
@@ -213,13 +212,6 @@ export default function WriterDashboard() {
         <div className="wd-header-text">
           <h1 className="wd-title">Writer Dashboard</h1>
           <div className="wd-lede">Publications where you are the assigned writer · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</div>
-        </div>
-        <div className="wd-header-aside">
-          <Checkbox
-            checked={weeklyEmail}
-            onChange={() => setWeeklyEmail(v => !v)}
-            label="Email me a status summary of all my publications every Friday"
-          />
         </div>
       </div>
 

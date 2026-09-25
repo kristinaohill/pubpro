@@ -29,6 +29,13 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  // Swaps in a re-issued token after a profile change (e.g. a new display name).
+  const updateSession = (token, nextUser) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(nextUser));
+    setUser(nextUser);
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -36,7 +43,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, updateSession, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

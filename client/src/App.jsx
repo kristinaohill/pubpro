@@ -20,6 +20,7 @@ import FinancialReport from './pages/FinancialReport';
 import PublicationWorkflows from './pages/PublicationWorkflows';
 import Studies from './pages/Studies';
 import StudyProfile from './pages/StudyProfile';
+import UserProfile from './pages/UserProfile';
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="author-dashboard" element={<ExternalAuthorDashboard />} />
             <Route path="external-author" element={<SampleAuthor />} />
             <Route path="external-author/:id" element={<ExternalAuthorProfile />} />
+            <Route path="profile" element={<UserProfile />} />
             <Route path="studies" element={<Studies />} />
             <Route path="study/:id" element={<StudyProfile />} />
             <Route path="vendor" element={<VendorProfile />} />

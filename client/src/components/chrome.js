@@ -46,6 +46,7 @@ export const CHROME = {
   '/publication-plan': USER_DASHBOARD,
   '/publication-plans': USER_DASHBOARD,
   '/studies': USER_DASHBOARD,
+  '/profile': USER_DASHBOARD,
   '/vendor': USER_DASHBOARD,
   // The Financial Report design has its own navy back bar and no app chrome.
   '/financial-report': null,

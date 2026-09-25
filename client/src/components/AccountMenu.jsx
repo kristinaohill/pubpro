@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ConfirmModal, Field, Icon, InlineMessage, NavMenu, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import './AccountMenu.css';
@@ -8,7 +9,8 @@ import './AccountMenu.css';
  * so this lays a button over it: a placeholder person icon (no profile photo yet) that opens
  * the account menu.
  */
-export default function AccountMenu({ userName, onLogout }) {
+export default function AccountMenu({ userName, onLogout, showProfile = true }) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [pw, setPw] = useState(null); // { current, next, confirm, error, done } while the dialog is open
   const wrapRef = useRef(null);
@@ -37,11 +39,12 @@ export default function AccountMenu({ userName, onLogout }) {
       </button>
       {open && (
         <NavMenu
-          items={[{ label: 'Change password', icon: 'key' }, { label: 'Log out', icon: 'logout' }]}
+          items={(showProfile ? [{ label: 'My profile', icon: 'account_circle' }] : []).concat([{ label: 'Change password', icon: 'key' }, { label: 'Log out', icon: 'logout' }])}
           width={200}
           style={{ left: 'auto', right: 0, marginTop: 12 }}
           onSelect={label => {
             setOpen(false);
+            if (label === 'My profile') navigate('/profile');
             if (label === 'Log out') onLogout();
             if (label === 'Change password') setPw({ current: '', next: '', confirm: '' });
           }}

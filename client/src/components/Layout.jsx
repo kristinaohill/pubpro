@@ -92,7 +92,7 @@ export default function Layout() {
         <div className="layout-chrome">
           <div className="layout-topnav" ref={navRef}>
             <TopNav key={navKey} items={chrome.nav} active={chrome.active} tenant={tenant} onNavigate={go} onMenuSelect={handleMenuSelect} />
-            <AccountMenu userName={user && user.name} onLogout={handleLogout} />
+            <AccountMenu userName={user && user.name} onLogout={handleLogout} showProfile={!isAuthor} />
           </div>
           <div className="layout-wstabs" ref={tabsRef}>
             <WorkspaceTabs
