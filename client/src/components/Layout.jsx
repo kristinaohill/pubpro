@@ -38,6 +38,9 @@ export default function Layout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
+  // Each page opens at the top, not at the scroll position of the page before it.
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+
   const [navRef, navKey] = useMenuReset();
   const [tabsRef, tabsKey] = useMenuReset();
 

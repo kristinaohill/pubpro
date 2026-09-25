@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button, DataTable, Pill, Select } from '../ds/pubpro';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Button, DataTable, InlineMessage, Pill, Select } from '../ds/pubpro';
 import DateField from '../components/DateField';
 import { api } from '../api';
 import { daysUntil } from './Publications';
@@ -310,6 +310,8 @@ function useRowWindow(visible) {
 
 export default function PubProDashboard() {
   const navigate = useNavigate();
+  // Save & Close on a publication, plan or author lands here with a confirmation.
+  const savedNotice = (useLocation().state || {}).savedNotice;
   const [module, setModule] = useState('publications');
   const [range, setRange] = useState('this_month');
   const [rangeFrom, setRangeFrom] = useState('');
@@ -388,6 +390,7 @@ export default function PubProDashboard() {
 
   return (
     <div className="pd-page">
+      {savedNotice && <InlineMessage kind="info">{savedNotice}</InlineMessage>}
 
       {/* My Task List */}
       <div className="pd-card">

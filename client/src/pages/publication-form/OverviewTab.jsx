@@ -14,8 +14,10 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
     set(s => {
       const tmpl = TEMPLATE_FOR_TYPE[v];
       const next = { ...s, pubType: v };
-      if (s.vendor === NO_VENDOR && tmpl) return { pubType: v, stageTemplate: tmpl, ...stageTemplatePatch(next, tmpl) };
-      return { pubType: v };
+      // Sub-types only apply to abstracts.
+      const subType = v === 'Abstract' ? s.subType : '';
+      if (s.vendor === NO_VENDOR && tmpl) return { pubType: v, subType, stageTemplate: tmpl, ...stageTemplatePatch(next, tmpl) };
+      return { pubType: v, subType };
     });
   };
 
@@ -68,7 +70,14 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
           {typeLocked && <div className="pf-faint13 pf-mt5">Locked once the record is saved. Cancel the record and create a new one to change it.</div>}
         </Field>
         <Field label="Publication Sub-Type">
-          <Select options={REVIEW_SUBTYPE_OPTIONS} value={st.subType} onChange={e => set({ subType: e.target.value })} width="300px" />
+          <Select
+            options={REVIEW_SUBTYPE_OPTIONS}
+            value={st.pubType === 'Abstract' ? st.subType : ''}
+            onChange={e => set({ subType: e.target.value })}
+            disabled={st.pubType !== 'Abstract'}
+            width="300px"
+          />
+          {st.pubType !== 'Abstract' && <div className="pf-faint13 pf-mt5">Only used for abstracts.</div>}
         </Field>
         <Field label="Parent Planning ID" info="Parent Planning ID">
           {st.parentPlan ? (

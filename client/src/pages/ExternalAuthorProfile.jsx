@@ -597,7 +597,7 @@ export default function ExternalAuthorProfile() {
         const list = notices(saved).map(n => ({ ...n, tab: null }));
         if (list.length) await api.post('/notifications', { notifications: list }).catch(() => {});
       }
-      if (close) { navigate('/external-authors', { state: { savedAuthorId: saved.author_id } }); return true; }
+      if (close) { navigate('/dashboard', { state: { savedNotice: 'Saved ' + saved.author_id + '.' } }); return true; }
       setNotice({ kind: 'info', text: done || (record ? 'Saved ' : 'Created ') + saved.author_id + '.' });
       if (!record) navigate('/external-author/' + saved.id, { replace: true });
       return true;

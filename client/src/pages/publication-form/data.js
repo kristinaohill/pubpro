@@ -204,7 +204,8 @@ export const REVIEWER_DIRECTORY = [
 ];
 
 export const PUBTYPE_OPTIONS = ["Abstract", "Poster", "Manuscript", "Congress Presentation"];
-export const REVIEW_SUBTYPE_OPTIONS = [{ value: "", label: "Please select" }, { value: "Encore", label: "Encore" }, { value: "Late Breaker", label: "Late Breaker" }];
+// Abstracts only; the Overview tab disables it for every other publication type.
+export const REVIEW_SUBTYPE_OPTIONS = [{ value: "", label: "Please select" }, { value: "Poster", label: "Poster" }, { value: "Oral", label: "Oral" }, { value: "Encore", label: "Encore" }, { value: "Late Breaker", label: "Late Breaker" }];
 // One per product: Biologix, Daxafort and Triazapam, Daxafont.
 export const REVIEW_THERAPEUTIC_AREA_OPTIONS = ["Cardiovascular & Metabolism", "Immunology", "Neuroscience"];
 export const REVIEW_DEPT_OPTIONS = ["Medical Affairs", "Clinical Development"];
