@@ -1,0 +1,114 @@
+/* Vendor Profile: full-bleed record form (RecordHeader, side tab rail + panel, action bar). */
+.vp-page {
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  background: var(--surface-page);
+}
+
+.vp-page .material-symbols-outlined { line-height: 1; }
+
+.vp-shell { padding: 8px 12px 0; display: flex; align-items: stretch; }
+.vp-rail { display: flex; align-self: stretch; }
+.vp-panel {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-divider);
+  background: var(--white);
+  padding: 18px 26px 30px;
+  min-height: 500px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+}
+
+/* Tab headings */
+.vp-tab-head { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 16px; }
+.vp-tab-head-text { display: flex; flex-direction: column; gap: 3px; }
+.vp-tab-head-action { margin-left: auto; }
+.vp-title { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; color: var(--high-emphasis); }
+.vp-subtitle { margin: 0 0 10px; font-size: 19px; font-weight: 700; color: var(--high-emphasis); }
+.vp-lede { margin: 0; font-size: 13px; color: var(--text-meta); max-width: 680px; text-wrap: pretty; }
+.vp-lede--narrow { max-width: 620px; }
+
+/* Overview */
+.vp-overview { display: flex; flex-direction: column; gap: 22px; max-width: 780px; }
+.vp-overview .vp-tab-head { margin-bottom: 0; }
+.vp-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.vp-stats--spaced { margin-bottom: 20px; }
+
+/* Field labels */
+.vp-label { font-size: var(--fs-base); font-weight: var(--fw-semibold); margin-bottom: 5px; }
+
+/* Hand-rolled grid tables (the design does not use DataTable here) */
+.vp-table { border: 1px solid var(--border-divider); border-radius: 4px; overflow-x: auto; }
+.vp-table--inner { overflow: hidden; background: var(--white); max-width: 720px; }
+.vp-thead,
+.vp-tr { box-sizing: border-box; display: grid; column-gap: 10px; padding: 9px 12px; }
+.vp-thead { background: var(--med-emphasis); font-size: 12px; font-weight: 700; color: var(--nav); }
+.vp-tr { align-items: center; font-size: 13px; padding-top: 10px; padding-bottom: 10px; }
+.vp-table > .vp-tr { border-top: 1px solid var(--border-hairline); }
+
+.vp-grid-rates { grid-template-columns: minmax(170px, 1.4fr) 90px 105px 90px 62px 44px; padding-left: 10px; padding-right: 10px; }
+.vp-grid-stages { grid-template-columns: minmax(140px, 1fr) 100px 70px 110px 100px; column-gap: 12px; padding: 8px 10px; }
+.vp-grid-invoices { grid-template-columns: minmax(150px, 170px) 85px 85px minmax(140px, 1fr) 90px minmax(65px, 100px) 44px; }
+.vp-grid-contracts { grid-template-columns: minmax(150px, 1.6fr) minmax(110px, .9fr) minmax(120px, 1.1fr) 95px 95px 85px 44px; }
+.vp-grid-pos { grid-template-columns: 90px minmax(110px, .8fr) minmax(100px, .7fr) minmax(130px, 1.1fr) 85px 80px minmax(100px, 1fr) 44px; column-gap: 8px; }
+.vp-grid-pubs { grid-template-columns: minmax(0, 120px) minmax(150px, 1.6fr) minmax(0, 110px) minmax(0, 120px) minmax(0, 110px); column-gap: 12px; }
+
+/* Cell treatments */
+.vp-right { text-align: right; }
+.vp-center { display: flex; justify-content: center; text-align: center; }
+.vp-shrink { min-width: 0; }
+.vp-pretty { text-wrap: pretty; }
+.vp-meta { color: var(--text-meta); }
+.vp-wrap { min-width: 0; text-wrap: pretty; color: var(--fg-3); }
+.vp-amount { font-weight: 600; }
+.vp-strong { font-weight: 700; color: var(--nav); }
+.vp-bold { font-weight: 700; }
+.vp-outstanding { color: var(--high-emphasis); font-weight: 600; }
+.vp-disabled { color: var(--fg-disabled); }
+.vp-row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+.vp-empty { padding: 22px; text-align: center; font-size: 13px; color: var(--fg-faint); border-top: 1px solid var(--border-hairline); }
+.vp-add-row { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+/* Document cell: file name, or a dashed upload control */
+.vp-doc { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.vp-page .vp-doc-icon { font-size: 16px; color: var(--high-emphasis); flex: none; }
+.vp-doc-name { min-width: 0; text-wrap: pretty; font-weight: 700; color: var(--nav); }
+.vp-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--high-emphasis);
+  cursor: pointer;
+  border: 1px dashed var(--border-input);
+  border-radius: 4px;
+  padding: 5px 10px;
+}
+.vp-page .vp-upload-icon { font-size: 15px; }
+
+/* Rate card rows + expandable detail */
+.vp-rc { border-top: 1px solid var(--border-hairline); }
+.vp-rc-open { display: flex; align-items: center; gap: 4px; min-width: 0; cursor: pointer; }
+.vp-page .vp-rc-caret { font-size: 18px; color: var(--text-link); flex: none; }
+.vp-rc-name { font-weight: 700; color: var(--text-link); text-decoration: underline; min-width: 0; text-wrap: pretty; }
+.vp-rc-open:hover .vp-rc-name { color: var(--text-title); }
+.vp-rc-detail { padding: 12px 10px 16px 32px; background: var(--surface-zebra); border-top: 1px solid var(--border-hairline); }
+.vp-rc-fields { display: flex; flex-wrap: wrap; gap: 14px 20px; margin-bottom: 14px; }
+.vp-stages-label { margin-bottom: 6px; }
+.vp-rc-close { display: flex; margin-top: 14px; }
+
+/* New rate card form */
+.vp-card { border: 1px solid var(--border-divider); border-radius: 6px; padding: 20px 22px; margin-bottom: 20px; background: var(--white); }
+.vp-card-title { margin-bottom: 16px; }
+.vp-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 20px; }
+.vp-ms { margin-top: 18px; border-top: 1px solid var(--border-hairline); padding-top: 16px; }
+.vp-ms-label { margin-bottom: 10px; }
+.vp-ms-list { display: flex; flex-direction: column; gap: 8px; }
+.vp-ms-row { display: grid; grid-template-columns: minmax(0, 1.4fr) 120px 36px; gap: 10px; align-items: center; }
+.vp-ms-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.vp-ms-total { font-size: 12px; color: var(--text-meta); }
+.vp-ms-total--ok { color: var(--ok); }
+.vp-page .vp-btn-icon-sm { font-size: 16px; }
+.vp-card-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }

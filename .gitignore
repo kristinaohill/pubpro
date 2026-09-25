@@ -1,0 +1,8 @@
+node_modules/
+client/dist/
+client/vite.test-tmp.config.mjs
+server/*.db
+server/*.db-shm
+server/*.db-wal
+.DS_Store
+.env

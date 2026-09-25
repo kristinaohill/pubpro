@@ -1,0 +1,95 @@
+/* The bell sits in the TopNav's right-hand cluster, beside the workflow icon. */
+.nt-wrap {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  flex: none;
+}
+.nt-wrap > [role="button"]:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; }
+
+/* Unread count. The DS has no badge component; this uses the fatal accent with white text. */
+.nt-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--fatal-text);
+  color: var(--white);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--nav);
+}
+
+.nt-panel {
+  position: absolute;
+  top: calc(100% + 13px);
+  right: 0;
+  width: 400px;
+  max-width: calc(100vw - 24px);
+  background: var(--white);
+  border-radius: var(--radius-input);
+  box-shadow: var(--shadow-menu);
+  color: var(--text-body);
+  font-family: var(--font-sans);
+  display: flex;
+  flex-direction: column;
+}
+
+.nt-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px 8px;
+}
+.nt-title { font-size: var(--fs-lg); font-weight: var(--fw-bold); color: var(--nav); }
+
+.nt-toggle { padding: 0 16px 10px; }
+
+.nt-list {
+  max-height: 420px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-hairline);
+}
+
+.nt-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border-hairline);
+  cursor: pointer;
+}
+.nt-item:hover { background: var(--surface-row-hover); }
+.nt-item:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: -2px; }
+.nt-item--unread { background: var(--blue-tint); }
+
+.nt-glyph { flex: none; margin-top: 1px; }
+.nt-body { flex: 1; min-width: 0; }
+.nt-item-title { font-size: var(--fs-base); color: var(--nav); }
+.nt-item--unread .nt-item-title { font-weight: var(--fw-bold); }
+.nt-item-text { font-size: var(--fs-sm); color: var(--fg-3); margin-top: 2px; text-wrap: pretty; }
+.nt-meta { font-size: var(--fs-meta); color: var(--text-meta); margin-top: 4px; }
+
+.nt-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: var(--radius-round);
+  background: var(--high-emphasis);
+}
+
+.nt-empty { padding: 22px 16px; font-size: var(--fs-sm); color: var(--text-meta); }
+
+.nt-foot {
+  padding: 9px 16px;
+  font-size: var(--fs-meta);
+  color: var(--fg-faint);
+  border-top: 1px solid var(--border-hairline);
+}

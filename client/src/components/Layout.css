@@ -1,0 +1,51 @@
+.layout {
+  min-height: 100vh;
+  background: var(--surface-page);
+}
+
+.layout-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* Pages own their width and padding (some designs are full-bleed). */
+.main-content {
+  min-width: 0;
+}
+
+.layout-wstabs {
+  position: relative;
+}
+
+/* Invisible hit area over the WorkspaceTabs chevron, sized by the same text and padding
+   (the design does the same with an overlaid link). */
+.layout-workspace-link {
+  position: absolute;
+  z-index: 11;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  padding: 0 28px 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  white-space: nowrap;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Tenant label plus the workflow reference icon; the gap matches TopNav's right-side cluster. */
+.layout-tenant {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Positioning context for the account menu laid over the TopNav avatar. */
+.layout-topnav {
+  position: relative;
+  z-index: 20;
+}

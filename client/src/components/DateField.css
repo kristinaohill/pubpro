@@ -1,0 +1,17 @@
+.df-wrap {
+  position: relative;
+  max-width: 100%;
+}
+
+/* The native picker input only anchors the browser's popup under the field. */
+.df-native {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}

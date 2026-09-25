@@ -1,0 +1,122 @@
+/* External author record: grey band header, author details card, side tab rail + panel, action bar. */
+.eap-page {
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  background: var(--surface-page);
+  min-height: calc(100vh - 100px); /* viewport minus the Layout's TopNav + WorkspaceTabs */
+  display: flex;
+  flex-direction: column;
+}
+
+.eap-page .material-symbols-outlined { line-height: 1; }
+
+.eap-shell { width: 95%; margin: 0 auto; padding-top: 14px; flex: 1; }
+.eap-shell--stack { display: flex; flex-direction: column; gap: 14px; }
+
+/* Author details card */
+.eap-details {
+  background: var(--white);
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-panel);
+  padding: var(--panel-pad);
+}
+.eap-details-head { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.eap-push { margin-left: auto; padding-top: 6px; }
+
+.eap-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 40px;
+}
+.eap-group { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.eap-group--wide { grid-column: 1 / -1; }
+
+.eap-grid { display: grid; gap: 14px 16px; }
+.eap-grid--name { grid-template-columns: minmax(0, 1fr) 90px minmax(0, 1fr); }
+.eap-grid--address { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.eap-span2 { grid-column: span 2; }
+
+.eap-label-row { display: inline-flex; align-items: center; gap: 6px; }
+.eap-tip { position: relative; display: inline-flex; cursor: help; outline: none; }
+
+.eap-affil {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-input);
+  background: var(--surface-zebra);
+}
+.eap-affil-label { font-size: var(--fs-base); font-weight: var(--fw-bold); }
+.eap-affil-options { display: flex; gap: 22px; flex-wrap: wrap; }
+
+@media (max-width: 1000px) {
+  .eap-groups { grid-template-columns: minmax(0, 1fr); }
+  .eap-grid--address { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Tabs: rail + white panel */
+.eap-tabs { display: flex; align-items: stretch; }
+.eap-rail { display: flex; align-self: stretch; font-weight: var(--fw-semibold); }
+.eap-panel {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-divider);
+  background: var(--white);
+  padding: var(--panel-pad);
+  min-height: 420px;
+  margin-left: -1px;
+  border-radius: 0 var(--radius-panel) var(--radius-panel) 0;
+}
+.eap-stack { display: flex; flex-direction: column; gap: var(--section-gap); }
+
+.eap-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .eap-stats { grid-template-columns: minmax(0, 1fr); } }
+
+/* Debarment result cell with the per-source breakdown */
+.eap-result { white-space: normal; line-height: var(--lh-body); }
+.eap-sources { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.eap-source {
+  font-size: var(--fs-meta);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--tint-positive-bg);
+  color: var(--text-button-dark);
+}
+.eap-source--hit { background: var(--deadline-overdue-bg); }
+
+.eap-person { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Signed COI file card */
+.eap-filecard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--border-divider);
+  border-radius: var(--radius-chip);
+  margin-bottom: 18px;
+}
+.eap-filecard-body { flex: 1 1 260px; min-width: 0; }
+.eap-filecard-name { font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+
+.eap-subtable-title { font-size: var(--fs-base); font-weight: var(--fw-bold); color: var(--nav); margin-bottom: 8px; }
+.eap-count { font-weight: var(--fw-regular); color: var(--text-meta); }
+
+.eap-search { width: 300px; max-width: 100%; }
+
+.eap-meta { font-size: var(--fs-sm); color: var(--text-meta); }
+.eap-link { color: var(--text-link); font-weight: var(--fw-bold); }
+
+.eap-empty {
+  padding: 18px;
+  text-align: center;
+  font-size: var(--fs-sm);
+  font-style: italic;
+  color: var(--fg-faint);
+  border-top: 1px solid var(--border-hairline);
+}
+
+.eap-filecard--empty { color: var(--fg-3); background: var(--warning-bg); border-color: var(--border-hairline); }

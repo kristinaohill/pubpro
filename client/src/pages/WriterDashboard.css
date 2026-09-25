@@ -1,0 +1,97 @@
+.wd-page {
+  width: 95%;
+  margin: 0 auto;
+  padding-top: 24px;
+  padding-bottom: 40px;
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wd-page a { color: var(--text-link); text-decoration: underline; }
+.wd-page a:hover { color: var(--text-title); }
+
+.wd-meta { font-size: 12px; color: var(--text-meta); }
+.wd-strong { font-weight: 700; }
+.wd-gap-2 { margin-top: 2px; }
+.wd-gap-3 { margin-top: 3px; }
+.wd-cell { min-width: 0; }
+.wd-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .09em; color: var(--text-meta); }
+
+/* Header */
+.wd-header { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.wd-header-text { display: flex; flex-direction: column; gap: 3px; }
+.wd-title { font-size: 26px; font-weight: 700; color: var(--high-emphasis); line-height: 1.2; }
+.wd-lede { font-size: 14px; color: var(--text-meta); }
+.wd-header-aside { margin-left: auto; }
+
+/* Stat row */
+.wd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+
+/* Two-column body */
+.wd-columns { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.wd-card { background: var(--surface-card); border: 1px solid var(--border-divider); border-radius: 6px; }
+.wd-main { flex: 1 1 720px; min-width: 0; padding: 18px 22px 22px; }
+.wd-side { flex: 1 1 320px; max-width: 420px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.wd-side-card { padding: 18px 20px 16px; }
+
+/* My Publications */
+.wd-main-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.wd-badge { width: 26px; height: 26px; border-radius: 5px; background: var(--nav); display: flex; align-items: center; justify-content: center; flex: none; }
+.wd-page .wd-badge-icon { font-size: 18px; color: var(--text-button); }
+.wd-main-title { font-size: 20px; font-weight: 700; color: var(--text-heading); }
+.wd-main-tools { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.wd-count { font-size: 13px; color: var(--fg-faint); }
+
+.wd-table-scroll { overflow-x: auto; }
+.wd-table-inner { min-width: 920px; }
+
+/* Custom DataTable body row; grid template comes from PUB_COLS */
+.wd-row {
+  display: grid;
+  column-gap: 12px;
+  align-items: center;
+  font-size: var(--fs-sm);
+  padding: var(--cell-pad-y) var(--cell-pad-x);
+  border-top: 1px solid var(--border-hairline);
+  background: var(--white);
+  cursor: pointer;
+}
+.wd-row:hover { background: var(--surface-row-hover); }
+
+.wd-pub-id { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wd-page .wd-pub-id a { font-weight: 700; }
+.wd-pub-title { margin-top: 2px; text-wrap: pretty; }
+.wd-step-name { font-weight: 700; color: var(--nav); }
+.wd-due { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.wd-bar { height: 5px; border-radius: 3px; background: var(--border-hairline); margin-top: 5px; overflow: hidden; }
+.wd-bar-fill { height: 100%; background: var(--high-emphasis); }
+.wd-page .wd-chevron { font-size: 22px; color: var(--high-emphasis); }
+
+.wd-empty { border: 1px dashed var(--border-input); border-radius: 4px; padding: 22px; font-size: 14px; color: var(--text-meta); margin-top: 12px; }
+
+/* Side panels */
+.wd-side-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.wd-side-head--attn { margin-bottom: 12px; }
+.wd-page .wd-side-icon { font-size: 22px; color: var(--high-emphasis); }
+.wd-side-title { font-size: 19px; font-weight: 700; color: var(--high-emphasis); }
+
+/* Needs Attention */
+.wd-attn-list { display: flex; flex-direction: column; gap: 14px; }
+.wd-attn { border: 1px solid var(--border-input); border-radius: 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.wd-attn-head { display: flex; align-items: center; gap: 8px; }
+.wd-page .wd-attn-glyph { font-size: 18px; }
+.wd-attn-title { font-size: 14px; font-weight: 700; }
+.wd-attn-body { font-size: 13px; color: var(--fg-3); text-wrap: pretty; }
+.wd-attn-done { font-size: 12px; color: var(--ok); display: flex; align-items: center; gap: 4px; }
+.wd-page .wd-attn-done-icon { font-size: 15px; }
+.wd-attn-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Upcoming Deadlines */
+.wd-dl-group { margin-top: 10px; }
+.wd-dl-label { padding-bottom: 6px; border-bottom: 1px solid var(--border-hairline); }
+.wd-dl-row { display: grid; grid-template-columns: 78px minmax(0, 1fr); column-gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-hairline); font-size: 13px; }
+.wd-dl-date { font-weight: 700; color: var(--nav); }
+.wd-dl-date--overdue { color: var(--fatal-text); }

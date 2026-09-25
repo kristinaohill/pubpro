@@ -1,0 +1,16 @@
+{
+  "name": "pub-planning",
+  "version": "1.0.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "install:all": "npm install && npm --prefix server install --ignore-scripts && npm --prefix client install",
+    "build": "npm --prefix client install --include=dev && npm --prefix client run build && npm --prefix server install --omit=dev --ignore-scripts",
+    "start": "npm --prefix server start"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,412 @@
+/* Publication Form — record form with a side tab rail. Ported from "Publication Form.dc.html". */
+
+.pf-page {
+  font-family: var(--font-sans);
+  color: var(--text-body);
+  background: var(--surface-page);
+  min-height: calc(100vh - var(--topnav-h) - var(--wstabs-h));
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  line-height: normal;
+}
+.pf-page a { color: var(--text-link); text-decoration: underline; }
+.pf-page a:hover { color: var(--nav); }
+
+.pf-shell { width: 95%; margin: 0 auto; }
+@media (max-width: 1200px) { .pf-shell { width: 100%; } }
+
+/* ---- Utilities ------------------------------------------------------------- */
+.pf-row { display: flex; align-items: center; }
+.pf-row-end { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.pf-row-end.pf-nowrap { flex-wrap: nowrap; }
+.pf-col { display: flex; flex-direction: column; }
+.pf-wrap { flex-wrap: wrap; }
+.pf-gap4 { gap: 4px; } .pf-gap5 { gap: 5px; } .pf-gap6 { gap: 6px; } .pf-gap8 { gap: 8px; }
+.pf-gap10 { gap: 10px; } .pf-gap12 { gap: 12px; } .pf-gap14 { gap: 14px; } .pf-gap26 { gap: 26px; }
+.pf-gap-16-26 { gap: 16px 26px; }
+.pf-stack14, .pf-stack16, .pf-stack22, .pf-stack24, .pf-stack26 { display: flex; flex-direction: column; }
+.pf-stack14 { gap: 14px; } .pf-stack16 { gap: 16px; } .pf-stack22 { gap: 22px; } .pf-stack24 { gap: 24px; } .pf-stack26 { gap: 26px; }
+.pf-ml-auto { margin-left: auto; }
+.pf-flex1 { flex: 1; min-width: 0; }
+.pf-min0 { min-width: 0; }
+.pf-none { flex: none; }
+.pf-justify-end { display: flex; justify-content: flex-end; }
+.pf-justify-center { display: flex; justify-content: center; }
+.pf-center { text-align: center; }
+.pf-center-items { align-items: center; }
+.pf-pointer { cursor: pointer; }
+.pf-maxw100 { max-width: 100%; }
+.pf-maxw640 { max-width: 640px; }
+.pf-maxw760 { max-width: 760px; }
+.pf-maxw900 { max-width: 900px; }
+.pf-mt2 { margin-top: 2px; } .pf-mt3 { margin-top: 3px; } .pf-mt5 { margin-top: 5px; } .pf-mt6 { margin-top: 6px; }
+.pf-mt8 { margin-top: 8px; } .pf-mt10 { margin-top: 10px; } .pf-mt12 { margin-top: 12px; } .pf-mt14 { margin-top: 14px; }
+.pf-mt18 { margin-top: 18px; } .pf-mt-neg8 { margin-top: -8px; }
+.pf-mb0 { margin-bottom: 0; } .pf-mb4 { margin-bottom: 4px; } .pf-mb6 { margin-bottom: 6px; } .pf-mb8 { margin-bottom: 8px; }
+.pf-mb10 { margin-bottom: 10px; } .pf-mb12 { margin-bottom: 12px; } .pf-mb14 { margin-bottom: 14px; }
+.pf-mb18 { margin-bottom: 18px; } .pf-mb20 { margin-bottom: 20px; }
+.pf-pb2 { padding-bottom: 2px; } .pf-pb5 { padding-bottom: 5px; } .pf-pb20 { padding-bottom: 20px; }
+.pf-pl22 { padding-left: 22px; } .pf-ml22 { margin-left: 22px; }
+.pf-pad12 { padding: 12px; } .pf-pad16 { padding: 16px; }
+.pf-inset { padding-left: 22px; padding-right: 22px; }
+.pf-scroll-x { overflow-x: auto; }
+.pf-ellipsis { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pf-ellipsis-1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-nowrap-text { white-space: nowrap; }
+.pf-break { overflow-wrap: anywhere; }
+.pf-preline { white-space: pre-line; }
+.pf-pretty { text-wrap: pretty; }
+.pf-italic { font-style: italic; }
+.pf-iconrow { display: flex; align-items: center; gap: 5px; }
+
+/* ---- Type ------------------------------------------------------------------ */
+.pf-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .09em; color: var(--text-meta); }
+.pf-h3 { font-size: 14px; font-weight: 700; color: var(--nav); }
+.pf-label { font-size: var(--fs-base); font-weight: var(--fw-semibold); margin-bottom: 5px; display: flex; align-items: center; gap: 6px; }
+.pf-label--bold { font-weight: var(--fw-bold); }
+.pf-strong { font-weight: 700; }
+.pf-strong14 { font-size: 14px; font-weight: 700; }
+.pf-strong-nav { font-weight: 700; color: var(--nav); }
+.pf-semibold14 { font-size: 14px; font-weight: 600; }
+.pf-13 { font-size: 13px; } .pf-14 { font-size: 14px; }
+.pf-meta { font-size: 13px; color: var(--fg-3); }
+.pf-fg3 { color: var(--fg-3); }
+.pf-note12 { font-size: 12px; color: var(--text-meta); }
+.pf-note13 { font-size: 13px; color: var(--text-meta); }
+.pf-faint12 { font-size: 12px; color: var(--fg-faint); }
+.pf-faint13 { font-size: 13px; color: var(--fg-faint); }
+.pf-faint14 { font-size: 14px; color: var(--fg-faint); }
+.pf-faint-inline, .pf-faint-dot { color: var(--fg-faint); }
+.pf-warn12 { font-size: 12px; color: var(--warn-text); margin-top: 2px; }
+.pf-fatal13 { font-size: 13px; color: var(--fatal-text); gap: 6px; }
+.pf-ok13 { font-size: 13px; color: var(--ok); }
+.pf-dash { font-size: 14px; color: var(--fg-disabled); }
+
+/* ---- Record header --------------------------------------------------------- */
+.pf-head { padding: 14px 18px 10px; display: flex; flex-direction: column; gap: 10px; }
+.pf-demo { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: -4px; }
+.pf-head-top { display: flex; align-items: flex-start; gap: 14px; }
+.pf-head-icon { width: 44px; height: 44px; flex: none; display: block; }
+.pf-head-titles { display: flex; flex-direction: column; gap: 2px; }
+.pf-title { font-size: 20px; font-weight: 700; color: var(--high-emphasis); }
+.pf-subtitle { font-size: 15px; color: var(--fg-3); }
+.pf-head-owner { margin-left: auto; text-align: right; font-size: 14px; color: var(--fg-3); line-height: 1.5; }
+
+.pf-prog {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  border-top: 1px solid var(--border-divider);
+  border-bottom: 1px solid var(--border-divider);
+  margin: 2px -18px 0;
+  padding: 0 2px;
+  overflow-x: auto;
+}
+.pf-prog-cell { min-width: 120px; padding: 10px 16px; display: flex; flex-direction: column; gap: 4px; }
+.pf-prog-cell + .pf-prog-cell { border-left: 1px solid var(--border-divider); }
+.pf-prog-cell--link { cursor: pointer; }
+.pf-prog-cell--link:hover { background: var(--surface-row-hover); }
+.pf-prog-step { font-size: 16px; font-weight: 700; color: var(--high-emphasis); }
+.pf-prog-val16 { font-size: 16px; font-weight: 700; }
+.pf-prog-val14 { font-size: 14px; font-weight: 700; }
+.pf-prog-due { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 13px; color: var(--fg-3); }
+.pf-prog-bar { height: 5px; border-radius: 3px; background: var(--border-hairline); overflow: hidden; max-width: 220px; }
+.pf-prog-bar-fill { height: 100%; background: var(--high-emphasis); }
+.pf-prog-ooo { font-size: 12px; color: var(--warn-text); display: flex; align-items: center; gap: 4px; }
+.pf-steps { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 2px 0 0; }
+.pf-step { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+
+/* ---- Rail + panel ---------------------------------------------------------- */
+.pf-body { display: flex; align-items: stretch; gap: 0; padding: 8px 12px 0; flex: 1; }
+.pf-rail { display: flex; align-self: stretch; font-weight: var(--fw-semibold); }
+.pf-rail [title="Required fields missing"] { flex: none; flex-shrink: 0; min-width: 8px; }
+.pf-panel {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--border-divider);
+  background: var(--white);
+  padding: 18px 26px 30px;
+  min-height: 640px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 0;
+  position: relative;
+  z-index: 3;
+}
+
+/* ---- Shared blocks --------------------------------------------------------- */
+.pf-card { border: 1px solid var(--border-input); border-radius: 4px; background: var(--white); }
+.pf-card-head { padding: 12px 14px; border-bottom: 1px solid var(--border-hairline); }
+.pf-card-title { font-size: 16px; font-weight: 700; color: var(--nav); margin-top: 2px; text-wrap: pretty; }
+.pf-divided-block { border-bottom: 1px solid var(--border-divider); padding-bottom: 22px; }
+.pf-divided-block.pf-pb20 { padding-bottom: 20px; }
+.pf-dashed-empty { border: 1px dashed var(--border-input); border-radius: 4px; padding: 22px; font-size: 14px; color: var(--text-meta); background: var(--white); }
+.pf-group { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--border-hairline); padding-top: 18px; }
+
+.pf-boxcheck {
+  border: 1px solid var(--border-input);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  cursor: pointer;
+}
+
+.pf-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 40px; padding: 14px; }
+.pf-detail--full { grid-column: 1 / -1; }
+.pf-detail-label { font-size: 14px; font-weight: 600; }
+.pf-detail-value { font-size: 14px; margin-top: 4px; text-wrap: pretty; }
+
+.pf-stepline {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 7px 14px; border-top: 1px solid var(--border-hairline);
+  font-size: 13px; color: var(--fg-3); background: var(--white);
+}
+
+.pf-readiness { padding: 14px 16px; }
+.pf-readiness-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 150px; column-gap: 12px; align-items: center;
+  padding: 7px 0; border-top: 1px solid var(--border-hairline); font-size: 13px;
+}
+
+/* Hand-rolled typeahead (parent plan, study). */
+.pf-search { position: relative; }
+.pf-search--340 { width: 340px; }
+.pf-search-box { display: flex; align-items: center; border: 1px solid var(--border-input); border-radius: 4px; background: var(--white); overflow: hidden; }
+.pf-search-input { flex: 1; min-width: 0; border: 0; outline: none; font-family: var(--font-sans); font-size: 14px; padding: 8px 8px 8px 0; }
+.pf-search-input--study { padding: 8px 4px; }
+.pf-menu {
+  position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px;
+  background: var(--white); border: 1px solid var(--border-input); border-radius: 4px;
+  box-shadow: var(--shadow-menu); z-index: 20; overflow: hidden;
+}
+.pf-menu-item { display: flex; align-items: center; gap: 12px; padding: 9px 12px; cursor: pointer; border-bottom: 1px solid var(--border-hairline); }
+.pf-menu-item--stack { display: block; }
+.pf-menu-item:hover { background: var(--surface-row-hover); }
+.pf-menu-empty { padding: 10px 12px; font-size: 13px; color: var(--fg-faint); }
+.pf-menu-empty.pf-italic { color: var(--text-meta); }
+
+/* ---- Overview -------------------------------------------------------------- */
+.pf-overview { display: flex; flex-direction: column; gap: 22px; max-width: 700px; }
+.pf-planchip { display: flex; align-items: center; gap: 10px; border: 1px solid var(--border-input); border-radius: 4px; width: 340px; background: var(--white); padding: 8px 10px; }
+.pf-page a.pf-planchip-link { font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+.pf-planchip-name { font-size: 13px; color: var(--fg-faint); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-checklist-box { border: 1px solid var(--border-input); border-radius: 4px; width: 300px; background: var(--white); padding: 8px 10px; display: flex; flex-direction: column; gap: 8px; }
+.pf-checkline { display: flex; align-items: center; gap: 9px; font-size: 14px; cursor: pointer; }
+
+/* ---- Publication ----------------------------------------------------------- */
+.pf-docstart { border: 2px dashed var(--border-input); border-radius: 4px; padding: 28px 20px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pf-docstart-title { font-size: 16px; color: var(--nav); }
+.pf-docstart-alt { display: flex; align-items: center; gap: 12px; margin-top: 4px; flex-wrap: wrap; justify-content: center; }
+.pf-filecard { border: 1px solid var(--border-divider); border-radius: 4px; padding: 14px 16px; display: inline-flex; align-items: center; gap: 26px; }
+.pf-filecard-name { font-size: 15px; font-weight: 700; }
+
+/* ---- Authors --------------------------------------------------------------- */
+.pf-kv-min { min-width: 1640px; }
+.pf-kv-row { border-top: 1px solid var(--border-hairline); background: var(--white); padding: var(--cell-pad-y) var(--cell-pad-x); }
+.pf-kv-grid {
+  display: grid;
+  grid-template-columns: 44px minmax(180px,1.6fr) 92px 130px 120px 130px 104px 176px 190px 110px minmax(140px,1fr) 30px;
+  column-gap: 12px;
+  align-items: center;
+  font-size: var(--fs-sm);
+}
+.pf-author-flag { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--nav); margin-top: 3px; }
+.pf-credit { display: flex; align-items: flex-start; gap: 6px; }
+.pf-credit-summary { flex: 1; min-width: 0; font-size: 12px; text-wrap: pretty; }
+.pf-icmje-all { display: flex; align-items: center; gap: 5px; color: var(--ok); font-weight: 700; }
+.pf-icmje { display: flex; gap: 2px; }
+.pf-kv-remove { display: flex; justify-content: flex-end; position: sticky; right: 0; background: var(--white); }
+.pf-credit-editor { margin: 10px 0 4px 56px; max-width: 760px; }
+
+.pf-split-block { border-top: 1px solid var(--border-divider); padding-top: 18px; }
+.pf-split-row {
+  display: grid; column-gap: 12px; align-items: center; font-size: var(--fs-sm);
+  padding: var(--cell-pad-y) var(--cell-pad-x); border-top: 1px solid var(--border-hairline); background: var(--white);
+}
+.pf-split-row--internal { grid-template-columns: 52px minmax(200px,1.5fr) minmax(180px,1fr) 30px; }
+.pf-split-row--external { grid-template-columns: 52px minmax(160px,1.6fr) minmax(150px,1fr) 120px 30px; }
+.pf-split-agreement { font-size: 12px; color: var(--fg-faint); margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pf-add-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+
+/* ---- Target ---------------------------------------------------------------- */
+.pf-shortlist { border: 1px solid var(--border-divider); border-radius: 4px; background: var(--white); }
+.pf-shortlist-row {
+  display: grid; grid-template-columns: 24px 28px minmax(0,1fr) auto 30px; column-gap: 10px; align-items: center;
+  padding: 10px 12px; border-top: 1px solid var(--border-hairline); cursor: grab;
+}
+.pf-shortlist-rank { font-size: 14px; font-weight: 700; color: var(--nav); }
+
+/* ---- Studies --------------------------------------------------------------- */
+.pf-study-id { font-size: 13px; font-weight: 700; color: var(--nav); width: 56px; flex: none; }
+.pf-study-title { font-size: 13px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pf-study-head { display: flex; align-items: flex-start; gap: 14px; padding: 12px 14px; border-bottom: 1px solid var(--border-hairline); }
+.pf-study-status { flex: none; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 20px; }
+
+/* ---- Planning -------------------------------------------------------------- */
+.pf-statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.pf-statgrid--narrow { grid-template-columns: repeat(auto-fit, minmax(170px, 260px)); }
+.pf-milestones { margin-top: 30px; padding-left: 22px; }
+.pf-ms-body { border: 1px solid var(--border-divider); border-top: 0; padding: 12px 12px 14px; min-width: 0; overflow-x: auto; }
+.pf-ms-grid {
+  display: grid;
+  grid-template-columns: minmax(140px,1.9fr) minmax(115px,1.05fr) minmax(70px,.8fr) minmax(95px,.78fr) minmax(95px,.78fr) 52px minmax(105px,1.05fr) minmax(115px,1.25fr) minmax(130px,1.5fr) minmax(100px,1fr);
+  gap: 8px;
+}
+.pf-ms-head { align-items: end; font-size: 14px; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid var(--border-divider); }
+.pf-ms-row { align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-hairline); }
+.pf-ms-empty { padding: 20px 4px; text-align: center; font-size: 13px; color: var(--fg-faint); }
+.pf-paid-locked { font-size: 14px; font-weight: 700; color: var(--fg-3); display: flex; align-items: center; gap: 5px; }
+.pf-paystatus { font-size: 12px; font-weight: 700; letter-spacing: .03em; display: flex; align-items: center; gap: 5px; }
+.pf-lockpill { width: 30px; height: 26px; flex: none; border-radius: var(--radius-pill); background: var(--low-emphasis); display: flex; align-items: center; justify-content: center; }
+
+/* ---- Reviews --------------------------------------------------------------- */
+.pf-newround { padding: 18px 20px; display: flex; flex-direction: column; gap: 18px; }
+.pf-round-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 300px)); gap: 16px 26px; }
+.pf-reviewer-row {
+  display: grid; grid-template-columns: 26px minmax(200px,1.5fr) minmax(150px,1fr) 40px; column-gap: 14px;
+  font-size: 14px; padding: 9px 12px; align-items: center; border-bottom: 1px solid var(--border-hairline);
+}
+.pf-round-foot { display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--border-divider); padding-top: 16px; flex-wrap: wrap; }
+.pf-round { border: 1px solid var(--border-divider); border-radius: 4px; overflow: hidden; }
+.pf-round-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; cursor: pointer; }
+.pf-round-head--current { padding: 11px 14px; background: var(--surface-row-hover); }
+.pf-round-head--past { padding: 10px 14px; background: var(--white); }
+.pf-round-head--past:hover { background: var(--surface-row-hover); }
+.pf-round-body { padding: 4px 14px 14px; }
+.pf-caps-head { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-meta); padding: 9px 0 7px; border-bottom: 1px solid var(--border-hairline); }
+.pf-resp-grid { display: grid; grid-template-columns: minmax(0,1.6fr) minmax(0,1fr) 96px auto; column-gap: 12px; }
+.pf-resp-item { padding: 8px 0; border-bottom: 1px solid var(--border-hairline); }
+.pf-past-grid { display: grid; grid-template-columns: minmax(110px,1fr) minmax(120px,1.1fr) 150px 100px minmax(140px,1.3fr); column-gap: 12px; }
+.pf-past-row { align-items: center; font-size: 13px; padding: 9px 0; border-bottom: 1px solid var(--border-hairline); }
+
+/* ---- Compliance ------------------------------------------------------------ */
+.pf-cl-body { border: 1px solid var(--border-divider); border-top: 0; }
+.pf-cl-row {
+  display: grid; grid-template-columns: 30px minmax(200px,1fr) 150px 110px 100px; column-gap: 12px; align-items: center;
+  padding: 11px 12px; font-size: 14px; border-bottom: 1px solid var(--border-hairline);
+}
+.pf-cl-req { font-size: 12px; font-weight: 700; }
+
+/* ---- Outcome --------------------------------------------------------------- */
+.pf-related { border: 1px solid var(--border-divider); border-radius: 4px; padding: 12px 14px; margin-bottom: 20px; }
+.pf-related-note { font-size: 12.5px; color: var(--text-meta); margin-bottom: 10px; text-wrap: pretty; }
+.pf-child-row { display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border-hairline); padding-top: 6px; }
+.pf-outcome-card { border: 1px solid var(--border-input); border-radius: 4px; padding: 14px 16px; max-width: 640px; }
+.pf-cycle-note { margin: 2px 0 10px; }
+.pf-history-row { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 0; border-top: 1px solid var(--border-hairline); }
+
+/* ---- Citations ------------------------------------------------------------- */
+.pf-cite-bar { display: flex; align-items: flex-end; gap: 12px; border-bottom: 1px solid var(--border-divider); padding: 7px 12px; }
+.pf-cite-note { padding: 8px 12px 0; }
+.pf-cite-grid {
+  display: grid; grid-template-columns: minmax(150px,1fr) minmax(190px,1.4fr) 130px 140px 150px 110px 100px 44px;
+  column-gap: 12px; font-size: 14px; min-width: 1100px;
+}
+.pf-cite-head { font-weight: 700; padding: 12px; }
+.pf-cite-row { align-items: center; padding: 11px 12px; border-top: 1px solid var(--border-hairline); }
+.pf-cite-form { display: grid; grid-template-columns: 300px 300px; gap: 16px 26px; padding-left: 22px; }
+
+/* ---- Audit ----------------------------------------------------------------- */
+.pf-audit { margin-left: 12px; overflow-x: auto; }
+.pf-audit-grid { display: grid; grid-template-columns: 54px minmax(190px,1fr) minmax(200px,1.3fr) 130px 140px 150px minmax(90px,.6fr); column-gap: 12px; font-size: 14px; }
+.pf-audit-head { font-weight: 700; padding-bottom: 12px; border-bottom: 1px solid var(--border-hairline); }
+.pf-audit-row { padding: 12px 0; align-items: center; border-bottom: 1px solid var(--border-hairline); }
+
+/* Save / load feedback above the action bar. */
+.pf-status { padding-top: 16px; }
+
+/* Recording a reviewer's response inside the open round. */
+.pf-respond {
+  margin-top: 10px;
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr) auto;
+  gap: 12px 16px;
+  align-items: end;
+}
+.pf-respond-actions { justify-content: flex-end; }
+@media (max-width: 900px) { .pf-respond { grid-template-columns: 1fr; } }
+
+.pf-pad8 { padding: 8px 0; }
+
+/* Empty states on the Reviews and Audit tabs. */
+.pf-empty-box {
+  border: 1px dashed var(--border-input);
+  border-radius: var(--radius-input);
+  padding: 18px 20px;
+  font-size: var(--fs-sm);
+  color: var(--text-meta);
+}
+
+/* Cancelled records are read-only. */
+.pf-panel--readonly { pointer-events: none; opacity: .8; }
+.pf-panel--readonly fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pf-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.pf-stack12 { display: flex; flex-direction: column; gap: 12px; }
+
+/* Publication document editor: a floating panel docked bottom-right, like a compose window. */
+.pf-docpanel {
+  position: fixed;
+  right: 24px;
+  bottom: 0;
+  z-index: 90;
+  width: min(620px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 140px));
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--border-divider);
+  border-bottom: 0;
+  border-radius: var(--radius-chip) var(--radius-chip) 0 0;
+  box-shadow: var(--shadow-menu);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  animation: pf-docpanel-in var(--dur-base) var(--ease-standard);
+}
+.pf-docpanel--expanded { width: min(1100px, calc(100vw - 48px)); height: calc(100vh - 120px); }
+.pf-docpanel--minimized { height: auto; width: 320px; }
+
+.pf-docpanel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  background: var(--nav);
+  color: var(--white);
+  cursor: default;
+  user-select: none;
+}
+.pf-docpanel-title { flex: 1; min-width: 0; font-size: var(--fs-base); font-weight: var(--fw-bold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-docpanel-btn {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-round);
+  background: transparent;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.pf-docpanel-btn:hover { background: rgba(255, 255, 255, .16); }
+.pf-docpanel-btn:focus-visible { outline: 2px solid var(--white); outline-offset: 1px; }
+.pf-docpanel-btn .material-symbols-outlined { font-size: 18px; }
+
+.pf-docpanel-body { flex: 1; min-height: 0; display: flex; }
+.pf-docpanel-body textarea { flex: 1; }
+.pf-docpanel-body textarea:focus { outline: none; }
+
+.pf-docpanel-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-hairline);
+}
+
+@keyframes pf-docpanel-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pf-docpanel { animation: none; } }

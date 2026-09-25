@@ -1,0 +1,203 @@
+// Fictional study profiles (design, population, enrollment, arms, endpoints), keyed by study ID
+// and merged into STUDY_DIRECTORY. Investigators are the app's sample external authors.
+// arms: [arm, intervention, participants]
+
+export const STUDY_PROFILES = {
+  /* ---------- Daxafort (Atopic Dermatitis) ---------- */
+  100210: {
+    summary: 'Pivotal trial of Daxafort, an IL-13 inhibitor, in adults whose atopic dermatitis is not controlled by topical therapy. A 16-week induction period is followed by a 36-week maintenance period, with CLARIFY reporting results through Week 52.',
+    design: 'Randomized, double-blind, placebo-controlled, parallel-group',
+    population: 'Adults 18 years and older with moderate-to-severe atopic dermatitis (EASI ≥ 16, IGA ≥ 3) inadequately controlled by topical treatments',
+    pi: 'Steve Altschuler, UCLA School of Medicine',
+    start: '3/1/2024', duration: '52 weeks (16-week induction + 36-week maintenance)',
+    enrollTarget: 780, enrollActual: 812, sites: 142, countries: 14,
+    arms: [
+      ['Daxafort Q2W', 'Daxafort 250 mg subcutaneous every 2 weeks', 271],
+      ['Daxafort Q4W', 'Daxafort 250 mg subcutaneous every 4 weeks', 270],
+      ['Placebo', 'Matching placebo subcutaneous every 2 weeks', 271],
+    ],
+    primary: 'Proportion of participants achieving EASI-75 at Week 16',
+    secondary: [
+      'IGA 0/1 with ≥ 2-grade improvement at Week 16',
+      '≥ 4-point improvement in Peak Pruritus NRS at Week 16',
+      'Maintenance of EASI-75 at Week 52 among Week 16 responders',
+      'Change from baseline in DLQI at Week 16',
+    ],
+  },
+  100211: {
+    summary: 'Open-label extension offering continued Daxafort treatment to participants who completed DAX-301 or the Phase II dose-ranging study, to characterize long-term safety and durability of response.',
+    design: 'Open-label, single-arm, long-term extension',
+    population: 'Participants with atopic dermatitis who completed DAX-301 or DAX-205',
+    pi: 'Marie Dubois, Hôpital Saint-Louis',
+    start: '9/15/2025', duration: '52 weeks',
+    enrollTarget: 650, enrollActual: 588, sites: 118, countries: 13,
+    arms: [['Daxafort Q2W (open-label)', 'Daxafort 250 mg subcutaneous every 2 weeks', 588]],
+    primary: 'Incidence of treatment-emergent adverse events through Week 52',
+    secondary: ['EASI-75 at Week 52', 'IGA 0/1 at Week 52', 'Change from baseline in Peak Pruritus NRS at Week 52'],
+  },
+  100212: {
+    summary: 'Pediatric study of weight-based Daxafort dosing in children aged 6 to 11 with severe atopic dermatitis.',
+    design: 'Randomized, double-blind, placebo-controlled, parallel-group',
+    population: 'Children aged 6 to 11 years with severe atopic dermatitis (IGA 4, EASI ≥ 21)',
+    pi: 'Amara Okafor, Imperial College London',
+    start: '2/3/2026', duration: '16 weeks',
+    enrollTarget: 360, enrollActual: 94, sites: 60, countries: 9,
+    arms: [
+      ['Daxafort weight-based', 'Daxafort 100–200 mg subcutaneous every 4 weeks by body weight', 47],
+      ['Placebo', 'Matching placebo subcutaneous every 4 weeks', 47],
+    ],
+    primary: 'Proportion of participants achieving EASI-75 at Week 16',
+    secondary: ['IGA 0/1 at Week 16', 'Daxafort serum trough concentration at Week 16', 'Incidence of treatment-emergent adverse events'],
+    note: 'Enrollment is paused pending a protocol amendment to the weight-based dosing schedule.',
+  },
+
+  /* ---------- Biologix (All) ---------- */
+  100220: {
+    summary: 'Tests whether once-weekly Biologix improves coronary microvascular function in patients with angina and non-obstructive coronary artery disease. CLARITY-CAD reports the primary results.',
+    design: 'Randomized, double-blind, placebo-controlled, parallel-group',
+    population: 'Adults with persistent angina and non-obstructive coronary artery disease (< 50% stenosis) and coronary flow reserve < 2.5',
+    pi: 'Priya Raman, Karolinska Institutet',
+    start: '1/9/2024', duration: '48 weeks',
+    enrollTarget: 1200, enrollActual: 1236, sites: 96, countries: 11,
+    arms: [
+      ['Biologix 2 mg', 'Biologix 2 mg subcutaneous once weekly', 618],
+      ['Placebo', 'Matching placebo subcutaneous once weekly', 618],
+    ],
+    primary: 'Change from baseline in coronary flow reserve at Week 48',
+    secondary: [
+      'Change in Seattle Angina Questionnaire summary score at Week 48',
+      'Time to first major adverse cardiovascular event',
+      'Change from baseline in hs-CRP at Week 48',
+    ],
+  },
+  100221: {
+    summary: 'Evaluates two Biologix doses added to metformin for glycemic control in adults with type 2 diabetes.',
+    design: 'Randomized, double-blind, placebo-controlled, parallel-group',
+    population: 'Adults with type 2 diabetes on stable metformin with HbA1c 7.0% to 10.5%',
+    pi: 'Helen Marsh, Mayo Clinic',
+    start: '6/5/2024', duration: '26 weeks',
+    enrollTarget: 900, enrollActual: 914, sites: 120, countries: 12,
+    arms: [
+      ['Biologix 1 mg', 'Biologix 1 mg subcutaneous once weekly', 305],
+      ['Biologix 2 mg', 'Biologix 2 mg subcutaneous once weekly', 304],
+      ['Placebo', 'Matching placebo subcutaneous once weekly', 305],
+    ],
+    primary: 'Change from baseline in HbA1c at Week 26',
+    secondary: ['Change from baseline in body weight at Week 26', 'Change in fasting plasma glucose', 'Proportion reaching HbA1c < 7.0%'],
+  },
+  100222: {
+    summary: 'Large event-driven outcomes trial assessing whether Biologix reduces major adverse cardiovascular events in high-risk adults.',
+    design: 'Randomized, double-blind, placebo-controlled, event-driven',
+    population: 'Adults 50 years and older with established atherosclerotic cardiovascular disease or multiple cardiovascular risk factors',
+    pi: 'Raj Patel, Imperial College London',
+    start: '4/1/2025', duration: 'Event-driven (expected median follow-up about 3 years)',
+    enrollTarget: 12000, enrollActual: 9480, sites: 610, countries: 32,
+    arms: [
+      ['Biologix 2 mg', 'Biologix 2 mg subcutaneous once weekly', 4740],
+      ['Placebo', 'Matching placebo subcutaneous once weekly', 4740],
+    ],
+    primary: 'Time to first MACE (cardiovascular death, nonfatal myocardial infarction or nonfatal stroke)',
+    secondary: ['Time to cardiovascular death', 'Time to first hospitalization for heart failure', 'All-cause mortality'],
+  },
+  100223: {
+    summary: 'Pharmacokinetic bridging study comparing a once-weekly Biologix autoinjector with the daily pen in healthy volunteers.',
+    design: 'Open-label, randomized, two-period crossover',
+    population: 'Healthy adult volunteers aged 18 to 55',
+    pi: 'Kenji Sato, University of Tokyo',
+    start: '10/6/2025', duration: '12 weeks',
+    enrollTarget: 48, enrollActual: 14, sites: 2, countries: 1,
+    arms: [
+      ['Once-weekly autoinjector', 'Biologix 2 mg once weekly by autoinjector', 7],
+      ['Daily pen', 'Biologix 0.3 mg once daily by pen', 7],
+    ],
+    primary: 'Steady-state AUC and Cmax of Biologix',
+    secondary: ['Safety and tolerability', 'Incidence of injection-site reactions'],
+  },
+
+  /* ---------- Daxafont (DMD) ---------- */
+  100230: {
+    summary: 'Confirmatory trial of weekly Daxafont infusions on motor function in young ambulatory boys with Duchenne muscular dystrophy.',
+    design: 'Randomized (2:1), double-blind, placebo-controlled, parallel-group',
+    population: 'Ambulatory boys aged 4 to 7 with genetically confirmed DMD on a stable corticosteroid dose',
+    pi: 'Henrik Lund, Karolinska University Hospital',
+    start: '5/12/2025', duration: '72 weeks',
+    enrollTarget: 220, enrollActual: 196, sites: 48, countries: 10,
+    arms: [
+      ['Daxafont 30 mg/kg', 'Daxafont 30 mg/kg intravenous once weekly', 131],
+      ['Placebo', 'Matching placebo intravenous once weekly', 65],
+    ],
+    primary: 'Change from baseline in North Star Ambulatory Assessment total score at Week 72',
+    secondary: ['Time to rise from floor', '10-meter walk/run velocity', 'Dystrophin expression by western blot at Week 48'],
+  },
+  100231: {
+    summary: 'Dose-escalation study that established dystrophin production with Daxafont and selected the Phase III dose.',
+    design: 'Open-label, sequential dose-escalation',
+    population: 'Boys aged 4 to 10 with genetically confirmed DMD amenable to Daxafont',
+    pi: 'Helen Marsh, Mayo Clinic',
+    start: '2/6/2024', duration: '48 weeks',
+    enrollTarget: 36, enrollActual: 36, sites: 8, countries: 4,
+    arms: [
+      ['10 mg/kg', 'Daxafont 10 mg/kg intravenous once weekly', 12],
+      ['20 mg/kg', 'Daxafont 20 mg/kg intravenous once weekly', 12],
+      ['30 mg/kg', 'Daxafont 30 mg/kg intravenous once weekly', 12],
+    ],
+    primary: 'Change from baseline in dystrophin protein level at Week 48',
+    secondary: ['Incidence of treatment-emergent adverse events', 'Daxafont plasma pharmacokinetics', 'Change in North Star Ambulatory Assessment'],
+  },
+  100232: {
+    summary: 'Long-term extension following DXN-201 and DXN-301 participants on continued Daxafont, including after loss of ambulation.',
+    design: 'Open-label, single-arm, long-term extension',
+    population: 'Participants with DMD who completed DXN-201 or DXN-301',
+    pi: 'Henrik Lund, Karolinska University Hospital',
+    start: '3/3/2026', duration: '144 weeks',
+    enrollTarget: 230, enrollActual: 58, sites: 44, countries: 10,
+    arms: [['Daxafont 30 mg/kg (open-label)', 'Daxafont 30 mg/kg intravenous once weekly', 58]],
+    primary: 'Incidence of treatment-emergent adverse events through Week 144',
+    secondary: ['Change in percent-predicted forced vital capacity', 'Change in North Star Ambulatory Assessment', 'Performance of Upper Limb (PUL 2.0) score'],
+  },
+
+  /* ---------- Triazapam (Dermatology) ---------- */
+  100240: {
+    summary: 'Pivotal trial of once-daily Triazapam cream in adults with mild-to-moderate plaque psoriasis.',
+    design: 'Randomized (2:1), double-blind, vehicle-controlled, parallel-group',
+    population: 'Adults with mild-to-moderate plaque psoriasis covering 2% to 15% of body surface area',
+    pi: 'Kenji Sato, University of Tokyo',
+    start: '4/1/2025', duration: '12 weeks',
+    enrollTarget: 640, enrollActual: 652, sites: 70, countries: 6,
+    arms: [
+      ['Triazapam 1%', 'Triazapam 1% cream applied once daily', 435],
+      ['Vehicle', 'Vehicle cream applied once daily', 217],
+    ],
+    primary: 'IGA success (clear or almost clear with ≥ 2-grade improvement) at Week 12',
+    secondary: ['PASI-75 at Week 12', 'Change in itch NRS at Week 12', 'Change in affected body surface area'],
+  },
+  100241: {
+    summary: 'Evaluates twice-daily Triazapam cream against vehicle in adults with moderate-to-severe chronic hand eczema.',
+    design: 'Randomized, double-blind, vehicle-controlled, parallel-group',
+    population: 'Adults with moderate-to-severe chronic hand eczema lasting at least 3 months',
+    pi: 'Marie Dubois, Hôpital Saint-Louis',
+    start: '11/3/2025', duration: '16 weeks',
+    enrollTarget: 480, enrollActual: 312, sites: 64, countries: 8,
+    arms: [
+      ['Triazapam 1%', 'Triazapam 1% cream applied twice daily', 156],
+      ['Vehicle', 'Vehicle cream applied twice daily', 156],
+    ],
+    primary: 'IGA-CHE success at Week 16',
+    secondary: ['HECSI-75 at Week 16', 'Change in Hand Eczema Symptom Diary itch and pain scores', 'Change from baseline in DLQI'],
+  },
+  100242: {
+    summary: 'Exploratory dose-finding study of Triazapam cream in seborrheic dermatitis.',
+    design: 'Randomized, double-blind, vehicle-controlled, parallel-group',
+    population: 'Adults with moderate seborrheic dermatitis of the face or scalp',
+    pi: 'Raj Patel, Imperial College London',
+    start: '3/4/2025', duration: '8 weeks',
+    enrollTarget: 180, enrollActual: 176, sites: 22, countries: 2,
+    arms: [
+      ['Triazapam 0.5%', 'Triazapam 0.5% cream applied once daily', 59],
+      ['Triazapam 1%', 'Triazapam 1% cream applied once daily', 58],
+      ['Vehicle', 'Vehicle cream applied once daily', 59],
+    ],
+    primary: 'IGA success at Week 8',
+    secondary: ['Change in erythema and scaling scores', 'Change in pruritus NRS at Week 8'],
+  },
+};
