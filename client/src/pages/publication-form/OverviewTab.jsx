@@ -2,7 +2,7 @@ import React from 'react';
 import useDismiss from '../../components/useDismiss';
 import { EyebrowLabel, Field, Icon, IconButton, SectionHeading, Select, TextArea, TextField } from '../../ds/pubpro';
 import {
-  PLANS, PRODUCTS, PUBTYPE_OPTIONS, REVIEW_DEPT_OPTIONS, REVIEW_SPONSOR_OPTIONS,
+  PLANS, PRODUCT_TA, PRODUCTS, productsForTA, PUBTYPE_OPTIONS, REVIEW_DEPT_OPTIONS, REVIEW_SPONSOR_OPTIONS,
   REVIEW_SUBTYPE_OPTIONS, REVIEW_THERAPEUTIC_AREA_OPTIONS, TEMPLATE_FOR_TYPE, NO_VENDOR,
 } from './data';
 import { stageTemplatePatch } from './state';
@@ -28,9 +28,22 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
   const showPlanSuggestions = st.planFocused && !st.parentPlan;
   const planRef = useDismiss(showPlanSuggestions, () => set({ planFocused: false }));
 
+  const ta = bind('therapeuticArea').value;
+  // A new area clears a product outside it; picking a product with no area fills the area in.
+  const onTA = e => {
+    const v = e.target.value;
+    set(s => ({
+      fields: { ...s.fields, therapeuticArea: v },
+      product: v && s.product && PRODUCT_TA[s.product] !== v ? '' : s.product,
+    }));
+  };
   const onProduct = e => {
     const v = e.target.value;
-    set(s => ({ product: v, additionalProducts: s.additionalProducts.filter(x => x !== v) }));
+    set(s => ({
+      product: v,
+      additionalProducts: s.additionalProducts.filter(x => x !== v),
+      fields: ta || !v ? s.fields : { ...s.fields, therapeuticArea: PRODUCT_TA[v] || '' },
+    }));
   };
   const toggleProduct = p => set(s => ({
     additionalProducts: s.additionalProducts.includes(p)
@@ -114,10 +127,10 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
       <div className="pf-group">
         <EyebrowLabel>Classification</EyebrowLabel>
         <Field label="Therapeutic Area">
-          <Select options={REVIEW_THERAPEUTIC_AREA_OPTIONS} placeholder="Please select" {...bind('therapeuticArea')} width="300px" />
+          <Select options={REVIEW_THERAPEUTIC_AREA_OPTIONS} placeholder="Please select" value={ta} onChange={onTA} width="300px" />
         </Field>
         <Field label="Product">
-          <Select options={PRODUCTS} placeholder="Please select" value={st.product} onChange={onProduct} width="300px" />
+          <Select options={productsForTA(ta)} placeholder="Please select" value={st.product} onChange={onProduct} width="300px" />
         </Field>
         <Field label="Additional Products">
           <div className="pf-checklist-box">

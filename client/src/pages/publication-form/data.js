@@ -340,6 +340,15 @@ export const PRODUCTS = [
   "Triazapam (Dermatology)",
 ];
 
+/** Each product's therapeutic area; picking an area narrows the Product list to its products. */
+export const PRODUCT_TA = {
+  "Biologix (All)": "Cardiovascular & Metabolism",
+  "Daxafont (DMD)": "Neuroscience",
+  "Daxafort (Atopic Dermatitis)": "Immunology",
+  "Triazapam (Dermatology)": "Immunology",
+};
+export const productsForTA = ta => (ta ? PRODUCTS.filter(p => PRODUCT_TA[p] === ta) : PRODUCTS);
+
 export const CONFERENCE_DIRECTORY = [
   { name: "European Pain Federation - Congress", abbr: "EFIC", kind: "Congress", dates: "4/21/2027 - 4/23/2027 · Glasgow, UK",
     start: "4/21/2027", end: "4/23/2027", open: "9/1/2026", close: "1/22/2027", lateBreaker: "2/1/2027",

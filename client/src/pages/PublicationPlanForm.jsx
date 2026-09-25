@@ -8,7 +8,7 @@ import {
 import DateField from '../components/DateField';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
-import { PRODUCTS, REVIEW_THERAPEUTIC_AREA_OPTIONS, STUDY_DIRECTORY, TEMPLATE_FOR_TYPE, TODAY_STR, nowStamp } from './publication-form/data';
+import { PRODUCT_TA, REVIEW_THERAPEUTIC_AREA_OPTIONS, productsForTA, STUDY_DIRECTORY, TEMPLATE_FOR_TYPE, TODAY_STR, nowStamp } from './publication-form/data';
 import {
   auditEntry as pubAuditEntry, blankState as blankPublication, stageTemplatePatch, statusOf as pubStatusOf,
   summarize as summarizePublication, toSavedData as pubSavedData,
@@ -344,10 +344,30 @@ function OverviewTab({ overview, setField, planColor, setPlanColor, status, setS
           </div>
         </Field>
         <Field label="Therapeutic Area">
-          <Select options={PLAN_TA_OPTIONS} placeholder="Please select" {...bind('ta')} width="300px" />
+          <Select
+            options={PLAN_TA_OPTIONS}
+            placeholder="Please select"
+            value={overview.ta}
+            onChange={e => {
+              const v = e.target.value;
+              setField('ta', v);
+              if (v && overview.product && PRODUCT_TA[overview.product] !== v) setField('product', '');
+            }}
+            width="300px"
+          />
         </Field>
         <Field label="Product">
-          <Select options={PRODUCTS} placeholder="Please select" {...bind('product')} width="300px" />
+          <Select
+            options={productsForTA(overview.ta)}
+            placeholder="Please select"
+            value={overview.product}
+            onChange={e => {
+              const v = e.target.value;
+              setField('product', v);
+              if (v && !overview.ta) setField('ta', PRODUCT_TA[v] || '');
+            }}
+            width="300px"
+          />
         </Field>
         <Field label="Plan Status">
           <Select options={PLAN_STATUSES} value={status} onChange={e => setStatus(e.target.value)} width="200px" />
