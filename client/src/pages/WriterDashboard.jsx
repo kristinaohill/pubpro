@@ -210,8 +210,8 @@ export default function WriterDashboard() {
     <div className="wd-page">
       <div className="wd-header">
         <div className="wd-header-text">
-          <h1 className="wd-title">Writer Dashboard</h1>
-          <div className="wd-lede">Publications where you are the assigned writer · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</div>
+          <h1 className="wd-title">Publication Manager Dashboard</h1>
+          <div className="wd-lede">Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</div>
         </div>
       </div>
 

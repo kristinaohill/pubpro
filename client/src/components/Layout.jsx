@@ -29,7 +29,7 @@ function useMenuReset() {
 
 const WORKSPACE_HOME = {
   'User Dashboard': '/dashboard',
-  'Writer Dashboard': '/writer-dashboard',
+  'Publication Manager Dashboard': '/publication-manager',
   'External Author Dashboard': '/author-dashboard',
 };
 

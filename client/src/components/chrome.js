@@ -4,13 +4,13 @@ const HELP = { label: 'Help', icon: 'info' };
 
 // Short product nav used by the Publication Planning pages.
 const PLANNING_NAV = [
-  { label: 'Workspaces', menuItems: ['Writer Dashboard', 'User Dashboard', 'External Author Dashboard', 'Reports', HELP] },
+  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'User Dashboard', 'External Author Dashboard', 'Reports', HELP] },
 ];
 
 // Full product nav used by the User Dashboard record pages.
 const FULL_NAV = [
   'Home', 'Content List',
-  { label: 'Workspaces', menuItems: ['Writer Dashboard', 'User Dashboard', 'External Author Dashboard', 'Reports', 'System Administrator', HELP] },
+  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'User Dashboard', 'External Author Dashboard', 'Reports', 'System Administrator', HELP] },
   { label: 'Settings', menu: true },
 ];
 
@@ -31,9 +31,9 @@ export const CHROME = {
   },
   // Informational page, opened from the workflow icon in the TopNav rather than a workspace.
   '/workflows': USER_DASHBOARD,
-  '/writer-dashboard': {
+  '/publication-manager': {
     nav: PLANNING_NAV, active: 'Workspaces',
-    workspace: 'Writer Dashboard', tabs: ['My Alerts (3)', CREATE_SHORT, SEARCH_SHORT],
+    workspace: 'Publication Manager Dashboard', tabs: ['My Alerts (3)', CREATE_SHORT, SEARCH_SHORT],
   },
   '/external-author': USER_DASHBOARD,
   '/external-authors': USER_DASHBOARD,
@@ -57,7 +57,7 @@ export const AUTHOR_CHROME = { nav: [], active: '', workspace: 'My Author Dashbo
 
 // Menu rows and tabs that open another page.
 export const MENU_ROUTES = {
-  'Writer Dashboard': '/writer-dashboard',
+  'Publication Manager Dashboard': '/publication-manager',
   'User Dashboard': '/dashboard',
   'Home': '/dashboard',
   'Reports': '/financial-report',

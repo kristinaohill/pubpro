@@ -41,7 +41,8 @@ export default function App() {
           <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<PubProDashboard />} />
-            <Route path="writer-dashboard" element={<WriterDashboard />} />
+            <Route path="publication-manager" element={<WriterDashboard />} />
+            <Route path="writer-dashboard" element={<Navigate to="/publication-manager" replace />} />
             <Route path="publications" element={<Publications />} />
             <Route path="publication" element={<SamplePublication />} />
             <Route path="publication/:id" element={<PublicationForm />} />

@@ -371,7 +371,7 @@ export const statusOf = st => (st.cancelled ? 'Cancelled' : openRoundOf(st) ? 'I
 
 /**
  * What the dashboards need without loading the whole record. Dates are ISO (YYYY-MM-DD);
- * steps and people use the Writer Dashboard's shape.
+ * steps and people use the Publication Manager Dashboard's shape.
  */
 export function summarize(st) {
   const { steps, ci } = deriveSteps(st);
