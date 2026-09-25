@@ -44,8 +44,8 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
 
       <div className="pf-group">
         <EyebrowLabel>Publication Identity</EyebrowLabel>
-        <Field label="Abbreviated Title" info="Abbreviated Title">
-          <TextField {...bind('abbrevTitle')} width="620px" style={{ maxWidth: '100%' }} />
+        <Field label="Abbreviated Title" info="Maximum 60 characters">
+          <TextField {...bind('abbrevTitle')} maxLength={60} width="620px" style={{ maxWidth: '100%' }} />
         </Field>
         <Field label="Publication Title" info="Publication Title">
           <TextArea {...bind('pubTitle')} width="620px" height="58px" style={{ maxWidth: '100%' }} />
