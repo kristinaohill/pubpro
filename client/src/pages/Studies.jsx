@@ -35,7 +35,6 @@ export default function Studies() {
   return (
     <div className="pl-page">
       <PageHeader
-        icon="science"
         title="Studies"
         description={`${STUDY_DIRECTORY.length} studies across ${PRODUCTS.length} products`}
         actions={(

@@ -393,7 +393,6 @@ export default function PubProDashboard() {
   return (
     <div className="pd-page">
       <PageHeader
-        icon="monitoring"
         title="Executive Dashboard"
         description="Tasks, pipeline, spend and outcomes across every PubPro publication."
       />

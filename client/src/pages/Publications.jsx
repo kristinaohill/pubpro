@@ -99,7 +99,6 @@ export default function Publications() {
   return (
     <div className="pl-page">
       <PageHeader
-        icon="library_books"
         title="Publications"
         description={pubs ? `${pubs.length} saved ${pubs.length === 1 ? 'publication' : 'publications'}` : 'Saved publication records'}
         actions={(

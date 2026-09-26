@@ -69,7 +69,6 @@ export default function ExternalAuthors() {
   return (
     <div className="pl-page">
       <PageHeader
-        icon="badge"
         title="External Authors"
         description={authors ? `${authors.length} saved ${authors.length === 1 ? 'author' : 'authors'}` : 'Saved external author profiles'}
         actions={(

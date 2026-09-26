@@ -210,7 +210,6 @@ export default function WriterDashboard() {
   return (
     <div className="wd-page">
       <PageHeader
-        icon="assignment_ind"
         title="Publication Manager Dashboard"
         description={<>Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</>}
       />

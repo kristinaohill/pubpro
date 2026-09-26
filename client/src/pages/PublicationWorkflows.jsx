@@ -171,7 +171,6 @@ export default function PublicationWorkflows() {
   return (
     <div className="pw-page">
       <PageHeader
-        icon="account_tree"
         title="Publication Workflows"
         description="Stage templates applied on the Planning tab of a publication. Both tracks share the drafting, review and release rounds; manuscripts add an outline phase and a journal response cycle."
       />

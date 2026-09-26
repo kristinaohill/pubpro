@@ -203,7 +203,6 @@ export default function ExternalAuthorDashboard() {
   return (
     <div className="ead-page">
       <PageHeader
-        icon="how_to_reg"
         title={isAuthor ? 'Welcome, ' + person : 'External Author Dashboard'}
         description={isAuthor ? 'Invitations, review requests and forms waiting on you.' : person ? `What's waiting on ${person} across PubPro publications.` : 'Invitations, review requests and forms waiting on an external author.'}
         actions={!isAuthor && (

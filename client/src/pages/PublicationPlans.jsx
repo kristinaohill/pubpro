@@ -86,7 +86,6 @@ export default function PublicationPlans() {
   return (
     <div className="pl-page">
       <PageHeader
-        icon="event_note"
         title="Publication Plans"
         description={plans ? `${plans.length} saved ${plans.length === 1 ? 'plan' : 'plans'}` : 'Saved publication plans'}
         actions={(
