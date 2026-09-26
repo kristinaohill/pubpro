@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, DataTable, InlineMessage, Pill, Select } from '../ds/pubpro';
 import DateField from '../components/DateField';
+import PageHeader from '../components/PageHeader';
 import { api } from '../api';
 import { daysUntil } from './Publications';
 import {
@@ -391,6 +392,11 @@ export default function PubProDashboard() {
 
   return (
     <div className="pd-page">
+      <PageHeader
+        icon="monitoring"
+        title="Executive Dashboard"
+        description="Tasks, pipeline, spend and outcomes across every PubPro publication."
+      />
       {savedNotice && <InlineMessage kind="info">{savedNotice}</InlineMessage>}
 
       {/* My Task List */}

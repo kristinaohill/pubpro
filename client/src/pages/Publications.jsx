@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill, SectionHeading } from '../ds/pubpro';
+import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
+import PageHeader from '../components/PageHeader';
 import './Publications.css';
 
 const COLUMNS = [
@@ -97,17 +98,19 @@ export default function Publications() {
 
   return (
     <div className="pl-page">
-      <div className="pl-head">
-        <SectionHeading subtitle={pubs ? `${pubs.length} saved ${pubs.length === 1 ? 'publication' : 'publications'}` : 'Saved publication records'}>
-          Publications
-        </SectionHeading>
-        <div className="pl-head-actions">
-          {cancelledCount > 0 && (
-            <Checkbox checked={showCancelled} onChange={() => setShowCancelled(v => !v)} label={`Show cancelled (${cancelledCount})`} />
-          )}
-          <Button variant="secondary" icon="add" onClick={() => navigate('/publication/new')}>Create New Publication</Button>
-        </div>
-      </div>
+      <PageHeader
+        icon="library_books"
+        title="Publications"
+        description={pubs ? `${pubs.length} saved ${pubs.length === 1 ? 'publication' : 'publications'}` : 'Saved publication records'}
+        actions={(
+          <>
+            {cancelledCount > 0 && (
+              <Checkbox checked={showCancelled} onChange={() => setShowCancelled(v => !v)} label={`Show cancelled (${cancelledCount})`} />
+            )}
+            <Button variant="secondary" icon="add" onClick={() => navigate('/publication/new')}>Create New Publication</Button>
+          </>
+        )}
+      />
 
       {savedRecordId && !notice && <InlineMessage kind="info">Saved {savedRecordId}.</InlineMessage>}
       {notice && <InlineMessage kind="info">{notice}</InlineMessage>}

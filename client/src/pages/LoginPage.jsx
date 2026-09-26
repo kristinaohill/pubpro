@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { BrandMark, Button, Field, InlineMessage, TextField } from '../ds/pubpro';
 import { useAuth } from '../AuthContext';
 import './LoginPage.css';
 
@@ -13,13 +14,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState(import.meta.env.DEV ? 'admin123' : '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const signup = mode === 'signup';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      if (mode === 'signup') await register(name, email, password);
+      if (signup) await register(name, email, password);
       else await login(email, password);
       navigate('/');
     } catch (err) {
@@ -31,52 +33,51 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
+      <BrandMark variant="white" height={30} />
+
       <div className="login-card">
         <div className="login-brand">
-          <span style={{ fontSize: 36 }}>📰</span>
-          <h1>PubPlanner</h1>
-          <p>Publication Management Platform</p>
-        </div>
-        <form onSubmit={handleSubmit}>
-          {mode === 'signup' && (
-            <div className="form-group">
-              <label>Name</label>
-              <input value={name} onChange={e => setName(e.target.value)} required autoFocus />
-            </div>
-          )}
-          <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              autoFocus={mode === 'signin'}
-            />
+          <img src="/ds/assets/icons/icon-pubpro.svg" alt="" className="login-product-icon" />
+          <div>
+            <h1 className="login-title">PubPro</h1>
+            <div className="login-sub">Publication planning and management</div>
           </div>
-          <div className="form-group">
-            <label>Password</label>
-            <input
+        </div>
+
+        <h2 className="login-heading">{signup ? 'Create your account' : 'Sign in'}</h2>
+
+        <form onSubmit={handleSubmit} className="login-form">
+          {signup && (
+            <Field label="Name" required>
+              <TextField value={name} onChange={e => setName(e.target.value)} required autoFocus autoComplete="name" />
+            </Field>
+          )}
+          <Field label="Email" required>
+            <TextField type="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus={!signup} autoComplete="email" />
+          </Field>
+          <Field label="Password" required help={signup ? 'At least 8 characters.' : undefined}>
+            <TextField
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required
-              minLength={mode === 'signup' ? 8 : undefined}
-              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              minLength={signup ? 8 : undefined}
+              autoComplete={signup ? 'new-password' : 'current-password'}
             />
-          </div>
-          {error && <div className="error">{error}</div>}
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: 8, padding: '10px' }} disabled={loading}>
-            {loading ? (mode === 'signup' ? 'Creating account…' : 'Signing in…') : (mode === 'signup' ? 'Create Account' : 'Sign In')}
-          </button>
+          </Field>
+          {error && <InlineMessage kind="error">{error}</InlineMessage>}
+          <Button type="submit" variant="primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
+            {loading ? (signup ? 'Creating account…' : 'Signing in…') : (signup ? 'Create Account' : 'Sign In')}
+          </Button>
         </form>
-        <p className="login-hint">
-          {mode === 'signup' ? 'Already have an account? ' : 'New here? '}
+
+        <div className="login-switch-row">
+          {signup ? 'Already have an account?' : 'New to PubPro?'}
           <button type="button" className="login-switch" onClick={() => { setMode(m => (m === 'signup' ? 'signin' : 'signup')); setError(''); }}>
-            {mode === 'signup' ? 'Sign in' : 'Create an account'}
+            {signup ? 'Sign in' : 'Create an account'}
           </button>
-        </p>
-        {import.meta.env.DEV && mode === 'signin' && <p className="login-hint">Default: admin@example.com / admin123</p>}
+        </div>
+        {import.meta.env.DEV && !signup && <div className="login-hint">Local default: admin@example.com / admin123</div>}
       </div>
     </div>
   );

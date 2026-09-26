@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill, SectionHeading } from '../ds/pubpro';
+import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
+import PageHeader from '../components/PageHeader';
 import { fmtSaved } from './Publications';
 import './Publications.css';
 
@@ -67,17 +68,19 @@ export default function ExternalAuthors() {
 
   return (
     <div className="pl-page">
-      <div className="pl-head">
-        <SectionHeading subtitle={authors ? `${authors.length} saved ${authors.length === 1 ? 'author' : 'authors'}` : 'Saved external author profiles'}>
-          External Authors
-        </SectionHeading>
-        <div className="pl-head-actions">
-          {inactiveCount > 0 && (
-            <Checkbox checked={showInactive} onChange={() => setShowInactive(v => !v)} label={`Show inactive (${inactiveCount})`} />
-          )}
-          <Button variant="secondary" icon="person_add" onClick={() => navigate('/external-author/new')}>Create New External Author</Button>
-        </div>
-      </div>
+      <PageHeader
+        icon="badge"
+        title="External Authors"
+        description={authors ? `${authors.length} saved ${authors.length === 1 ? 'author' : 'authors'}` : 'Saved external author profiles'}
+        actions={(
+          <>
+            {inactiveCount > 0 && (
+              <Checkbox checked={showInactive} onChange={() => setShowInactive(v => !v)} label={`Show inactive (${inactiveCount})`} />
+            )}
+            <Button variant="secondary" icon="person_add" onClick={() => navigate('/external-author/new')}>Create New External Author</Button>
+          </>
+        )}
+      />
 
       {savedAuthorId && !notice && <InlineMessage kind="info">Saved {savedAuthorId}.</InlineMessage>}
       {notice && <InlineMessage kind="info">{notice}</InlineMessage>}

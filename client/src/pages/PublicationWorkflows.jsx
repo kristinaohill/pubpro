@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pill, InlineMessage } from '../ds/pubpro';
+import PageHeader from '../components/PageHeader';
 import './PublicationWorkflows.css';
 
 // Display options from the design. Flip to hide parts of the stage cards.
@@ -169,11 +170,12 @@ function TrackCell({ nodes = [], branches = [], emptyText, isMs }) {
 export default function PublicationWorkflows() {
   return (
     <div className="pw-page">
+      <PageHeader
+        icon="account_tree"
+        title="Publication Workflows"
+        description="Stage templates applied on the Planning tab of a publication. Both tracks share the drafting, review and release rounds; manuscripts add an outline phase and a journal response cycle."
+      />
       <div className="pw-header">
-        <div className="pw-header-text">
-          <h1 className="pw-title">Publication Workflows</h1>
-          <p className="pw-lede">Stage templates applied on the Planning tab of a publication. Both tracks share the drafting, review and release rounds; manuscripts add an outline phase and a journal response cycle.</p>
-        </div>
         <div className="pw-legend">
           <div className="pw-legend-item"><span className="pw-swatch" />Stage</div>
           <div className="pw-legend-item"><span className="pw-diamond pw-diamond--sm" />Milestone</div>

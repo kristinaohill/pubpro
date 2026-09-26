@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Button, DataTable, Icon, InlineMessage, Panel, Pill, SectionHeading, Select, StatCard, TextField,
+  Button, DataTable, Icon, InlineMessage, Panel, Pill, Select, StatCard, TextField,
 } from '../ds/pubpro';
 import { api } from '../api';
+import PageHeader from '../components/PageHeader';
 import { useAuth } from '../AuthContext';
 import { TODAY_STR, nowStamp, toISO } from './publication-form/data';
 import {
@@ -201,15 +202,17 @@ export default function ExternalAuthorDashboard() {
 
   return (
     <div className="ead-page">
-      <div className="ead-head">
-        <SectionHeading subtitle={isAuthor ? 'Invitations, review requests and forms waiting on you.' : person ? `What's waiting on ${person} across PubPro publications.` : 'Invitations, review requests and forms waiting on an external author.'}>
-          {isAuthor ? 'Welcome, ' + person : 'External Author Dashboard'}
-        </SectionHeading>
-        {!isAuthor && <div className="ead-viewas">
-          <span className="ead-viewas-label">Viewing as</span>
-          <Select options={people} placeholder={people.length ? 'Choose an author' : 'No authors yet'} value={person} onChange={e => { setPerson(e.target.value); setMessage(null); }} width="240px" />
-        </div>}
-      </div>
+      <PageHeader
+        icon="how_to_reg"
+        title={isAuthor ? 'Welcome, ' + person : 'External Author Dashboard'}
+        description={isAuthor ? 'Invitations, review requests and forms waiting on you.' : person ? `What's waiting on ${person} across PubPro publications.` : 'Invitations, review requests and forms waiting on an external author.'}
+        actions={!isAuthor && (
+          <div className="ead-viewas">
+            <span className="ead-viewas-label">Viewing as</span>
+            <Select options={people} placeholder={people.length ? 'Choose an author' : 'No authors yet'} value={person} onChange={e => { setPerson(e.target.value); setMessage(null); }} width="240px" />
+          </div>
+        )}
+      />
 
       {!isAuthor && <InlineMessage kind="info">
         Preview of the author&rsquo;s view. External authors don&rsquo;t have PubPro logins yet, so you can act on their behalf here;

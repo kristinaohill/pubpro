@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
+import PageHeader from '../components/PageHeader';
 import './WriterDashboard.css';
 
 // Designer Tweak (Regional): "US (M/D/YYYY)" or "International (D/M/YYYY)".
@@ -208,12 +209,11 @@ export default function WriterDashboard() {
 
   return (
     <div className="wd-page">
-      <div className="wd-header">
-        <div className="wd-header-text">
-          <h1 className="wd-title">Publication Manager Dashboard</h1>
-          <div className="wd-lede">Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</div>
-        </div>
-      </div>
+      <PageHeader
+        icon="assignment_ind"
+        title="Publication Manager Dashboard"
+        description={<>Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</>}
+      />
 
       <div className="wd-stats">
         {stats.map(s => (
