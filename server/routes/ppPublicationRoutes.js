@@ -115,4 +115,20 @@ router.delete('/:id', requireAuth, blockAuthors, (req, res) => {
   res.json({ success: true });
 });
 
+// One-time starter records (server/seeds/demo-publications.json) so the dashboards have data to
+// show. Runs once per database: the key goes in app_seeds, so deleting the records keeps them gone.
+const DEMO_SEED_KEY = 'demo-publications-2026-09';
+db.exec("CREATE TABLE IF NOT EXISTS app_seeds (key TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))");
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(DEMO_SEED_KEY)) {
+  const demo = require('../seeds/demo-publications.json');
+  const insert = db.prepare(`INSERT INTO pp_publications (record_id, title, pub_type, product, status, owner, summary, data, created_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`);
+  for (const r of demo) {
+    insert.run(nextRecordId(r.pub_type, r.product), r.title, r.pub_type, r.product, r.status, r.owner,
+      JSON.stringify(r.summary), JSON.stringify(r.data));
+  }
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(DEMO_SEED_KEY);
+  console.log('Added ' + demo.length + ' demo publications.');
+}
+
 module.exports = router;

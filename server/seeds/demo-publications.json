@@ -1,0 +1,2399 @@
+[
+  {
+    "title": "Triazapam Cream in Plaque Psoriasis: TRZ-301 Results",
+    "pub_type": "Abstract",
+    "product": "Triazapam (Dermatology)",
+    "owner": "Kristina Hill",
+    "status": "In Review",
+    "summary": {
+      "stepName": "Internal Draft Review",
+      "stepNum": 5,
+      "stepTotal": 11,
+      "due": "2026-09-27",
+      "steps": [
+        {
+          "name": "Author Invitations",
+          "type": "Stage",
+          "start": "2026-09-01",
+          "d": "2026-09-06",
+          "pct": 100,
+          "done": "2026-09-12",
+          "current": false
+        },
+        {
+          "name": "Kick-off Complete",
+          "type": "Milestone",
+          "start": "2026-09-06",
+          "d": "2026-09-06",
+          "pct": 100,
+          "done": "2026-09-15",
+          "current": false
+        },
+        {
+          "name": "Draft Development",
+          "type": "Stage",
+          "start": "2026-09-06",
+          "d": "2026-09-20",
+          "pct": 100,
+          "done": "2026-09-22",
+          "current": false
+        },
+        {
+          "name": "Draft Development Complete",
+          "type": "Milestone",
+          "start": "2026-09-20",
+          "d": "2026-09-20",
+          "pct": 100,
+          "done": "2026-09-22",
+          "current": false
+        },
+        {
+          "name": "Internal Draft Review",
+          "type": "Stage",
+          "start": "2026-09-20",
+          "d": "2026-09-27",
+          "pct": 0,
+          "current": true
+        },
+        {
+          "name": "Stats / Data QC",
+          "type": "Stage",
+          "start": "2026-09-27",
+          "d": "2026-10-02",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Author Draft Review",
+          "type": "Stage",
+          "start": "2026-10-02",
+          "d": "2026-10-12",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Final Draft Development",
+          "type": "Stage",
+          "start": "2026-10-12",
+          "d": "2026-10-17",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Author Approval",
+          "type": "Milestone",
+          "start": "2026-10-17",
+          "d": "2026-10-17",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Internal Release Approval",
+          "type": "Stage",
+          "start": "2026-10-17",
+          "d": "2026-10-20",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Submission",
+          "type": "Milestone",
+          "start": "2026-10-20",
+          "d": "2026-10-20",
+          "pct": 0,
+          "current": false
+        }
+      ],
+      "parentPlanId": "",
+      "roundType": "Internal Draft Review",
+      "people": [
+        {
+          "name": "Dana Ruiz",
+          "role": "Medical Director - Immunology",
+          "status": "done",
+          "last": "—"
+        },
+        {
+          "name": "Ben Cho",
+          "role": "Biostatistics",
+          "status": "pending",
+          "last": "—"
+        },
+        {
+          "name": "Tom Nakamura",
+          "role": "Regulatory Affairs",
+          "status": "pending",
+          "last": "—"
+        }
+      ]
+    },
+    "data": {
+      "reassignType": "current",
+      "childPubs": [],
+      "nextChildId": 1,
+      "correspondingAuthor": "",
+      "presentingAuthor": "",
+      "authorMetaEdits": {},
+      "internalAuthorPick": "",
+      "progReminded": {},
+      "internalSort": {
+        "by": 0,
+        "dir": "asc"
+      },
+      "kvSort": {
+        "by": 0,
+        "dir": "asc"
+      },
+      "authorFilter": "All",
+      "externalSort": {
+        "by": 0,
+        "dir": "asc"
+      },
+      "externalAuthorPick": "",
+      "targets": [
+        "European Academy of Dermatology and Venereology (EADV) Congress",
+        "American Academy of Dermatology (AAD) Annual Meeting"
+      ],
+      "noStudy": false,
+      "pubDoc": false,
+      "selectedStudies": [
+        "100240"
+      ],
+      "currentRoundOpen": true,
+      "reviewType": "Internal Draft Review",
+      "reviewMethod": "Collaborative Edit",
+      "internal": [
+        {
+          "id": 1,
+          "selected": true,
+          "corr": "optional",
+          "name": "Lena Ortiz",
+          "display": "Lena Ortiz",
+          "invite": {
+            "status": "accepted",
+            "sent": "9/10/2026",
+            "on": "9/11/2026"
+          }
+        }
+      ],
+      "external": [
+        {
+          "id": 1,
+          "selected": true,
+          "corr": "optional",
+          "name": "Marie Dubois-Hôpital Saint-Louis",
+          "display": "Marie Dubois",
+          "agreement": "Authorship_Agreement_Dubois_Signed.pdf",
+          "agreementDate": "8/10/2026",
+          "invite": {
+            "status": "accepted",
+            "sent": "9/10/2026",
+            "on": "9/12/2026"
+          }
+        },
+        {
+          "id": 2,
+          "selected": true,
+          "corr": "optional",
+          "name": "Kenji Sato-University of Tokyo",
+          "display": "Kenji Sato",
+          "agreement": "Authorship_Agreement_Sato_Signed.pdf",
+          "agreementDate": "2/20/2026",
+          "invite": {
+            "status": "sent",
+            "sent": "9/10/2026"
+          }
+        }
+      ],
+      "mandatory": [],
+      "additional": [],
+      "nextReviewerId": 2,
+      "subType": "Poster",
+      "parentPlan": null,
+      "product": "Triazapam (Dermatology)",
+      "additionalProducts": [],
+      "checklist": [
+        {
+          "id": 1,
+          "group": "Compliance",
+          "label": "ICMJE authorship criteria confirmed for all authors",
+          "owner": "Kristina Hill",
+          "due": "8/14/2026",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 2,
+          "group": "Compliance",
+          "label": "Author agreements on file for external authors",
+          "owner": "Kristina Hill",
+          "due": "8/14/2026",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 3,
+          "group": "Compliance",
+          "label": "Conflict of interest disclosures collected",
+          "owner": "Ina Ternal",
+          "due": "9/18/2026",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 4,
+          "group": "Content",
+          "label": "Data on file matches source tables and figures",
+          "owner": "Ben Cho",
+          "due": "9/18/2026",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 5,
+          "group": "Content",
+          "label": "Statistical review complete",
+          "owner": "Ben Cho",
+          "due": "9/18/2026",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 6,
+          "group": "Content",
+          "label": "Plain language summary drafted",
+          "owner": "Kristina Hill",
+          "due": "9/29/2026",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 7,
+          "group": "Submission",
+          "label": "Congress formatting and word count requirements met",
+          "owner": "Kristina Hill",
+          "due": "10/9/2026",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 8,
+          "group": "Submission",
+          "label": "Trial registration number included",
+          "owner": "Dana Ruiz",
+          "due": "10/9/2026",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 9,
+          "group": "Submission",
+          "label": "Copyright and licensing terms reviewed",
+          "owner": "Lena Ortiz",
+          "due": "10/9/2026",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 101,
+          "group": "Authorship & Presenting Author",
+          "label": "Each author made a substantial contribution to the conception/design of the work, or the acquisition, analysis, or interpretation of data",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 102,
+          "group": "Authorship & Presenting Author",
+          "label": "Presenting author identified (frequently distinct from the corresponding author; some congress portals grant upload permissions only to the presenting author)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 103,
+          "group": "Authorship & Presenting Author",
+          "label": "Author order and affiliations confirmed by all authors",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 104,
+          "group": "Authorship & Presenting Author",
+          "label": "A single author agreement covers both the abstract and its subsequent presentation",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 105,
+          "group": "Authorship & Presenting Author",
+          "label": "Non-author contributors and any professional medical writer identified and disclosed by name",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 110,
+          "group": "Abstract Content Preparation",
+          "label": "Abstract follows the congress's required structure",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 111,
+          "group": "Abstract Content Preparation",
+          "label": "Word or character count confirmed against the current submission portal limit",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 112,
+          "group": "Abstract Content Preparation",
+          "label": "Table/figure count confirmed against the congress limit",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 113,
+          "group": "Abstract Content Preparation",
+          "label": "Content is final as submitted",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 114,
+          "group": "Abstract Content Preparation",
+          "label": "Results are reported completely and are not overstated relative to the underlying data's maturity",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 115,
+          "group": "Abstract Content Preparation",
+          "label": "Sex/gender and other reporting conventions consistent with the sponsor's standard manuscript practice, where applicable",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 116,
+          "group": "Abstract Content Preparation",
+          "label": "Submission made to only one appropriate section/category/program track",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 120,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Every listed author has completed the congress's own COI disclosure inside its submission portal (separate from any ICMJE COI form already on file)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 121,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Funding source and sponsor's role disclosed per the congress's required format",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 122,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Professional medical writing support disclosed by name and funding source, consistent with GPP 2022",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 123,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Any AI tool used in preparing the abstract or presentation materials disclosed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 130,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "Prior presentation/publication status accurately declared in the submission portal (Original / Encore / Adaptation)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 131,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "If an Encore: confirmed the target congress accepts encore abstracts, and any required additional notice has been sent",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 132,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "If data will also be submitted as a journal manuscript around the same time: publication timing coordinated so it does not violate the congress's embargo policy",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 133,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "Copyright status of any previously published abstract content clarified before reuse",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 140,
+          "group": "Embargo Compliance",
+          "label": "Exact embargo lift date and time confirmed directly from the current congress policy",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 141,
+          "group": "Embargo Compliance",
+          "label": "All internal stakeholders (medical affairs, corporate communications, investor relations, social media) briefed on the embargo date and what it covers",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 142,
+          "group": "Embargo Compliance",
+          "label": "Confirmed the embargo applies to all release formats (press materials, investor communications, websites, social media, conference itinerary planner/app), not just formal press releases",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 143,
+          "group": "Embargo Compliance",
+          "label": "If a simultaneous journal publication is planned, its publication date is coordinated to align with the congress embargo lift",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 144,
+          "group": "Embargo Compliance",
+          "label": "Any planned exception to the embargo (e.g. a required regulatory disclosure) reviewed against the congress's exception policy, with advance notice given where required",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 150,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Eligibility for the late-breaking track confirmed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 151,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Late-breaking-specific submission deadline and data-cutoff requirements confirmed separately from the standard track",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 152,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Any placeholder or partial submission requirements met, if the congress allows a placeholder abstract pending final data",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 153,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Confirmed the late-breaking abstract remains subject to the same confidentiality/embargo policy as standard abstracts from the point of submission, even before formal acceptance",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 160,
+          "group": "Submission Portal and Format Requirements",
+          "label": "Correct submission category/section selected",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 161,
+          "group": "Submission Portal and Format Requirements",
+          "label": "File format requirements confirmed for any required supporting files (structured data tables, supplementary figures)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 162,
+          "group": "Submission Portal and Format Requirements",
+          "label": "All author COI disclosures completed inside the portal by every listed author before the submission deadline",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 163,
+          "group": "Submission Portal and Format Requirements",
+          "label": "Submission confirmation retained and logged against the internal publication plan",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 164,
+          "group": "Submission Portal and Format Requirements",
+          "label": "If corrections are needed after submission: the congress's specific correction/withdrawal process confirmed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 170,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Poster or slide format specifications confirmed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 171,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Disclosure slide prepared for oral presentations, listing COI and funding consistent with the abstract's own disclosures",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 172,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Only the designated presenting author used to upload materials, where the congress portal restricts this permission",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 173,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Accessibility considerations addressed in poster/slide design (font size, color contrast, alt text) per GPCAP's 2026 update",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 174,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Patient engagement considerations reviewed, where relevant, per GPCAP's patient engagement section",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 175,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Congress branding and any required disclaimers (e.g. \"data on file,\" trademark symbols) included per the congress's own material guidelines",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 180,
+          "group": "Post-Conference",
+          "label": "Poster or slide deck made available post-conference exactly as the congress's own reuse/reprint policy permits",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 181,
+          "group": "Post-Conference",
+          "label": "Any enhanced content (plain-language summary, infographic) prepared and reviewed consistent with GPP 2022's enhanced-content standards",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 182,
+          "group": "Post-Conference",
+          "label": "Presentation logged in the internal publication tracking system, including final abstract number/ID assigned by the congress",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 183,
+          "group": "Post-Conference",
+          "label": "If underlying data will subsequently be submitted as a full manuscript: prior presentation at this congress disclosed transparently in the manuscript per ICMJE requirements",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 184,
+          "group": "Post-Conference",
+          "label": "Citation metrics/attention data (if tracked) linked back to this record for ongoing impact monitoring",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        }
+      ],
+      "planBudget": 64000,
+      "journalChecklist": [
+        {
+          "id": 501,
+          "group": "Planning Stage",
+          "label": "Target journal confirmed against the publication plan and scope",
+          "owner": "Unassigned",
+          "due": "",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 502,
+          "group": "Planning Stage",
+          "label": "Journal author guidelines reviewed (word count, reference style, article type)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 503,
+          "group": "Planning Stage",
+          "label": "Data sources and analysis plan agreed with the study team",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 504,
+          "group": "Planning Stage",
+          "label": "Timeline shared with all authors, including review windows",
+          "owner": "Unassigned",
+          "due": "",
+          "done": true,
+          "required": false
+        },
+        {
+          "id": 511,
+          "group": "Manuscript Content",
+          "label": "Abstract structured per journal requirements",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 512,
+          "group": "Manuscript Content",
+          "label": "Data in text, tables and figures verified against source outputs",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 513,
+          "group": "Manuscript Content",
+          "label": "Clinical trial registration number included in the abstract and methods",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 514,
+          "group": "Manuscript Content",
+          "label": "Reporting guideline checklist completed (CONSORT, STROBE or equivalent)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 515,
+          "group": "Manuscript Content",
+          "label": "Cover letter drafted",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 521,
+          "group": "Authors and Contributors",
+          "label": "All authors meet ICMJE authorship criteria",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 522,
+          "group": "Authors and Contributors",
+          "label": "CRediT contributor roles recorded for every author",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 523,
+          "group": "Authors and Contributors",
+          "label": "Medical writing support acknowledged, with funding source",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 524,
+          "group": "Authors and Contributors",
+          "label": "ORCID iDs collected for all authors",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 531,
+          "group": "Disclosures and Declarations",
+          "label": "ICMJE disclosure forms current for every author",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 532,
+          "group": "Disclosures and Declarations",
+          "label": "Funding statement and sponsor role declared",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 533,
+          "group": "Disclosures and Declarations",
+          "label": "Data sharing statement prepared",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 534,
+          "group": "Disclosures and Declarations",
+          "label": "Ethics approval and informed consent statement included",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        }
+      ],
+      "readinessChecked": false,
+      "citationsVerified": false,
+      "outcomeStatus": "",
+      "responseDone": {},
+      "proofDone": {},
+      "dispositionRecorded": false,
+      "returnedToSubmission": false,
+      "rejectionHistory": [],
+      "poNumber": "",
+      "vendor": "No Vendor (In-house)",
+      "rateCard": "",
+      "stageTemplate": "Abstract",
+      "pubType": "Abstract",
+      "pubStart": "9/1/2026",
+      "priorVendorName": "",
+      "priorVendorDate": "",
+      "nextRowId": 113,
+      "rows": [
+        {
+          "id": 100,
+          "name": "Author Invitations",
+          "type": "Stage",
+          "done": true,
+          "pct": "100",
+          "days": 5,
+          "start": "9/1/2026",
+          "end": "9/6/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/12/2026"
+        },
+        {
+          "id": 101,
+          "name": "Kick-off Complete",
+          "type": "Milestone",
+          "done": true,
+          "pct": "",
+          "days": 0,
+          "start": "9/6/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/15/2026"
+        },
+        {
+          "id": 102,
+          "name": "Draft Development",
+          "type": "Stage",
+          "done": true,
+          "pct": "100",
+          "days": 14,
+          "start": "9/6/2026",
+          "end": "9/20/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/22/2026"
+        },
+        {
+          "id": 103,
+          "name": "Draft Development Complete",
+          "type": "Milestone",
+          "done": true,
+          "pct": "",
+          "days": 0,
+          "start": "9/20/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/22/2026"
+        },
+        {
+          "id": 104,
+          "name": "Internal Draft Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 7,
+          "start": "9/20/2026",
+          "end": "9/27/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 105,
+          "name": "Partner Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "",
+          "end": "",
+          "core": false,
+          "optional": true,
+          "included": false,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 106,
+          "name": "Stats / Data QC",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "9/27/2026",
+          "end": "10/2/2026",
+          "core": false,
+          "optional": true,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 107,
+          "name": "Author Draft Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 10,
+          "start": "10/2/2026",
+          "end": "10/12/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 108,
+          "name": "Final Draft Development",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "10/12/2026",
+          "end": "10/17/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 109,
+          "name": "Compliance and IP Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "",
+          "end": "",
+          "core": false,
+          "optional": true,
+          "included": false,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 110,
+          "name": "Author Approval",
+          "type": "Milestone",
+          "done": false,
+          "pct": "",
+          "days": 0,
+          "start": "10/17/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 111,
+          "name": "Internal Release Approval",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 3,
+          "start": "10/17/2026",
+          "end": "10/20/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 112,
+          "name": "Submission",
+          "type": "Milestone",
+          "done": false,
+          "pct": "",
+          "days": 0,
+          "start": "10/20/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        }
+      ],
+      "rounds": [
+        {
+          "num": 1,
+          "type": "Internal Draft Review",
+          "method": "Collaborative Edit",
+          "priority": "Standard Review",
+          "due": "9/30/2026",
+          "sentOn": "9/23/2026",
+          "closedOn": "",
+          "status": "open",
+          "outcome": "",
+          "reviewers": [
+            {
+              "name": "Dana Ruiz",
+              "role": "Medical Director - Immunology",
+              "kind": "reviewer",
+              "decision": "approve",
+              "on": "9/25/2026",
+              "comment": "Efficacy claims match the CSR.",
+              "remindedOn": "",
+              "ooo": ""
+            },
+            {
+              "name": "Ben Cho",
+              "role": "Biostatistics",
+              "kind": "reviewer",
+              "decision": "pending",
+              "on": "",
+              "comment": "",
+              "remindedOn": "",
+              "ooo": ""
+            },
+            {
+              "name": "Tom Nakamura",
+              "role": "Regulatory Affairs",
+              "kind": "reviewer",
+              "decision": "pending",
+              "on": "",
+              "comment": "",
+              "remindedOn": "",
+              "ooo": ""
+            }
+          ]
+        }
+      ],
+      "audit": [
+        {
+          "action": "Record Created",
+          "participants": "Kristina Hill",
+          "start": "8/31/2026 9:00 AM",
+          "completed": "8/31/2026",
+          "result": "Draft",
+          "active": false,
+          "comment": ""
+        },
+        {
+          "action": "Author Invitation Sent",
+          "participants": "Lena Ortiz\nMarie Dubois\nKenji Sato",
+          "start": "9/10/2026 10:15 AM",
+          "completed": "9/10/2026",
+          "result": "",
+          "active": false,
+          "comment": "Sent by Kristina Hill"
+        },
+        {
+          "action": "Internal Draft Review (Round 1)",
+          "participants": "Dana Ruiz [Medical Director - Immunology]\nBen Cho [Biostatistics]\nTom Nakamura [Regulatory Affairs]",
+          "start": "9/23/2026 2:00 PM",
+          "completed": "-",
+          "result": "",
+          "active": true,
+          "comment": "Sent by Kristina Hill · Collaborative Edit · due 9/30/2026",
+          "roundNum": 1
+        }
+      ],
+      "historyFiles": [],
+      "pubDocOn": "",
+      "pubDocBy": "",
+      "cancelled": null,
+      "fields": {
+        "abbrevTitle": "Triazapam Cream in Plaque Psoriasis: TRZ-301 Results",
+        "pubTitle": "Once-Daily Triazapam 1% Cream in Mild-to-Moderate Plaque Psoriasis: Primary Results of the Phase III TRZ-301 Trial",
+        "therapeuticArea": "Immunology",
+        "department": "Medical Affairs",
+        "sponsorType": "Company Sponsored",
+        "roundDue": "",
+        "priority": "Standard Review",
+        "timezone": "ET",
+        "actualCost": "0.00",
+        "citationType": "Journal Article",
+        "delegateTo": "",
+        "reassignFrom": ""
+      }
+    }
+  },
+  {
+    "title": "Daxafort 52-Week Safety in Atopic Dermatitis: DAX-302",
+    "pub_type": "Manuscript",
+    "product": "Daxafort (Atopic Dermatitis)",
+    "owner": "Kristina Hill",
+    "status": "Active",
+    "summary": {
+      "stepName": "Draft Development",
+      "stepNum": 6,
+      "stepTotal": 14,
+      "due": "2026-10-02",
+      "steps": [
+        {
+          "name": "Author Invitations",
+          "type": "Stage",
+          "start": "2026-08-17",
+          "d": "2026-08-22",
+          "pct": 100,
+          "done": "2026-08-24",
+          "current": false
+        },
+        {
+          "name": "Kick-off Complete",
+          "type": "Milestone",
+          "start": "2026-08-22",
+          "d": "2026-08-22",
+          "pct": 100,
+          "done": "2026-08-28",
+          "current": false
+        },
+        {
+          "name": "Data and Proposal Input",
+          "type": "Stage",
+          "start": "2026-08-22",
+          "d": "2026-09-01",
+          "pct": 100,
+          "done": "2026-09-03",
+          "current": false
+        },
+        {
+          "name": "Outline Development",
+          "type": "Stage",
+          "start": "2026-09-01",
+          "d": "2026-09-11",
+          "pct": 100,
+          "done": "2026-09-12",
+          "current": false
+        },
+        {
+          "name": "Outline Review",
+          "type": "Stage",
+          "start": "2026-09-11",
+          "d": "2026-09-18",
+          "pct": 100,
+          "done": "2026-09-19",
+          "current": false
+        },
+        {
+          "name": "Draft Development",
+          "type": "Stage",
+          "start": "2026-09-18",
+          "d": "2026-10-02",
+          "pct": 0,
+          "current": true
+        },
+        {
+          "name": "Draft Development Complete",
+          "type": "Milestone",
+          "start": "2026-10-02",
+          "d": "2026-10-02",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Internal Draft Review",
+          "type": "Stage",
+          "start": "2026-10-02",
+          "d": "2026-10-09",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Stats / Data QC",
+          "type": "Stage",
+          "start": "2026-10-09",
+          "d": "2026-10-14",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Author Draft Review",
+          "type": "Stage",
+          "start": "2026-10-14",
+          "d": "2026-10-24",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Final Draft Development",
+          "type": "Stage",
+          "start": "2026-10-24",
+          "d": "2026-10-29",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Author Approval",
+          "type": "Milestone",
+          "start": "2026-10-29",
+          "d": "2026-10-29",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Internal Release Approval",
+          "type": "Stage",
+          "start": "2026-10-29",
+          "d": "2026-11-01",
+          "pct": 0,
+          "current": false
+        },
+        {
+          "name": "Submission",
+          "type": "Milestone",
+          "start": "2026-11-01",
+          "d": "2026-11-01",
+          "pct": 0,
+          "current": false
+        }
+      ],
+      "parentPlanId": "",
+      "roundType": "",
+      "people": []
+    },
+    "data": {
+      "reassignType": "current",
+      "childPubs": [],
+      "nextChildId": 1,
+      "correspondingAuthor": "",
+      "presentingAuthor": "",
+      "authorMetaEdits": {},
+      "internalAuthorPick": "",
+      "progReminded": {},
+      "internalSort": {
+        "by": 0,
+        "dir": "asc"
+      },
+      "kvSort": {
+        "by": 0,
+        "dir": "asc"
+      },
+      "authorFilter": "All",
+      "externalSort": {
+        "by": 0,
+        "dir": "asc"
+      },
+      "externalAuthorPick": "",
+      "targets": [
+        "Journal of the American Academy of Dermatology",
+        "British Journal of Dermatology"
+      ],
+      "noStudy": false,
+      "pubDoc": false,
+      "selectedStudies": [
+        "100211"
+      ],
+      "currentRoundOpen": true,
+      "reviewType": "Internal Draft Review",
+      "reviewMethod": "Collaborative Edit",
+      "internal": [
+        {
+          "id": 1,
+          "selected": true,
+          "corr": "optional",
+          "name": "Kristina Hill",
+          "display": "Kristina Hill",
+          "invite": {
+            "status": "accepted",
+            "sent": "8/18/2026",
+            "on": "8/18/2026"
+          }
+        }
+      ],
+      "external": [
+        {
+          "id": 1,
+          "selected": true,
+          "corr": "optional",
+          "name": "Steve Altschuler-UCLA School of Medicine",
+          "display": "Steve Altschuler",
+          "agreement": "Authorship_Agreement_Altschuler_Signed.pdf",
+          "agreementDate": "3/14/2025",
+          "invite": {
+            "status": "accepted",
+            "sent": "8/18/2026",
+            "on": "8/20/2026"
+          }
+        },
+        {
+          "id": 2,
+          "selected": true,
+          "corr": "optional",
+          "name": "Priya Raman-Karolinska Institutet",
+          "display": "Priya Raman",
+          "agreement": "Authorship_Agreement_Raman_Signed.pdf",
+          "agreementDate": "1/8/2026",
+          "invite": {
+            "status": "declined",
+            "sent": "8/18/2026",
+            "on": "8/25/2026"
+          }
+        }
+      ],
+      "mandatory": [],
+      "additional": [],
+      "nextReviewerId": 2,
+      "subType": "",
+      "parentPlan": null,
+      "product": "Daxafort (Atopic Dermatitis)",
+      "additionalProducts": [],
+      "checklist": [
+        {
+          "id": 1,
+          "group": "Compliance",
+          "label": "ICMJE authorship criteria confirmed for all authors",
+          "owner": "Kristina Hill",
+          "due": "8/14/2026",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 2,
+          "group": "Compliance",
+          "label": "Author agreements on file for external authors",
+          "owner": "Kristina Hill",
+          "due": "8/14/2026",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 3,
+          "group": "Compliance",
+          "label": "Conflict of interest disclosures collected",
+          "owner": "Ina Ternal",
+          "due": "9/18/2026",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 4,
+          "group": "Content",
+          "label": "Data on file matches source tables and figures",
+          "owner": "Ben Cho",
+          "due": "9/18/2026",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 5,
+          "group": "Content",
+          "label": "Statistical review complete",
+          "owner": "Ben Cho",
+          "due": "9/18/2026",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 6,
+          "group": "Content",
+          "label": "Plain language summary drafted",
+          "owner": "Kristina Hill",
+          "due": "9/29/2026",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 7,
+          "group": "Submission",
+          "label": "Congress formatting and word count requirements met",
+          "owner": "Kristina Hill",
+          "due": "10/9/2026",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 8,
+          "group": "Submission",
+          "label": "Trial registration number included",
+          "owner": "Dana Ruiz",
+          "due": "10/9/2026",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 9,
+          "group": "Submission",
+          "label": "Copyright and licensing terms reviewed",
+          "owner": "Lena Ortiz",
+          "due": "10/9/2026",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 101,
+          "group": "Authorship & Presenting Author",
+          "label": "Each author made a substantial contribution to the conception/design of the work, or the acquisition, analysis, or interpretation of data",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 102,
+          "group": "Authorship & Presenting Author",
+          "label": "Presenting author identified (frequently distinct from the corresponding author; some congress portals grant upload permissions only to the presenting author)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 103,
+          "group": "Authorship & Presenting Author",
+          "label": "Author order and affiliations confirmed by all authors",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 104,
+          "group": "Authorship & Presenting Author",
+          "label": "A single author agreement covers both the abstract and its subsequent presentation",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 105,
+          "group": "Authorship & Presenting Author",
+          "label": "Non-author contributors and any professional medical writer identified and disclosed by name",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 110,
+          "group": "Abstract Content Preparation",
+          "label": "Abstract follows the congress's required structure",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 111,
+          "group": "Abstract Content Preparation",
+          "label": "Word or character count confirmed against the current submission portal limit",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 112,
+          "group": "Abstract Content Preparation",
+          "label": "Table/figure count confirmed against the congress limit",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 113,
+          "group": "Abstract Content Preparation",
+          "label": "Content is final as submitted",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 114,
+          "group": "Abstract Content Preparation",
+          "label": "Results are reported completely and are not overstated relative to the underlying data's maturity",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 115,
+          "group": "Abstract Content Preparation",
+          "label": "Sex/gender and other reporting conventions consistent with the sponsor's standard manuscript practice, where applicable",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 116,
+          "group": "Abstract Content Preparation",
+          "label": "Submission made to only one appropriate section/category/program track",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 120,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Every listed author has completed the congress's own COI disclosure inside its submission portal (separate from any ICMJE COI form already on file)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 121,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Funding source and sponsor's role disclosed per the congress's required format",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 122,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Professional medical writing support disclosed by name and funding source, consistent with GPP 2022",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 123,
+          "group": "Disclosures and Conflict of Interest",
+          "label": "Any AI tool used in preparing the abstract or presentation materials disclosed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 130,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "Prior presentation/publication status accurately declared in the submission portal (Original / Encore / Adaptation)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 131,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "If an Encore: confirmed the target congress accepts encore abstracts, and any required additional notice has been sent",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 132,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "If data will also be submitted as a journal manuscript around the same time: publication timing coordinated so it does not violate the congress's embargo policy",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 133,
+          "group": "Prior Publication and Encore Declaration",
+          "label": "Copyright status of any previously published abstract content clarified before reuse",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 140,
+          "group": "Embargo Compliance",
+          "label": "Exact embargo lift date and time confirmed directly from the current congress policy",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 141,
+          "group": "Embargo Compliance",
+          "label": "All internal stakeholders (medical affairs, corporate communications, investor relations, social media) briefed on the embargo date and what it covers",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 142,
+          "group": "Embargo Compliance",
+          "label": "Confirmed the embargo applies to all release formats (press materials, investor communications, websites, social media, conference itinerary planner/app), not just formal press releases",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 143,
+          "group": "Embargo Compliance",
+          "label": "If a simultaneous journal publication is planned, its publication date is coordinated to align with the congress embargo lift",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 144,
+          "group": "Embargo Compliance",
+          "label": "Any planned exception to the embargo (e.g. a required regulatory disclosure) reviewed against the congress's exception policy, with advance notice given where required",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 150,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Eligibility for the late-breaking track confirmed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 151,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Late-breaking-specific submission deadline and data-cutoff requirements confirmed separately from the standard track",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 152,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Any placeholder or partial submission requirements met, if the congress allows a placeholder abstract pending final data",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 153,
+          "group": "Late-Breaking Abstracts (If Applicable)",
+          "label": "Confirmed the late-breaking abstract remains subject to the same confidentiality/embargo policy as standard abstracts from the point of submission, even before formal acceptance",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 160,
+          "group": "Submission Portal and Format Requirements",
+          "label": "Correct submission category/section selected",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 161,
+          "group": "Submission Portal and Format Requirements",
+          "label": "File format requirements confirmed for any required supporting files (structured data tables, supplementary figures)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 162,
+          "group": "Submission Portal and Format Requirements",
+          "label": "All author COI disclosures completed inside the portal by every listed author before the submission deadline",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 163,
+          "group": "Submission Portal and Format Requirements",
+          "label": "Submission confirmation retained and logged against the internal publication plan",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 164,
+          "group": "Submission Portal and Format Requirements",
+          "label": "If corrections are needed after submission: the congress's specific correction/withdrawal process confirmed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 170,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Poster or slide format specifications confirmed",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 171,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Disclosure slide prepared for oral presentations, listing COI and funding consistent with the abstract's own disclosures",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 172,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Only the designated presenting author used to upload materials, where the congress portal restricts this permission",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 173,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Accessibility considerations addressed in poster/slide design (font size, color contrast, alt text) per GPCAP's 2026 update",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 174,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Patient engagement considerations reviewed, where relevant, per GPCAP's patient engagement section",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 175,
+          "group": "Poster / Oral Presentation Preparation (Post-Acceptance)",
+          "label": "Congress branding and any required disclaimers (e.g. \"data on file,\" trademark symbols) included per the congress's own material guidelines",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 180,
+          "group": "Post-Conference",
+          "label": "Poster or slide deck made available post-conference exactly as the congress's own reuse/reprint policy permits",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 181,
+          "group": "Post-Conference",
+          "label": "Any enhanced content (plain-language summary, infographic) prepared and reviewed consistent with GPP 2022's enhanced-content standards",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 182,
+          "group": "Post-Conference",
+          "label": "Presentation logged in the internal publication tracking system, including final abstract number/ID assigned by the congress",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 183,
+          "group": "Post-Conference",
+          "label": "If underlying data will subsequently be submitted as a full manuscript: prior presentation at this congress disclosed transparently in the manuscript per ICMJE requirements",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 184,
+          "group": "Post-Conference",
+          "label": "Citation metrics/attention data (if tracked) linked back to this record for ongoing impact monitoring",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        }
+      ],
+      "planBudget": 64000,
+      "journalChecklist": [
+        {
+          "id": 501,
+          "group": "Planning Stage",
+          "label": "Target journal confirmed against the publication plan and scope",
+          "owner": "Unassigned",
+          "due": "",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 502,
+          "group": "Planning Stage",
+          "label": "Journal author guidelines reviewed (word count, reference style, article type)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": true,
+          "required": true
+        },
+        {
+          "id": 503,
+          "group": "Planning Stage",
+          "label": "Data sources and analysis plan agreed with the study team",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 504,
+          "group": "Planning Stage",
+          "label": "Timeline shared with all authors, including review windows",
+          "owner": "Unassigned",
+          "due": "",
+          "done": true,
+          "required": false
+        },
+        {
+          "id": 511,
+          "group": "Manuscript Content",
+          "label": "Abstract structured per journal requirements",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 512,
+          "group": "Manuscript Content",
+          "label": "Data in text, tables and figures verified against source outputs",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 513,
+          "group": "Manuscript Content",
+          "label": "Clinical trial registration number included in the abstract and methods",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 514,
+          "group": "Manuscript Content",
+          "label": "Reporting guideline checklist completed (CONSORT, STROBE or equivalent)",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 515,
+          "group": "Manuscript Content",
+          "label": "Cover letter drafted",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 521,
+          "group": "Authors and Contributors",
+          "label": "All authors meet ICMJE authorship criteria",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 522,
+          "group": "Authors and Contributors",
+          "label": "CRediT contributor roles recorded for every author",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 523,
+          "group": "Authors and Contributors",
+          "label": "Medical writing support acknowledged, with funding source",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 524,
+          "group": "Authors and Contributors",
+          "label": "ORCID iDs collected for all authors",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": false
+        },
+        {
+          "id": 531,
+          "group": "Disclosures and Declarations",
+          "label": "ICMJE disclosure forms current for every author",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 532,
+          "group": "Disclosures and Declarations",
+          "label": "Funding statement and sponsor role declared",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 533,
+          "group": "Disclosures and Declarations",
+          "label": "Data sharing statement prepared",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        },
+        {
+          "id": 534,
+          "group": "Disclosures and Declarations",
+          "label": "Ethics approval and informed consent statement included",
+          "owner": "Unassigned",
+          "due": "",
+          "done": false,
+          "required": true
+        }
+      ],
+      "readinessChecked": false,
+      "citationsVerified": false,
+      "outcomeStatus": "",
+      "responseDone": {},
+      "proofDone": {},
+      "dispositionRecorded": false,
+      "returnedToSubmission": false,
+      "rejectionHistory": [],
+      "poNumber": "",
+      "vendor": "No Vendor (In-house)",
+      "rateCard": "",
+      "stageTemplate": "Manuscript",
+      "pubType": "Manuscript",
+      "pubStart": "8/17/2026",
+      "priorVendorName": "",
+      "priorVendorDate": "",
+      "nextRowId": 116,
+      "rows": [
+        {
+          "id": 100,
+          "name": "Author Invitations",
+          "type": "Stage",
+          "done": true,
+          "pct": "100",
+          "days": 5,
+          "start": "8/17/2026",
+          "end": "8/22/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "8/24/2026"
+        },
+        {
+          "id": 101,
+          "name": "Kick-off Complete",
+          "type": "Milestone",
+          "done": true,
+          "pct": "",
+          "days": 0,
+          "start": "8/22/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "8/28/2026"
+        },
+        {
+          "id": 102,
+          "name": "Data and Proposal Input",
+          "type": "Stage",
+          "done": true,
+          "pct": "100",
+          "days": 10,
+          "start": "8/22/2026",
+          "end": "9/1/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/3/2026"
+        },
+        {
+          "id": 103,
+          "name": "Outline Development",
+          "type": "Stage",
+          "done": true,
+          "pct": "100",
+          "days": 10,
+          "start": "9/1/2026",
+          "end": "9/11/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/12/2026"
+        },
+        {
+          "id": 104,
+          "name": "Outline Review",
+          "type": "Stage",
+          "done": true,
+          "pct": "100",
+          "days": 7,
+          "start": "9/11/2026",
+          "end": "9/18/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet",
+          "doneOn": "9/19/2026"
+        },
+        {
+          "id": 105,
+          "name": "Draft Development",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 14,
+          "start": "9/18/2026",
+          "end": "10/2/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 106,
+          "name": "Draft Development Complete",
+          "type": "Milestone",
+          "done": false,
+          "pct": "",
+          "days": 0,
+          "start": "10/2/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 107,
+          "name": "Internal Draft Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 7,
+          "start": "10/2/2026",
+          "end": "10/9/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 108,
+          "name": "Partner Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "",
+          "end": "",
+          "core": false,
+          "optional": true,
+          "included": false,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 109,
+          "name": "Stats / Data QC",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "10/9/2026",
+          "end": "10/14/2026",
+          "core": false,
+          "optional": true,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 110,
+          "name": "Author Draft Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 10,
+          "start": "10/14/2026",
+          "end": "10/24/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 111,
+          "name": "Final Draft Development",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "10/24/2026",
+          "end": "10/29/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 112,
+          "name": "Compliance and IP Review",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 5,
+          "start": "",
+          "end": "",
+          "core": false,
+          "optional": true,
+          "included": false,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 113,
+          "name": "Author Approval",
+          "type": "Milestone",
+          "done": false,
+          "pct": "",
+          "days": 0,
+          "start": "10/29/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 114,
+          "name": "Internal Release Approval",
+          "type": "Stage",
+          "done": false,
+          "pct": "0",
+          "days": 3,
+          "start": "10/29/2026",
+          "end": "11/1/2026",
+          "core": false,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        },
+        {
+          "id": 115,
+          "name": "Submission",
+          "type": "Milestone",
+          "done": false,
+          "pct": "",
+          "days": 0,
+          "start": "11/1/2026",
+          "end": "",
+          "core": true,
+          "optional": false,
+          "included": true,
+          "costed": false,
+          "amount": 0,
+          "paidAmount": 0,
+          "status": "notmet"
+        }
+      ],
+      "rounds": [],
+      "audit": [
+        {
+          "action": "Record Created",
+          "participants": "Kristina Hill",
+          "start": "8/14/2026 9:00 AM",
+          "completed": "8/14/2026",
+          "result": "Draft",
+          "active": false,
+          "comment": ""
+        },
+        {
+          "action": "Author Invitation Sent",
+          "participants": "Kristina Hill\nSteve Altschuler\nPriya Raman",
+          "start": "8/18/2026 10:15 AM",
+          "completed": "8/18/2026",
+          "result": "",
+          "active": false,
+          "comment": "Sent by Kristina Hill"
+        }
+      ],
+      "historyFiles": [],
+      "pubDocOn": "",
+      "pubDocBy": "",
+      "cancelled": null,
+      "fields": {
+        "abbrevTitle": "Daxafort 52-Week Safety in Atopic Dermatitis: DAX-302",
+        "pubTitle": "Long-Term Safety and Efficacy of Daxafort in Moderate-to-Severe Atopic Dermatitis: 52-Week Results from the DAX-302 Open-Label Extension",
+        "therapeuticArea": "Immunology",
+        "department": "Clinical Development",
+        "sponsorType": "Company Sponsored",
+        "roundDue": "",
+        "priority": "Standard Review",
+        "timezone": "ET",
+        "actualCost": "0.00",
+        "citationType": "Journal Article",
+        "delegateTo": "",
+        "reassignFrom": ""
+      }
+    }
+  }
+]
