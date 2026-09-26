@@ -422,7 +422,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
         </div>
       ) : (
         !st.newRoundOpen && (
-          <div className="pf-empty-box">No review round is out right now. Use Start New Round to send one.</div>
+          <div className="empty-state">No review round is out right now. Use Start New Round to send one.</div>
         )
       )}
 

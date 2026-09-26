@@ -82,5 +82,5 @@ export function ReadinessPanel({ r, onCheck }) {
 
 /** Dashed empty-state box. */
 export function DashedEmpty({ children }) {
-  return <div className="pf-dashed-empty">{children}</div>;
+  return <div className="empty-state">{children}</div>;
 }

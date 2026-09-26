@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
 import PageHeader from '../components/PageHeader';
+import Flash from '../components/Flash';
 import './Publications.css';
 
 const COLUMNS = [
@@ -111,14 +112,14 @@ export default function Publications() {
         )}
       />
 
-      {savedRecordId && !notice && <InlineMessage kind="info">Saved {savedRecordId}.</InlineMessage>}
-      {notice && <InlineMessage kind="info">{notice}</InlineMessage>}
+      {savedRecordId && !notice && <Flash>Saved {savedRecordId}.</Flash>}
+      {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}
 
       <div className="pl-card">
-        {pubs === null && !error && <div className="pl-empty">Loading…</div>}
+        {pubs === null && !error && <div className="empty-state">Loading…</div>}
         {pubs && visible.length === 0 && (
-          <div className="pl-empty">No publications yet. Use Create New Publication to add the first one.</div>
+          <div className="empty-state">No publications yet. Use Create New Publication to add the first one.</div>
         )}
         {visible.length > 0 && (
           <DataTable

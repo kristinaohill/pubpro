@@ -5,7 +5,7 @@ import {
 } from '../../ds/pubpro';
 import DateField from '../../components/DateField';
 import {
-  MILESTONE_TYPE_OPTIONS, NO_VENDOR, PARENT_PLAN, RATE_CARD_COSTS, RATE_CARD_OPTIONS, STAGE_TEMPLATE_OPTIONS,
+  MILESTONE_TYPE_OPTIONS, NO_VENDOR, RATE_CARD_COSTS, RATE_CARD_OPTIONS, STAGE_TEMPLATE_OPTIONS,
   STATUS_LOOK, TODAY_STR, VENDOR_OPTIONS, money, rescheduleRows,
 } from './data';
 import { rateCardPatch, stageTemplatePatch } from './state';
@@ -16,24 +16,29 @@ const toInt = v => {
   return isNaN(n) ? 0 : n;
 };
 
-/** Parent-plan roll-up; shared with the Outcome tab's planned-cost figures. */
-export function planFinancials(st) {
+/**
+ * Roll-up of the saved parent plan (budget, planned ideas, committed allocations and fees), the
+ * same figures as the plan's Allocation tab. `plan` is null when no saved plan is linked.
+ */
+export function planFinancials(st, plan) {
   const cancelled = st.outcomeStatus === 'Cancelled';
   const spent = st.rows.reduce((a, r) => a + ((r.status === 'paid' || r.status === 'queued') ? (r.paidAmount || r.amount || 0) : (r.paidAmount || 0)), 0);
   const returned = Math.max(0, st.planBudget - spent);
-  const committed = PARENT_PLAN.committed - (cancelled ? returned : 0);
-  const remaining = PARENT_PLAN.budget - (PARENT_PLAN.planned + committed);
-  return { cancelled, spent, returned, committed, remaining };
+  if (!plan) return { cancelled, spent, returned, plan: null };
+  const committed = plan.committed - (cancelled ? returned : 0);
+  const remaining = plan.budget - (plan.planned + committed);
+  return { cancelled, spent, returned, committed, remaining, plan };
 }
 
-export default function PlanningTab({ st, set }) {
+export default function PlanningTab({ st, set, plans }) {
   const rows = st.rows;
   const hasVendor = !!st.vendor && st.vendor !== NO_VENDOR;
   const billableTotal = rows.filter(r => r.costed).reduce((a, r) => a + (r.amount || 0), 0);
   const diff = st.planBudget - billableTotal;
   const rcCost = RATE_CARD_COSTS[st.rateCard];
   const rcMismatch = rcCost != null && rcCost !== st.planBudget;
-  const fin = planFinancials(st);
+  const parentPlan = st.parentPlan && (plans || []).find(p => p.id === st.parentPlan.id);
+  const fin = planFinancials(st, parentPlan || null);
 
   const patchRow = (id, p) => set(s => ({ rows: s.rows.map(x => (x.id === id ? { ...x, ...p } : x)) }));
   const moveRow = (idx, dir) => set(s => {
@@ -116,16 +121,26 @@ export default function PlanningTab({ st, set }) {
             <span className="pf-faint-inline">· {money(billableTotal)} allocated across billable lines</span>
           </div>
           <div className="pf-mt14 pf-maxw900">
-            <EyebrowLabel style={{ textTransform: 'none', marginBottom: 8 }}>
-              PARENT PLAN · {PARENT_PLAN.id + ' ' + PARENT_PLAN.name} · READ-ONLY
-            </EyebrowLabel>
-            <div className="pf-statgrid">
-              <StatCard label="Plan Budget" value={money(PARENT_PLAN.budget)} icon="account_balance" />
-              <StatCard label="Planned (No Pub ID)" value={money(PARENT_PLAN.planned)} icon="lightbulb" />
-              <StatCard label="Committed (Live Pubs)" value={money(fin.committed)} icon="library_books" />
-              <StatCard label="Remaining" value={money(fin.remaining)} icon="savings" tone={fin.remaining < 0 ? 'fatal' : 'info'} />
-            </div>
-            <div className="pf-note12 pf-mt6">Remaining = Plan Budget − (Planned + Committed)</div>
+            {fin.plan ? (
+              <>
+                <EyebrowLabel style={{ textTransform: 'none', marginBottom: 8 }}>
+                  PARENT PLAN · {fin.plan.id + ' ' + fin.plan.name} · READ-ONLY
+                </EyebrowLabel>
+                <div className="pf-statgrid">
+                  <StatCard label="Plan Budget" value={money(fin.plan.budget)} icon="account_balance" />
+                  <StatCard label="Planned (No Pub ID)" value={money(fin.plan.planned)} icon="lightbulb" />
+                  <StatCard label="Committed (Live Pubs)" value={money(fin.committed)} icon="library_books" />
+                  <StatCard label="Remaining" value={money(fin.remaining)} icon="savings" tone={fin.remaining < 0 ? 'fatal' : 'info'} />
+                </div>
+                <div className="pf-note12 pf-mt6">Remaining = Plan Budget − (Planned + Committed), from the plan&rsquo;s Allocation tab.</div>
+              </>
+            ) : (
+              <div className="pf-note12">
+                {st.parentPlan
+                  ? 'Parent plan ' + st.parentPlan.id + ' isn\u2019t saved in PubPro, so there are no plan budget figures to show.'
+                  : 'No parent plan. Link one on the Overview tab to see its budget here.'}
+              </div>
+            )}
             {fin.cancelled && (
               <div className="pf-mt14">
                 <EyebrowLabel style={{ marginBottom: 8 }}>Publication Cancelled</EyebrowLabel>

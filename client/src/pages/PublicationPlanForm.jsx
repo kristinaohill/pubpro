@@ -15,6 +15,7 @@ import {
 } from './publication-form/state';
 import { STATUS_TONE } from './Publications';
 import useDismiss from '../components/useDismiss';
+import Flash from '../components/Flash';
 import './PublicationPlanForm.css';
 
 /* ---------- Data from the design ---------- */
@@ -484,7 +485,7 @@ function StudiesTab({ noStudy, onToggleNoStudy, studyQuery, setStudyQuery, study
               ))}
             </div>
           ) : (
-            <div className="ppf-empty-box">No studies linked to this plan yet. Use the search above to add one.</div>
+            <div className="empty-state">No studies linked to this plan yet. Use the search above to add one.</div>
           )}
         </div>
       )}
@@ -498,7 +499,7 @@ function TimelineTab({ planColor, scale, setScale, gantt }) {
     return (
       <div>
         <SectionHeading subtitle="Every publication in this plan, on one roadmap." style={{ marginBottom: 16 }}>Timeline</SectionHeading>
-        <div className="ppf-empty-box">
+        <div className="empty-state">
           Nothing to chart yet. Publications show up here once they name this plan as their Parent Planning ID
           (on the publication&rsquo;s Overview tab) or are launched from Planned Pubs on the Allocation tab.
         </div>
@@ -843,7 +844,7 @@ function AllocationTab(props) {
         }))}
         footer={ideas.length > 0 ? ['Total Planned', '', '', money(plannedTotal), ''] : undefined}
       >
-        {ideas.length === 0 ? <div className="ppf-empty-row">No planned pubs logged yet.</div> : undefined}
+        {ideas.length === 0 ? <div className="empty-state empty-state--inset">No planned pubs logged yet. Use Add Planned Pub to log an idea before it becomes a publication.</div> : undefined}
       </DataTable>
       <div className="ppf-mt16">
         <Button variant="tertiary" onClick={addIdea}><Icon name="add" size={18} />Add Planned Pub</Button>
@@ -953,7 +954,7 @@ function AuditTab({ rows }) {
           ],
         }))}
       >
-        {rows.length === 0 ? <div className="ppf-empty-row">No activity yet. Saving the plan starts the log.</div> : undefined}
+        {rows.length === 0 ? <div className="empty-state empty-state--inset">No activity yet. Saving the plan starts the log.</div> : undefined}
       </DataTable>
     </div>
   );
@@ -1290,9 +1291,7 @@ export default function PublicationPlanForm() {
       </div>
 
       {message && (
-        <div className="ppf-shell ppf-status">
-          <InlineMessage kind={message.kind}>{message.text}</InlineMessage>
-        </div>
+        <Flash kind={message.kind} watch={message} className="ppf-shell ppf-status">{message.text}</Flash>
       )}
 
       <FormActionBar

@@ -110,13 +110,5 @@
 .eap-meta { font-size: var(--fs-sm); color: var(--text-meta); }
 .eap-link { color: var(--text-link); font-weight: var(--fw-bold); }
 
-.eap-empty {
-  padding: 18px;
-  text-align: center;
-  font-size: var(--fs-sm);
-  font-style: italic;
-  color: var(--fg-faint);
-  border-top: 1px solid var(--border-hairline);
-}
 
 .eap-filecard--empty { color: var(--fg-3); background: var(--warning-bg); border-color: var(--border-hairline); }

@@ -47,7 +47,7 @@ export default function Studies() {
 
       <div className="pl-card">
         {visible.length === 0 ? (
-          <div className="pl-empty">No studies match that search.</div>
+          <div className="empty-state">No studies match that search.</div>
         ) : (
           <DataTable
             columns={COLUMNS}

@@ -67,7 +67,6 @@
 .vp-outstanding { color: var(--high-emphasis); font-weight: 600; }
 .vp-disabled { color: var(--fg-disabled); }
 .vp-row-actions { display: flex; gap: 4px; justify-content: flex-end; }
-.vp-empty { padding: 22px; text-align: center; font-size: 13px; color: var(--fg-faint); border-top: 1px solid var(--border-hairline); }
 .vp-add-row { margin-top: 16px; display: flex; justify-content: flex-end; }
 
 /* Document cell: file name, or a dashed upload control */

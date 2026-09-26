@@ -229,3 +229,19 @@ label {
 .mt-8 { margin-top: 8px; }
 .mt-16 { margin-top: 16px; }
 .mb-16 { margin-bottom: 16px; }
+
+
+/* One empty-state style for every list, table and panel with nothing in it (or still loading).
+   Add --inset inside a table or panel body so the box sits off its edges. */
+.empty-state {
+  border: 1px dashed var(--border-input);
+  border-radius: var(--radius-input);
+  background: var(--white);
+  padding: 18px 20px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: 1.45;
+  color: var(--text-meta);
+  text-wrap: pretty;
+}
+.empty-state--inset { margin: 14px 16px; }

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
 import PageHeader from '../components/PageHeader';
+import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
 import './Publications.css';
 
@@ -81,14 +82,14 @@ export default function ExternalAuthors() {
         )}
       />
 
-      {savedAuthorId && !notice && <InlineMessage kind="info">Saved {savedAuthorId}.</InlineMessage>}
-      {notice && <InlineMessage kind="info">{notice}</InlineMessage>}
+      {savedAuthorId && !notice && <Flash>Saved {savedAuthorId}.</Flash>}
+      {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}
 
       <div className="pl-card">
-        {authors === null && !error && <div className="pl-empty">Loading…</div>}
+        {authors === null && !error && <div className="empty-state">Loading…</div>}
         {authors && visible.length === 0 && (
-          <div className="pl-empty">No external authors yet. Use Create New External Author to add the first one.</div>
+          <div className="empty-state">No external authors yet. Use Create New External Author to add the first one.</div>
         )}
         {visible.length > 0 && (
           <DataTable columns={COLUMNS} rows={rows} headerTone="knowledge" onRowClick={r => navigate('/external-author/' + r.id)} />

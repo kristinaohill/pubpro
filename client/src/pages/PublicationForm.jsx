@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button, ConfirmModal, Field, FormActionBar, Icon, InlineMessage, Pill, SideTabRail, TextArea } from '../ds/pubpro';
+import Flash from '../components/Flash';
 import { api } from '../api';
 import { STATUS_TONE } from './Publications';
 import { useAuth } from '../AuthContext';
@@ -44,6 +45,11 @@ const TAB_VIEWS = {
 };
 
 function ProgressStrip({ prog, onOpenReviews, onOpenPlanning }) {
+  // The full step list is folded into a one-line progress bar; clicking the bar opens it.
+  // (The current step and count are already in the first card above.)
+  const [showSteps, setShowSteps] = useState(false);
+  const steps = prog.progSteps;
+  const doneCount = steps.filter(s => s.state === 'done').length;
   return (
     <>
       <div className="pf-prog">
@@ -74,13 +80,29 @@ function ProgressStrip({ prog, onOpenReviews, onOpenPlanning }) {
           <div className="pf-meta">{prog.progDeadlineNote}</div>
         </div>
       </div>
-      <div className="pf-steps">
-        {prog.progSteps.map((s, i) => (
-          <div key={s.name + i} title={s.tip} className="pf-step" style={{ fontWeight: s.weight, color: s.color }}>
-            <Icon name={s.glyph} size={17} color={s.glyphColor} />{s.name}
-          </div>
-        ))}
-      </div>
+      {steps.length > 0 && (
+        <button
+          type="button"
+          className="pf-track"
+          onClick={() => setShowSteps(v => !v)}
+          aria-expanded={showSteps}
+          aria-label={doneCount + ' of ' + steps.length + ' steps done. ' + (showSteps ? 'Hide' : 'Show') + ' all steps'}
+          title={showSteps ? 'Hide the step list' : 'Show all steps'}
+        >
+          {steps.map((s, i) => (
+            <span key={s.name + i} className={'pf-track-seg pf-track-seg--' + s.state} title={s.name + ' · ' + s.tip} />
+          ))}
+        </button>
+      )}
+      {showSteps && (
+        <div className="pf-steps">
+          {steps.map((s, i) => (
+            <div key={s.name + i} title={s.tip} className="pf-step" style={{ fontWeight: s.weight, color: s.color }}>
+              <Icon name={s.glyph} size={17} color={s.glyphColor} />{s.name}
+            </div>
+          ))}
+        </div>
+      )}
     </>
   );
 }
@@ -109,8 +131,18 @@ export default function PublicationForm() {
   // Saved publication plans for the Parent Planning ID picker.
   const [plans, setPlans] = useState([]);
   useEffect(() => {
-    api.get('/pp-plans')
-      .then(list => setPlans(list.filter(p => p.status !== 'Cancelled').map(p => ({ id: p.plan_id, name: p.title, savedId: p.id }))))
+    // With their data so the Planning tab can show the parent plan's real budget figures.
+    api.get('/pp-plans?include=data')
+      .then(list => setPlans(list.filter(p => p.status !== 'Cancelled').map(p => {
+        const d = p.data || {};
+        const sum = (xs, k) => (xs || []).reduce((a, x) => a + ((k ? x[k] : x) || 0), 0);
+        return {
+          id: p.plan_id, name: p.title, savedId: p.id,
+          budget: d.planBudget || 0,
+          planned: sum(d.ideas, 'cost'),
+          committed: sum(Object.values(d.allocations || {})) + sum(d.fees, 'amount'),
+        };
+      })))
       .catch(() => setPlans([]));
   }, []);
   // What was last saved, so each save can log which tabs changed.
@@ -327,9 +359,7 @@ export default function PublicationForm() {
       </div>
 
       {message && (
-        <div className="pf-shell pf-status">
-          <InlineMessage kind={message.kind}>{message.text}</InlineMessage>
-        </div>
+        <Flash kind={message.kind} watch={message} className="pf-shell pf-status">{message.text}</Flash>
       )}
 
       <FormActionBar

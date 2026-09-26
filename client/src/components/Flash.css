@@ -1,0 +1,6 @@
+.flash { transition: opacity 0.5s ease; }
+.flash--fading { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .flash { transition: none; }
+}

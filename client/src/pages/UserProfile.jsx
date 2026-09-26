@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Checkbox, DetailGrid, Field, FormActionBar, InlineMessage, Panel, Pill, RecordHeader, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
+import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
 import './StudyProfile.css';
 
@@ -46,7 +47,7 @@ export default function UserProfile() {
   if (!profile) {
     return (
       <div className="sp-page sp-pad">
-        {message ? <InlineMessage kind="error">{message.text}</InlineMessage> : <div className="sp-empty">Loading…</div>}
+        {message ? <InlineMessage kind="error">{message.text}</InlineMessage> : <div className="empty-state empty-state--inset">Loading…</div>}
       </div>
     );
   }
@@ -62,7 +63,7 @@ export default function UserProfile() {
       />
 
       <div className="sp-body">
-        {message && <InlineMessage kind={message.kind}>{message.text}</InlineMessage>}
+        {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
 
         <Panel icon="badge" title="Account">
           <div className="sp-endpoints" style={{ gap: 16 }}>

@@ -7,6 +7,7 @@ import {
   RecordHeader, SectionHeading, Select, SideTabRail, StatCard, TextField, Tooltip,
 } from '../ds/pubpro';
 import { STUDY_DIRECTORY } from './publication-form/data';
+import Flash from '../components/Flash';
 import './ExternalAuthorProfile.css';
 
 const TABS = [
@@ -124,7 +125,7 @@ function RequestTable({ rows, empty }) {
         };
       })}
     >
-      {rows.length === 0 ? <div className="eap-empty">{empty}</div> : undefined}
+      {rows.length === 0 ? <div className="empty-state empty-state--inset">{empty}</div> : undefined}
     </DataTable>
   );
 }
@@ -264,7 +265,7 @@ function DebarmentsTab({ checks, authorName, onRun, onRemove, onToggleShow }) {
             ],
           }))}
         >
-          {checks.length === 0 ? <div className="eap-empty">No checks on file. Use Run Debarment Checks to screen this author.</div> : undefined}
+          {checks.length === 0 ? <div className="empty-state empty-state--inset">No checks on file. Use Run Debarment Checks to screen this author.</div> : undefined}
         </DataTable>
       </Panel>
     </div>
@@ -337,7 +338,7 @@ function StudiesTab({ query, onQuery, selected, available, onAdd, onRemove }) {
               <IconButton icon="close" tone="fatal" size={26} title="Unlink study" onClick={() => onRemove(s.id)} />],
           }))}
         >
-          {selected.length === 0 ? <div className="eap-empty">No studies linked yet. Add one from the list below.</div> : undefined}
+          {selected.length === 0 ? <div className="empty-state empty-state--inset">No studies linked yet. Add one from the list below.</div> : undefined}
         </DataTable>
       </Panel>
 
@@ -362,7 +363,7 @@ function StudiesTab({ query, onQuery, selected, available, onAdd, onRemove }) {
               <Button variant="tertiary" icon="add" onClick={() => onAdd(s)}>Link</Button>],
           }))}
         >
-          {available.length === 0 ? <div className="eap-empty">No studies match that search.</div> : undefined}
+          {available.length === 0 ? <div className="empty-state empty-state--inset">No studies match that search.</div> : undefined}
         </DataTable>
       </Panel>
     </div>
@@ -391,7 +392,7 @@ function PublicationsTab({ rows, onOpen }) {
             cells: [<span className="eap-link">{p.id}</span>, p.title, p.product, p.type, <Pill tone={p.tone}>{p.status}</Pill>, p.submittedBy],
           }))}
         >
-          {rows.length === 0 ? <div className="eap-empty">No saved publications list this author yet. Add them on a publication&rsquo;s Authors tab.</div> : undefined}
+          {rows.length === 0 ? <div className="empty-state empty-state--inset">No saved publications list this author yet. Add them on a publication&rsquo;s Authors tab.</div> : undefined}
         </DataTable>
       </Panel>
     </div>
@@ -747,7 +748,7 @@ export default function ExternalAuthorProfile() {
           </div>
         </div>
 
-        {notice && <InlineMessage kind={notice.kind}>{notice.text}</InlineMessage>}
+        {notice && <Flash kind={notice.kind} watch={notice}>{notice.text}</Flash>}
       </div>
 
       <FormActionBar

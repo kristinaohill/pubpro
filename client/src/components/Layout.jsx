@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { TopNav, WorkspaceTabs, IconButton } from '../ds/pubpro';
-import { AUTHOR_CHROME, CHROME, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
+import { ALERTS_TAB, AUTHOR_CHROME, CHROME, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
 import Notifications from './Notifications';
 import AccountMenu from './AccountMenu';
 import './Layout.css';
@@ -41,6 +41,7 @@ export default function Layout() {
   // Each page opens at the top, not at the scroll position of the page before it.
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
 
+  const [unread, setUnread] = useState(0);
   const [navRef, navKey] = useMenuReset();
   const [tabsRef, tabsKey] = useMenuReset();
 
@@ -82,7 +83,7 @@ export default function Layout() {
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openWorkflows(); } }}
       />
       )}
-      <Notifications canOpenRecords={!isAuthor} />
+      <Notifications canOpenRecords={!isAuthor} onUnreadChange={setUnread} />
     </span>
   );
 
@@ -98,7 +99,7 @@ export default function Layout() {
             <WorkspaceTabs
               key={tabsKey}
               workspace={chrome.workspace}
-              tabs={chrome.tabs}
+              tabs={chrome.tabs.map(t => (t === ALERTS_TAB ? ALERTS_TAB + (unread ? ' (' + unread + ')' : '') : t))}
               active={chrome.activeTab}
               onSelect={go}
               onMenuSelect={handleTabMenuSelect}

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, DataTable, InlineMessage, Pill, Select } from '../ds/pubpro';
 import DateField from '../components/DateField';
 import PageHeader from '../components/PageHeader';
+import Flash from '../components/Flash';
 import { api } from '../api';
 import { daysUntil } from './Publications';
 import {
@@ -396,14 +397,14 @@ export default function PubProDashboard() {
         title="Executive Dashboard"
         description="Tasks, pipeline, spend and outcomes across every PubPro publication."
       />
-      {savedNotice && <InlineMessage kind="info">{savedNotice}</InlineMessage>}
+      {savedNotice && <Flash watch={savedNotice}>{savedNotice}</Flash>}
 
       {/* My Task List */}
       <div className="pd-card">
-        <SectionTitle icon="checklist" title={`My Task List (${taskCount} items)`} className="pd-section-title--mb16">
+        <SectionTitle icon="checklist" title="My Task List" className="pd-section-title--mb16">
           <RefreshIcon onClick={refresh} />
         </SectionTitle>
-        <div className="pd-count">{taskCount} items</div>
+        <div className="pd-count">{taskCount} {taskCount === 1 ? 'task' : 'tasks'}</div>
         <div ref={taskWrapRef}>
           <DataTable
             columns={TASK_COLUMNS}
@@ -413,7 +414,7 @@ export default function PubProDashboard() {
             zebra={false}
             maxHeight={taskMaxHeight}
           >
-            {taskRows.length === 0 ? <div className="pd-empty-row">No tasks yet. Saved publications show up here with their current step.</div> : undefined}
+            {taskRows.length === 0 ? <div className="empty-state empty-state--inset">No tasks yet. Saved publications show up here with their current step.</div> : undefined}
           </DataTable>
         </div>
       </div>
@@ -559,10 +560,10 @@ export default function PubProDashboard() {
 
               {/* My Publication Plans */}
               <div className="pd-block">
-                <SectionTitle icon="calendar_month" title={`My Publication Plans (${planRows.length} items)`} className="pd-section-title--mb14">
+                <SectionTitle icon="calendar_month" title="My Publication Plans" className="pd-section-title--mb14">
                   <RefreshIcon onClick={refresh} />
                 </SectionTitle>
-                <div className="pd-count">{planRows.length} items</div>
+                <div className="pd-count">{planRows.length} {planRows.length === 1 ? 'plan' : 'plans'}</div>
                 <DataTable
                   columns={PLAN_COLUMNS}
                   rows={planRows}
@@ -570,7 +571,7 @@ export default function PubProDashboard() {
                   headerTone="knowledge"
                   zebra={false}
                 >
-                  {planRows.length === 0 ? <div className="pd-empty-row">No publication plans yet. Create one from Create New › Publication Planning.</div> : undefined}
+                  {planRows.length === 0 ? <div className="empty-state empty-state--inset">No publication plans yet. Create one from Create New › Publication Planning.</div> : undefined}
                 </DataTable>
               </div>
 

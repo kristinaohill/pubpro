@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
 import PageHeader from '../components/PageHeader';
+import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
 import './Publications.css';
 
@@ -98,14 +99,14 @@ export default function PublicationPlans() {
         )}
       />
 
-      {savedPlanId && !notice && <InlineMessage kind="info">Saved {savedPlanId}.</InlineMessage>}
-      {notice && <InlineMessage kind="info">{notice}</InlineMessage>}
+      {savedPlanId && !notice && <Flash>Saved {savedPlanId}.</Flash>}
+      {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}
 
       <div className="pl-card">
-        {plans === null && !error && <div className="pl-empty">Loading…</div>}
+        {plans === null && !error && <div className="empty-state">Loading…</div>}
         {plans && visible.length === 0 && (
-          <div className="pl-empty">No publication plans yet. Use Create New Publication Plan to add the first one.</div>
+          <div className="empty-state">No publication plans yet. Use Create New Publication Plan to add the first one.</div>
         )}
         {visible.length > 0 && (
           <DataTable columns={COLUMNS} rows={rows} headerTone="knowledge" onRowClick={r => navigate('/publication-plan/' + r.id)} />

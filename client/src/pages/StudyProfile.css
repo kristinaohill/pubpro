@@ -19,14 +19,6 @@
 
 .sp-pad-sm { padding: 12px 16px 0; }
 
-.sp-empty {
-  margin: 16px;
-  border: 1px dashed var(--border-input);
-  border-radius: var(--radius-input);
-  padding: 20px;
-  font-size: var(--fs-base);
-  color: var(--text-meta);
-}
 
 .sp-link {
   font-weight: var(--fw-bold);

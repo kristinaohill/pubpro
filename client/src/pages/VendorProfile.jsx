@@ -224,7 +224,7 @@ function RowActions({ editing, onSave, onRemove }) {
   );
 }
 
-const EmptyRow = ({ children }) => <div className="vp-empty">{children}</div>;
+const EmptyRow = ({ children }) => <div className="empty-state empty-state--inset">{children}</div>;
 
 const AddRowButton = ({ label, onClick }) => (
   <div className="vp-add-row">

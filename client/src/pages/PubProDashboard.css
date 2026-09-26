@@ -218,7 +218,6 @@
 }
 
 /* Empty task list. */
-.pd-empty-row { padding: 20px; text-align: center; font-size: 13px; color: var(--fg-faint); border-top: 1px solid var(--border-hairline); }
 
 /* Empty chart states. */
 .pd-nodata { padding: 18px 4px; font-size: 13px; color: var(--fg-faint); text-wrap: pretty; }

@@ -4,6 +4,10 @@ import { Button, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
+import Flash from '../components/Flash';
+import { TODAY_STR } from './publication-form/data';
+import { auditEntry, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData } from './publication-form/state';
+import { AuthorBlockersPanel, CongressDeadlinesPanel, ReviewsPanel } from './WriterDashboardPanels';
 import './WriterDashboard.css';
 
 // Designer Tweak (Regional): "US (M/D/YYYY)" or "International (D/M/YYYY)".
@@ -138,11 +142,52 @@ export default function WriterDashboard() {
   const { user } = useAuth();
   const openPublication = (p, tab) => navigate('/publication/' + p.savedId, { state: { tab } });
   const [saved, setSaved] = useState([]);
-  useEffect(() => {
-    api.get('/pp-publications')
-      .then(list => setSaved(list.filter(p => p.status !== 'Cancelled').map(fromSaved).filter(p => p.steps.some(x => x.current))))
-      .catch(() => setSaved([]));
-  }, []);
+  // Live (not cancelled) records with their data, for the author, congress and review panels.
+  const [live, setLive] = useState([]);
+  const [message, setMessage] = useState(null);
+  const [busyId, setBusyId] = useState(null);
+  const load = () => api.get('/pp-publications?include=data')
+    .then(list => {
+      const open = list.filter(p => p.status !== 'Cancelled');
+      setLive(open);
+      setSaved(open.map(fromSaved).filter(p => p.steps.some(x => x.current)));
+    })
+    .catch(() => { setSaved([]); setLive([]); });
+  useEffect(() => { load(); }, []);
+
+  const openRecord = (p, tab) => navigate('/publication/' + p.id, { state: { tab } });
+
+  /** The Reviews tab's reminder, run from here: marks them reminded, logs it and notifies them in PubPro. */
+  const remind = async (p, names) => {
+    setBusyId(p.id);
+    setMessage(null);
+    try {
+      const st = fromSavedData(p.data);
+      const next = {
+        ...st,
+        rounds: st.rounds.map(r => (r.status === 'open'
+          ? { ...r, reviewers: r.reviewers.map(v => (names.includes(v.name) ? { ...v, remindedOn: TODAY_STR } : v)) }
+          : r)),
+        audit: (st.audit || []).concat([auditEntry('Reminder Sent', { participants: names.join('\n'), comment: 'Sent by ' + ((user && user.name) || 'PubPro') + ' from the Publication Manager Dashboard' })]),
+      };
+      await api.put('/pp-publications/' + p.id, {
+        title: titleOf(next) || p.title, pub_type: p.pub_type, product: next.product || p.product || null,
+        status: statusOf(next), summary: summarize(next), data: toSavedData(next),
+      });
+      const round = openRoundOf(next);
+      await api.post('/notifications', { notifications: names.map(name => ({
+        recipient: name, kind: 'reminder', tab: 'reviewers', pub_id: p.id, record_id: p.record_id,
+        title: 'Reminder: ' + (round ? round.type : 'review') + ' response ' + (round && round.due ? 'due ' + round.due : 'requested'),
+        body: p.title + ' (' + p.record_id + ')',
+      })) }).catch(() => {});
+      await load();
+      setMessage({ kind: 'info', text: (names.length === 1 ? 'Reminder sent to ' + names[0] : names.length + ' reminders sent') + ' for ' + p.record_id + '.' });
+    } catch (err) {
+      setMessage({ kind: 'error', text: 'Could not send the reminder: ' + err.message });
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const [filter, setFilter] = useState('All');
 
@@ -214,6 +259,8 @@ export default function WriterDashboard() {
         description={<>Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</>}
       />
 
+      {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
+
       <div className="wd-stats">
         {stats.map(s => (
           <StatCard key={s.label} label={s.label} value={String(s.value)} icon={s.icon} tone={s.tone} />
@@ -239,7 +286,7 @@ export default function WriterDashboard() {
             </div>
           </div>
           {rows.length === 0 && (
-            <div className="wd-empty">{model.length ? `No publications match "${filter}".` : 'No publications yet. Create one from Create New › Publication.'}</div>
+            <div className="empty-state">{model.length ? `No publications match "${filter}".` : 'No publications yet. Create one from Create New › Publication.'}</div>
           )}
         </section>
 
@@ -251,7 +298,7 @@ export default function WriterDashboard() {
             </div>
             <div className="wd-attn-list">
               {attention.map(a => <AttentionCard key={a.key} a={a} />)}
-              {attention.length === 0 && <div className="wd-empty">Nothing needs attention right now.</div>}
+              {attention.length === 0 && <div className="empty-state">Nothing needs attention right now.</div>}
             </div>
           </section>
 
@@ -282,6 +329,12 @@ export default function WriterDashboard() {
             ))}
           </section>
         </div>
+      </div>
+
+      <div className="wdp-row-panels">
+        <AuthorBlockersPanel pubs={live} onOpen={openRecord} />
+        <CongressDeadlinesPanel pubs={live} onOpen={openRecord} />
+        <ReviewsPanel pubs={live} onOpen={openRecord} onRemind={remind} busyId={busyId} />
       </div>
     </div>
   );

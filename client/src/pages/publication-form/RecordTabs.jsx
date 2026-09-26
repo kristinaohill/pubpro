@@ -85,7 +85,7 @@ export function AuditTab({ st, recordId }) {
             <Button variant="secondary">View</Button>
           </div>
         ))}
-        {files.length === 0 && <div className="pf-empty-box pf-ml22">Approved review documents appear here once rounds are signed off.</div>}
+        {files.length === 0 && <div className="empty-state pf-ml22">Approved review documents appear here once rounds are signed off.</div>}
       </div>
       <div>
         <SectionHeading level="subsection" style={{ marginBottom: 16 }}>Activity Log</SectionHeading>
@@ -108,7 +108,7 @@ export function AuditTab({ st, recordId }) {
               <div className="pf-min0 pf-note12 pf-preline">{row.comment}</div>
             </div>
           ))}
-          {rows.length === 0 && <div className="pf-empty-box">No activity yet. Saving the record starts the log.</div>}
+          {rows.length === 0 && <div className="empty-state">No activity yet. Saving the record starts the log.</div>}
         </div>
       </div>
     </div>

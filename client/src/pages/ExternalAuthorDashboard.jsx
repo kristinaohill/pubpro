@@ -5,6 +5,7 @@ import {
 } from '../ds/pubpro';
 import { api } from '../api';
 import PageHeader from '../components/PageHeader';
+import Flash from '../components/Flash';
 import { useAuth } from '../AuthContext';
 import { TODAY_STR, nowStamp, toISO } from './publication-form/data';
 import {
@@ -218,10 +219,10 @@ export default function ExternalAuthorDashboard() {
         each reply is logged on the record as coming from them and the publication owner is notified.
       </InlineMessage>}
 
-      {message && <InlineMessage kind={message.kind}>{message.text}</InlineMessage>}
+      {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
 
       {loaded && !people.length && (
-        <div className="ead-empty-box">No external authors yet. Add authors on a publication&rsquo;s Authors tab or create an external author profile.</div>
+        <div className="empty-state">No external authors yet. Add authors on a publication&rsquo;s Authors tab or create an external author profile.</div>
       )}
 
       {person && (
@@ -236,7 +237,7 @@ export default function ExternalAuthorDashboard() {
           <div className="ead-columns">
             <div className="ead-main">
               <Panel icon="priority_high" title="Action Needed" count={waiting} description={waiting ? 'Reply to each item to keep your publications moving.' : undefined}>
-                {waiting === 0 && <div className="ead-empty">You&rsquo;re all caught up. Nothing is waiting on you.</div>}
+                {waiting === 0 && <div className="empty-state empty-state--inset">You&rsquo;re all caught up. Nothing is waiting on you.</div>}
 
                 {work.invitations.map(inv => (
                   <div key={'inv' + inv.p.id} className="ead-item">
@@ -329,14 +330,14 @@ export default function ExternalAuthorDashboard() {
                     };
                   })}
                 >
-                  {work.mine.length === 0 ? <div className="ead-empty">Not listed as an author on any saved publication.</div> : undefined}
+                  {work.mine.length === 0 ? <div className="empty-state empty-state--inset">Not listed as an author on any saved publication.</div> : undefined}
                 </DataTable>
               </Panel>
             </div>
 
             <div className="ead-side">
               <Panel icon="notifications" title="My Notifications" count={unread} description={unread ? unread + ' unread' : 'Messages sent to you in PubPro.'}>
-                {inbox.length === 0 && <div className="ead-empty">No messages yet.</div>}
+                {inbox.length === 0 && <div className="empty-state empty-state--inset">No messages yet. Updates about your publications appear here.</div>}
                 <div className="ead-notes">
                   {inbox.map(n => (
                     <div key={n.id} className={'ead-note' + (n.read_at ? '' : ' ead-note--unread')} role="button" tabIndex={0} onClick={() => openNote(n)} onKeyDown={e => { if (e.key === 'Enter') openNote(n); }}>
@@ -359,7 +360,7 @@ export default function ExternalAuthorDashboard() {
                 </Panel>
               ) : (
                 <Panel icon="badge" title="My Profile">
-                  <div className="ead-empty">No author profile yet.</div>
+                  <div className="empty-state empty-state--inset">No author profile yet. {isAuthor ? 'Ask the publication team to set one up.' : 'Create one to track agreements, COI and debarment checks.'}</div>
                   {!isAuthor && <Button variant="tertiary" icon="person_add" onClick={() => navigate('/external-author/new', { state: { name: person } })}>Create Profile</Button>}
                 </Panel>
               )}

@@ -356,6 +356,7 @@ export function deriveProgress(st) {
     currentStepName: cur ? cur.name : allDone ? 'Complete' : 'Not started',
     progSteps: steps.map(x => ({
       name: x.name,
+      state: x.done ? 'done' : x.current ? 'current' : 'upcoming',
       tip: x.done ? 'Completed ' + x.done + ' (planned ' + x.d + ')' : (x.current ? 'Due ' : 'Planned ') + x.d,
       glyph: x.done ? 'check_circle' : x.current ? 'radio_button_checked' : 'radio_button_unchecked',
       glyphColor: x.done ? 'var(--ok)' : x.current ? 'var(--high-emphasis)' : 'var(--fg-disabled)',

@@ -140,7 +140,6 @@
 .pf-card-title { font-size: 16px; font-weight: 700; color: var(--nav); margin-top: 2px; text-wrap: pretty; }
 .pf-divided-block { border-bottom: 1px solid var(--border-divider); padding-bottom: 22px; }
 .pf-divided-block.pf-pb20 { padding-bottom: 20px; }
-.pf-dashed-empty { border: 1px dashed var(--border-input); border-radius: 4px; padding: 22px; font-size: 14px; color: var(--text-meta); background: var(--white); }
 .pf-group { display: flex; flex-direction: column; gap: 16px; border-top: 1px solid var(--border-hairline); padding-top: 18px; }
 
 .pf-boxcheck {
@@ -332,13 +331,6 @@
 .pf-pad8 { padding: 8px 0; }
 
 /* Empty states on the Reviews and Audit tabs. */
-.pf-empty-box {
-  border: 1px dashed var(--border-input);
-  border-radius: var(--radius-input);
-  padding: 18px 20px;
-  font-size: var(--fs-sm);
-  color: var(--text-meta);
-}
 
 /* Cancelled records are read-only. */
 .pf-panel--readonly { pointer-events: none; opacity: .8; }
@@ -410,3 +402,16 @@
 
 @keyframes pf-docpanel-in { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pf-docpanel { animation: none; } }
+
+
+/* Compact workflow progress under the summary strip; clicking the bar opens .pf-steps. */
+.pf-track {
+  display: flex; gap: 3px; width: 100%; max-width: 640px;
+  padding: 6px 0; margin: 0; border: 0; background: none; cursor: pointer;
+}
+.pf-track:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 2px; border-radius: 3px; }
+.pf-track-seg { flex: 1; height: 8px; border-radius: 2px; background: var(--border-input); }
+.pf-track:hover .pf-track-seg { filter: brightness(0.95); }
+.pf-track-seg--done { background: var(--ok); }
+.pf-track-seg--current { background: var(--high-emphasis); }
+.pf-steps { padding-top: 4px; }

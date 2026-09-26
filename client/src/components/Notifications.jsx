@@ -33,7 +33,7 @@ const ago = s => {
  * Bell in the TopNav: in-app notifications instead of email. (The TopNav's own chat icon is
  * reserved for the Approvia AI chatbot.)
  */
-export default function Notifications({ canOpenRecords = true }) {
+export default function Notifications({ canOpenRecords = true, onUnreadChange }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
@@ -52,6 +52,9 @@ export default function Notifications({ canOpenRecords = true }) {
       .then(setItems)
       .catch(() => setItems([]));
   }, []);
+
+  // Lets the header show the same unread count on its My Alerts tab.
+  useEffect(() => { if (onUnreadChange) onUnreadChange(unread); }, [unread, onUnreadChange]);
 
   // Refresh the badge on each page change and once a minute.
   useEffect(() => { refreshCount(); }, [pathname, refreshCount]);

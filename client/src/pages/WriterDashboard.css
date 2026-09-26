@@ -70,7 +70,6 @@
 .wd-bar-fill { height: 100%; background: var(--high-emphasis); }
 .wd-page .wd-chevron { font-size: 22px; color: var(--high-emphasis); }
 
-.wd-empty { border: 1px dashed var(--border-input); border-radius: 4px; padding: 22px; font-size: 14px; color: var(--text-meta); margin-top: 12px; }
 
 /* Side panels */
 .wd-side-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
@@ -95,3 +94,17 @@
 .wd-dl-row { display: grid; grid-template-columns: 78px minmax(0, 1fr); column-gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border-hairline); font-size: 13px; }
 .wd-dl-date { font-weight: 700; color: var(--nav); }
 .wd-dl-date--overdue { color: var(--fatal-text); }
+
+
+/* Lower row: author blockers, congress deadlines, reviews in progress (WriterDashboardPanels.jsx) */
+.wdp-row-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
+.wdp-count { margin-left: auto; }
+.wdp-list { display: flex; flex-direction: column; }
+.wdp-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-hairline); font-size: 13px; }
+.wdp-row:first-child { border-top: 0; padding-top: 4px; }
+.wd-page .wdp-glyph { font-size: 19px; line-height: 1.2; }
+.wdp-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.wdp-warn { font-size: 12px; font-weight: 700; color: var(--warn-text); }
+.wdp-pubs { margin-top: 2px; }
+.wdp-actions { margin-top: 6px; }
+.wdp-more { padding-top: 8px; }

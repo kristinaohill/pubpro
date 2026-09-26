@@ -59,14 +59,6 @@
 .ead-profile { display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-base); }
 .ead-profile .ead-meta { display: inline-block; width: 90px; }
 
-.ead-empty { padding: 16px 0; font-size: var(--fs-sm); font-style: italic; color: var(--fg-faint); }
-.ead-empty-box {
-  border: 1px dashed var(--border-input);
-  border-radius: var(--radius-input);
-  padding: 22px;
-  font-size: var(--fs-base);
-  color: var(--text-meta);
-}
 
 @media (max-width: 900px) {
   .ead-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }

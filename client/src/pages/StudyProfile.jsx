@@ -137,7 +137,7 @@ export default function StudyProfile() {
 
         <div className="sp-two">
           <Panel icon="groups" title="Treatment Arms" count={arms.length}>
-            {arms.length === 0 ? <div className="sp-empty">No arms recorded.</div> : (
+            {arms.length === 0 ? <div className="empty-state empty-state--inset">No arms recorded.</div> : (
               <DataTable
                 columns={ARM_COLUMNS}
                 headerTone="knowledge"
@@ -172,9 +172,9 @@ export default function StudyProfile() {
           onRefresh={load}
         >
           {error && <div className="sp-pad-sm"><InlineMessage kind="error">{error}</InlineMessage></div>}
-          {pubs === null && !error && <div className="sp-empty">Loading…</div>}
+          {pubs === null && !error && <div className="empty-state empty-state--inset">Loading…</div>}
           {pubs && pubs.length === 0 && (
-            <div className="sp-empty">No publications use this study yet. Link it from a publication&rsquo;s Studies tab.</div>
+            <div className="empty-state empty-state--inset">No publications use this study yet. Link it from a publication&rsquo;s Studies tab.</div>
           )}
           {pubs && pubs.length > 0 && (
             <DataTable

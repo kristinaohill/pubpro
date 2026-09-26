@@ -122,7 +122,6 @@ export const JOURNAL_CHECKLIST = [
 export const READINESS_RESULTS = ["Looks good", "Needs human check", "Missing"];
 export const READINESS_TONE = { "Looks good": "on-track", "Needs human check": "due-soon", Missing: "overdue" };
 
-export const PARENT_PLAN = { id: "PLAN-26-DAX-002", name: "Daxafort Dissemination Plan", budget: 850000, planned: 180000, committed: 512000 };
 export const STATUS_OPTIONS = ["Submitted", "Changes Requested", "Accepted", "Rejected", "Withdrawn", "Cancelled"];
 export const RESPONSE_CYCLE = ["Response Documents", "Internal Review", "Author Review", "Resubmission"];
 export const PROOF_STEPS = ["PL/MW proof review", "Author proof review"];

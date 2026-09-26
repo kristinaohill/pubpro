@@ -360,7 +360,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         </div>
       </div>
       {kvFiltered.length === 0 && (
-        <div className="pf-dashed-empty">
+        <div className="empty-state">
           {kvAll.length === 0 ? 'No authors on this publication yet. Use Add Author above to add one.' : 'No ' + st.authorFilter.toLowerCase() + ' authors on this publication.'}
         </div>
       )}

@@ -29,13 +29,6 @@
   color: var(--text-link);
 }
 
-.pl-empty {
-  border: 1px dashed var(--border-input);
-  border-radius: var(--radius-input);
-  padding: 22px;
-  font-size: var(--fs-base);
-  color: var(--text-meta);
-}
 
 .pl-head-actions {
   margin-left: auto;
