@@ -411,6 +411,8 @@
 .pf-tl-step--current .pf-tl-seg { background: var(--high-emphasis); }
 .pf-tl-step:hover .pf-tl-seg { filter: brightness(0.9); }
 .pf-tl-step:focus-visible .pf-tl-seg { box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--high-emphasis); }
-.pf-tl-label { margin-top: 6px; font-size: 12px; line-height: 1.3; font-weight: 700; color: var(--nav); overflow-wrap: anywhere; }
+/* The current and next step size to their labels so each fits on one line; the rest share what's left. */
+.pf-tl-step--labelled { flex: 0 1 auto; min-width: 96px; }
+.pf-tl-label { margin-top: 6px; padding-right: 10px; font-size: 12px; line-height: 1.3; font-weight: 700; color: var(--nav); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pf-tl-step--upcoming .pf-tl-label { font-weight: 400; color: var(--fg-3); }
 .pf-tl-eyebrow { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg-3); }
