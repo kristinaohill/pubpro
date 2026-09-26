@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button, ConfirmModal, Field, FormActionBar, Icon, InlineMessage, Pill, SideTabRail, TextArea } from '../ds/pubpro';
+import { Button, ConfirmModal, Field, FormActionBar, Icon, InlineMessage, Pill, SideTabRail, TextArea, Tooltip } from '../ds/pubpro';
 import Flash from '../components/Flash';
 import { api } from '../api';
 import { STATUS_TONE } from './Publications';
@@ -45,11 +45,13 @@ const TAB_VIEWS = {
 };
 
 function ProgressStrip({ prog, onOpenReviews, onOpenPlanning }) {
-  // The full step list is folded into a one-line progress bar; clicking the bar opens it.
-  // (The current step and count are already in the first card above.)
-  const [showSteps, setShowSteps] = useState(false);
+  // Full-width timeline under the cards: one segment per step, labels only on the current and
+  // next step, and every step's name and date in a tooltip on hover or keyboard focus.
+  const [hover, setHover] = useState(null);
   const steps = prog.progSteps;
   const doneCount = steps.filter(s => s.state === 'done').length;
+  const currentIdx = steps.findIndex(s => s.state === 'current');
+  const nextIdx = currentIdx < 0 ? -1 : steps.findIndex((s, i) => i > currentIdx && s.state !== 'done');
   return (
     <>
       <div className="pf-prog">
@@ -81,26 +83,36 @@ function ProgressStrip({ prog, onOpenReviews, onOpenPlanning }) {
         </div>
       </div>
       {steps.length > 0 && (
-        <button
-          type="button"
-          className="pf-track"
-          onClick={() => setShowSteps(v => !v)}
-          aria-expanded={showSteps}
-          aria-label={doneCount + ' of ' + steps.length + ' steps done. ' + (showSteps ? 'Hide' : 'Show') + ' all steps'}
-          title={showSteps ? 'Hide the step list' : 'Show all steps'}
-        >
-          {steps.map((s, i) => (
-            <span key={s.name + i} className={'pf-track-seg pf-track-seg--' + s.state} title={s.name + ' · ' + s.tip} />
-          ))}
-        </button>
-      )}
-      {showSteps && (
-        <div className="pf-steps">
-          {steps.map((s, i) => (
-            <div key={s.name + i} title={s.tip} className="pf-step" style={{ fontWeight: s.weight, color: s.color }}>
-              <Icon name={s.glyph} size={17} color={s.glyphColor} />{s.name}
-            </div>
-          ))}
+        <div className="pf-tl" role="list" aria-label={doneCount + ' of ' + steps.length + ' steps done'}>
+          {steps.map((s, i) => {
+            const label = i === currentIdx ? 'Now' : i === nextIdx ? 'Next' : '';
+            return (
+              <div
+                key={s.name + i}
+                role="listitem"
+                tabIndex={0}
+                aria-label={s.name + ': ' + s.tip}
+                className={'pf-tl-step pf-tl-step--' + s.state + (label ? ' pf-tl-step--labelled' : '')}
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+                onFocus={() => setHover(i)}
+                onBlur={() => setHover(null)}
+              >
+                <div className="pf-tl-seg" />
+                {label && (
+                  <div className="pf-tl-label">
+                    <span className="pf-tl-eyebrow">{label}</span>
+                    {s.name}
+                  </div>
+                )}
+                {hover === i && (
+                  <Tooltip title={s.name} align={i < steps.length / 2 ? 'left' : 'right'} width={230}>
+                    {'Step ' + (i + 1) + ' of ' + steps.length + ' · ' + s.tip}
+                  </Tooltip>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </>
