@@ -103,9 +103,6 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('levels-products-20
     db.prepare("UPDATE users SET role = ?, extra_roles = '[]', role_scopes = '{}', product_roles = ? WHERE id = ?").run(level, JSON.stringify(map), u.id);
   }
   db.prepare('DELETE FROM roles WHERE key NOT IN (' + LEVEL_KEYS.map(() => '?').join(',') + ')').run(...LEVEL_KEYS);
-  if (!LEVEL_KEYS.includes(db.prepare("SELECT value FROM app_settings WHERE key = 'signup_role'").get()?.value || 'pub_manager')) {
-    db.prepare("UPDATE app_settings SET value = 'pub_manager' WHERE key = 'signup_role'").run();
-  }
   db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run('levels-products-2026-09');
 }
 
@@ -230,12 +227,6 @@ function setSetting(key, value) {
   db.prepare('INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value);
 }
 
-/** Access level given to people who create their own account on the sign-in page. */
-function signupRole() {
-  const key = getSetting('signup_role', 'pub_manager');
-  return roleRow(key) && !LOCKED[key] ? key : 'pub_manager';
-}
-
 function roleName(key) {
   const row = roleRow(key);
   return row ? row.name : key;
@@ -244,7 +235,7 @@ function roleName(key) {
 module.exports = {
   PERMISSIONS, PERM_KEYS, LOCKED, LEVEL_KEYS, ALL_PRODUCTS, PRODUCTS, PRODUCT_TA, normalize, permissionsOf, permissionsForUser,
   scopesOf, roleScopesOf, productRolesOf, setProductRoles, scopeLabel, rolesOf, roleNamesOf, setRoles, listRoles, roleRow, roleName,
-  signupRole, getSetting, setSetting,
+  getSetting, setSetting,
   // Kept for older callers: product scopes are set through setProductRoles now.
   setScopes: () => {},
 };

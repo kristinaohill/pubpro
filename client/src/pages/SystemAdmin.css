@@ -119,25 +119,10 @@
 .sa-rolecell { font-size: var(--fs-meta); color: var(--fg-1); line-height: 1.4; }
 
 /* Sign-ups waiting for approval */
-.sa-card--pending { border-color: #F0DB8C; background: #FFFCEF; }
-.sa-card--pending p { margin: -6px 0 0; }
-.sa-row--pending { grid-template-columns: minmax(220px, 2fr) minmax(190px, 1fr) minmax(220px, auto); background: var(--white); }
-.sa-tab-n--alert { background: #FFD66B; color: #3D2E00; width: auto; }
 
-/* Sign-up tab */
-.sa-modes { display: flex; flex-direction: column; gap: 8px; }
-.sa-mode {
-  display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid #DCE1E7; border-radius: 10px; cursor: pointer;
-  max-width: 720px;
-}
-.sa-mode input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--high-emphasis); }
-.sa-mode > span { display: flex; flex-direction: column; gap: 2px; }
-.sa-mode--on { border-color: var(--nav); box-shadow: inset 0 0 0 1px var(--nav); }
-.sa-mode-label { font-weight: var(--fw-semibold); font-size: var(--fs-base); }
-.sa-signup-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; max-width: 900px; }
 .sa-inline { display: flex; gap: 8px; align-items: center; }
 .sa-inline > :first-child { flex: 1; }
-@media (max-width: 900px) { .sa-signup-grid, .sa-add-grid--ooo { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .sa-add-grid--ooo { grid-template-columns: 1fr; } }
 
 /* Role chips in the Users list, with their product scope */
 .sa-rolecell { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }

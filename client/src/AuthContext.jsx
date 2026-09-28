@@ -72,13 +72,6 @@ export function AuthProvider({ children }) {
     return null;
   }
 
-  // Returns { pending: true } when an administrator has to approve new accounts first.
-  const register = async (name, email, password) => {
-    const r = await api.post('/auth/register', { name, email, password });
-    if (r.pending) return { pending: true };
-    return login(email, password);
-  };
-
   const login = async (email, password) => {
     const data = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', data.token);
@@ -114,7 +107,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, updateSession, logout, loading, can, refreshMe, impersonate, stopImpersonating, impersonator: admin && admin.user }}>
+    <AuthContext.Provider value={{ user, login, updateSession, logout, loading, can, refreshMe, impersonate, stopImpersonating, impersonator: admin && admin.user }}>
       {children}
     </AuthContext.Provider>
   );

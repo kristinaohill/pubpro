@@ -176,27 +176,6 @@ router.put('/users/:id', (req, res) => {
   res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
 });
 
-// Self sign-ups waiting for approval (sign-up rule "approval"): approve, or decline (removes the account).
-router.post('/users/:id/approve', (req, res) => {
-  const u = db.prepare('SELECT id, pending FROM users WHERE id = ?').get(req.params.id);
-  if (!u) return res.status(404).json({ error: 'User not found.' });
-  const roles = rolesIn(req.body);
-  if (roles) {
-    if (!roles.length || roles.some(k => !P.roleRow(k) || k === 'author')) return res.status(400).json({ error: 'Choose an access level.' });
-    P.setRoles(u.id, roles);
-    if (req.body.productRoles) { try { P.setProductRoles(u.id, req.body.productRoles); } catch (e) { return res.status(400).json({ error: e.message }); } }
-  }
-  db.prepare('UPDATE users SET pending = 0, active = 1 WHERE id = ?').run(u.id);
-  res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
-});
-router.delete('/users/:id', (req, res) => {
-  const u = db.prepare('SELECT id, pending FROM users WHERE id = ?').get(req.params.id);
-  if (!u) return res.status(404).json({ error: 'User not found.' });
-  if (!u.pending) return res.status(400).json({ error: 'Only sign-ups waiting for approval can be removed. Deactivate other accounts instead.' });
-  db.prepare('DELETE FROM users WHERE id = ?').run(u.id);
-  res.json({ success: true });
-});
-
 /**
  * Sign In As: a 2-hour session as another user, to see PubPro exactly as they do. The token carries
  * the administrator (imp) so the app can show a banner and switch back; everything done in it is
@@ -279,8 +258,7 @@ router.post('/users/:id/reset-password', (req, res) => {
 });
 
 const rolesPayload = () => ({
-  roles: P.listRoles(), permissions: P.PERMISSIONS, signupRole: P.signupRole(),
-  signup: people.signupRules(),
+  roles: P.listRoles(), permissions: P.PERMISSIONS,
   options: { therapeuticAreas: people.therapeuticAreas(), departments: people.DEPARTMENTS, products: P.PRODUCTS, activeProducts: catalog.ACTIVE_PRODUCTS, productTa: P.PRODUCT_TA, productRoles: catalog.productRoles() },
 });
 
@@ -318,17 +296,6 @@ router.put('/products', (req, res) => {
 });
 router.put('/product-roles', (req, res) => {
   try { res.json(catalog.saveProductRoles(req.body.productRoles)); } catch (e) { res.status(400).json({ error: e.message }); }
-});
-
-// Self sign-up: { signupRole, mode: open | approval | closed, domains: [..] } (any subset).
-router.put('/settings', (req, res) => {
-  if (req.body.signupRole != null) {
-    const role = String(req.body.signupRole);
-    if (!P.roleRow(role) || P.LOCKED[role]) return res.status(400).json({ error: 'Choose a staff role other than System Administrator.' });
-    P.setSetting('signup_role', role);
-  }
-  try { people.setSignupRules({ mode: req.body.mode, domains: req.body.domains }); } catch (e) { return res.status(400).json({ error: e.message }); }
-  res.json(rolesPayload());
 });
 
 module.exports = router;

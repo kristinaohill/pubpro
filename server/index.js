@@ -15,7 +15,12 @@ require('./reviewTypes');
 app.get('/api/review-types', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => res.json({
   types: require('./reviewTypes').list(),
   roles: require('./products').productRoles().map(r => ({ key: r.key, name: r.name })),
+  rotation: require('./reviewTypes').rotation(),
 }));
+// A round went out: advance the round robin for the product roles it assigned.
+app.post('/api/review-types/rotation', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => {
+  try { res.json(require('./reviewTypes').recordPicks(String(req.body.product || ''), req.body.picks)); } catch (e) { res.status(400).json({ error: e.message }); }
+});
 
 // The catalog set up on System Administrator: products, product roles and access levels.
 app.get('/api/catalog', require('./auth').requireAuth, (req, res) => {

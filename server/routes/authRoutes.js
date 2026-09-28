@@ -22,34 +22,8 @@ const profileOf = u => ({
 // What the client keeps about the signed-in user: the token claims plus what their role allows.
 const sessionOf = u => ({ ...claimsOf(u), roles: rolesOf(u), role_name: roleNamesOf(u), permissions: permissionsForUser(u), roleScopes: roleScopesOf(u) });
 
-// What the sign-in page needs to know before someone creates an account (no sign-in required).
-router.get('/signup-options', (req, res) => {
-  const { mode, domains } = people.signupRules();
-  res.json({ mode, domains });
-});
-
-router.post('/register', (req, res) => {
-  const { password } = req.body;
-  const email = String(req.body.email || '').trim().toLowerCase();
-  const name = String(req.body.name || '').trim();
-  if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
-  const rules = people.signupRules();
-  if (rules.mode === 'closed') return res.status(403).json({ error: 'New accounts are created by your system administrator. Ask them for access.' });
-  const domain = email.split('@')[1] || '';
-  if (!rules.domains.includes(domain)) {
-    return res.status(403).json({ error: 'Use your work email (' + rules.domains.map(d => '@' + d).join(' or ') + ').' });
-  }
-  if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-  const existing = db.prepare('SELECT id FROM users WHERE lower(email) = ?').get(email);
-  if (existing) return res.status(400).json({ error: 'Email already registered' });
-  const hash = bcrypt.hashSync(password, 10);
-  const pending = rules.mode === 'approval' ? 1 : 0;
-  const r = db.prepare('INSERT INTO users (email, password_hash, name, role, client_id, pending) VALUES (?,?,?,?,?,?)').run(
-    email, hash, name, rules.role, null, pending
-  );
-  res.json({ id: r.lastInsertRowid, email, name, pending: !!pending });
-});
-
+// There is no self sign-up: an administrator creates internal and library users, and external
+// authors get their login from their author profile (the invitation).
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
@@ -58,7 +32,6 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   if (!user.active) return res.status(403).json({ error: 'This account has been deactivated. Contact your system administrator.' });
-  if (user.pending) return res.status(403).json({ error: 'Your account is waiting for an administrator to approve it. You\u2019ll be able to sign in once they do.' });
   db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").run(user.id);
   res.json({ token: signToken(claimsOf(user)), user: sessionOf(user) });
 });

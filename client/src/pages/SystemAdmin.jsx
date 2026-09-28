@@ -4,7 +4,7 @@ import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
-import { SignupTab, UsersTab } from './SystemAdminUsers';
+import { UsersTab } from './SystemAdminUsers';
 import ExternalUsersTab from './SystemAdminExternal';
 import ReviewTypesTab from './SystemAdminReviewTypes';
 import { ProductRolesTab, ProductsTab } from './SystemAdminCatalog';
@@ -54,7 +54,7 @@ export default function SystemAdmin() {
           Product roles
         </button>
         <button type="button" role="tab" aria-selected={tab === 'internal'} className="sa-tab" onClick={() => setTab('internal')}>
-          Internal users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending && x.role !== 'author' && x.role !== 'library').length}</span> : null}
+          Internal users{users ? <span className="sa-tab-n">{users.filter(x => x.role !== 'author' && x.role !== 'library').length}</span> : null}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'external'} className="sa-tab" onClick={() => setTab('external')}>
           External users
@@ -67,9 +67,6 @@ export default function SystemAdmin() {
         </button>
         <button type="button" role="tab" aria-selected={tab === 'reviews'} className="sa-tab" onClick={() => setTab('reviews')}>
           Review types
-        </button>
-        <button type="button" role="tab" aria-selected={tab === 'signup'} className="sa-tab" onClick={() => setTab('signup')}>
-          Sign-up{users && users.some(x => x.pending) ? <span className="sa-tab-n sa-tab-n--alert">{users.filter(x => x.pending).length} waiting</span> : null}
         </button>
       </div>
 
@@ -95,12 +92,6 @@ export default function SystemAdmin() {
         />
       ) : tab === 'reviews' ? (
         <ReviewTypesTab onChanged={msg => { setError(''); if (msg) setNotice(msg); }} onError={setError} />
-      ) : tab === 'signup' ? (
-        <SignupTab
-          data={roleData}
-          onChanged={(msg, data) => { setError(''); if (msg) setNotice(msg); if (data) setRoleData(data); else loadRoles(); }}
-          onError={setError}
-        />
       ) : (
         <RolesTab
           data={roleData}

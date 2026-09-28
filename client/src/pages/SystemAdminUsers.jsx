@@ -9,7 +9,7 @@ import { ChipCheck } from './publication-form/ui';
 import { fmtSaved } from './Publications';
 import { scopeLabel, shortProduct } from '../components/scope';
 
-// System Administrator > Users (list, add, edit, approve, Sign In As) and > Sign-up.
+// System Administrator > Users (list, add, edit, Sign In As). Admins create every internal and library account.
 
 const mdy = iso => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? +m[2] + '/' + +m[3] + '/' + m[1] : ''; };
 const iso = s => { const m = String(s || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0') : ''; };
@@ -193,18 +193,16 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
   const [editing, setEditing] = useState(null); // { id, d }
   const [busy, setBusy] = useState(false);
   const [secret, setSecret] = useState(null); // { name, email, password, reset }
-  const [confirm, setConfirm] = useState(null); // { kind: 'deactivate' | 'reset' | 'decline', user }
-  const [approveRole, setApproveRole] = useState({}); // pending user id -> role
+  const [confirm, setConfirm] = useState(null); // { kind: 'deactivate' | 'reset', user }
 
   const opts = options || { therapeuticAreas: [], departments: [] };
   const roleOptions = roles.filter(r => r.key !== 'author' && r.key !== 'library').map(r => ({ value: r.key, label: r.name }));
   const q = query.trim().toLowerCase();
   const inTab = u => (library ? u.role === 'library' : external ? u.role === 'author' : u.role !== 'author' && u.role !== 'library');
-  const pending = (users || []).filter(u => u.pending && inTab(u));
-  const list = (users || []).filter(u => inTab(u) && !u.pending && (showInactive || u.active)
+  const list = (users || []).filter(u => inTab(u) && (showInactive || u.active)
     && (!roleFilter || u.role === roleFilter)
     && (!q || [u.name, u.email, u.title, u.department, u.author && u.author.institution, u.author && u.author.authorId].join(' ').toLowerCase().includes(q)));
-  const inactiveCount = (users || []).filter(u => inTab(u) && !u.active && !u.pending).length;
+  const inactiveCount = (users || []).filter(u => inTab(u) && !u.active).length;
   const replace = saved => (users || []).map(x => (x.id === saved.id ? saved : x));
   const isSelf = u => String(u.id) === String(me && me.id);
 
@@ -249,17 +247,12 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
     return false;
   });
 
-  const approve = u => run(async () => api.post('/admin/users/' + u.id + '/approve', { roles: [approveRole[u.id] || u.role] }),
-    s => s.name + ' can now sign in as ' + s.role_name + '.');
-
   const runConfirm = async () => {
     const { kind, user: u } = confirm;
     setConfirm(null);
     if (kind === 'deactivate') {
       run(() => api.put('/admin/users/' + u.id, { active: false }), s => s.name + ' is deactivated and can no longer sign in.');
       setEditing(null);
-    } else if (kind === 'decline') {
-      run(async () => { await api.delete('/admin/users/' + u.id); return null; }, 'Declined ' + u.name + '’s sign-up.');
     } else {
       run(async () => {
         const r = await api.post('/admin/users/' + u.id + '/reset-password', {});
@@ -287,30 +280,6 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
           <Button variant="secondary" icon="content_copy" onClick={() => copy(secret.password)}>Copy</Button>
           <button type="button" className="sa-x" aria-label="Dismiss" onClick={() => setSecret(null)}><Icon name="close" size={18} /></button>
         </div>
-      )}
-
-      {pending.length > 0 && (
-        <section className="sa-card sa-card--pending">
-          <h2 className="sa-card-title">Waiting for approval ({pending.length})</h2>
-          <p className="sa-faint">These people created an account on the sign-in page. Approve them with an access level (then Edit them to choose their products), or decline to remove the account.</p>
-          <div className="sa-table" role="table" aria-label="Sign-ups waiting for approval">
-            {pending.map(u => (
-              <div key={u.id} className="sa-row sa-row--pending" role="row">
-                <span role="cell" className="sa-user">
-                  <span className="sa-avatar" aria-hidden="true">{initials(u.name)}</span>
-                  <span><span className="sa-name">{u.name}</span><span className="sa-email">{u.email} · signed up {fmtSaved(u.created_at)}</span></span>
-                </span>
-                <span role="cell">
-                  <Select options={roleOptions} value={approveRole[u.id] || u.role} onChange={e => setApproveRole({ ...approveRole, [u.id]: e.target.value })} width="100%" aria-label={'Role for ' + u.name} />
-                </span>
-                <span role="cell" className="sa-actions">
-                  <Button variant="primary" icon="check" onClick={() => approve(u)} disabled={busy}>Approve</Button>
-                  <Button variant="secondary" onClick={() => setConfirm({ kind: 'decline', user: u })} disabled={busy}>Decline</Button>
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
       )}
 
       <section className="sa-card">
@@ -444,76 +413,16 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
       {confirm && (
         <ConfirmModal
           title={confirm.kind === 'reset' ? 'Reset ' + confirm.user.name + '’s password?'
-            : confirm.kind === 'decline' ? 'Decline ' + confirm.user.name + '’s sign-up?'
               : 'Deactivate ' + confirm.user.name + '?'}
-          confirmLabel={confirm.kind === 'reset' ? 'Reset Password' : confirm.kind === 'decline' ? 'Decline' : 'Deactivate'}
+          confirmLabel={confirm.kind === 'reset' ? 'Reset Password' : 'Deactivate'}
           cancelLabel="Keep"
           onConfirm={runConfirm}
           onCancel={() => setConfirm(null)}
         >
           {confirm.kind === 'reset' ? 'Their current password stops working. You’ll get a temporary one to pass on.'
-            : confirm.kind === 'decline' ? 'Their account is removed. They can sign up again later.'
               : 'They’re signed out and can’t sign in until you reactivate them. Their name stays on records and audit trails.'}
         </ConfirmModal>
       )}
     </>
-  );
-}
-
-const MODES = [
-  { value: 'open', label: 'Anyone can create an account', help: 'They can sign in straight away with the role below.' },
-  { value: 'approval', label: 'Anyone can ask for an account; an administrator approves it', help: 'Requests appear at the top of the Users tab.' },
-  { value: 'closed', label: 'Only administrators create accounts', help: 'The sign-in page hides “Create an account”.' },
-];
-
-/** System Administrator > Sign-up: who can create their own account on the sign-in page. */
-export function SignupTab({ data, onChanged, onError }) {
-  const [domains, setDomains] = useState(null); // text being edited, or null = saved value
-  if (!data) return <section className="sa-card"><div className="empty-state empty-state--inset">Loading&hellip;</div></section>;
-  const { signup } = data;
-  const staffRoles = data.roles.filter(r => !r.locked);
-  const put = async (body, msg) => {
-    try {
-      const res = await api.put('/admin/settings', body);
-      onChanged(msg, res);
-      return true;
-    } catch (err) {
-      onError(err.message);
-      return false;
-    }
-  };
-  const domainText = domains != null ? domains : signup.domains.join(', ');
-  return (
-    <section className="sa-card">
-      <h2 className="sa-card-title">Creating an account</h2>
-      <fieldset className="sa-fieldset">
-        <legend className="sa-legend">Who can create their own account on the sign-in page?</legend>
-        <div className="sa-modes">
-          {MODES.map(m => (
-            <label key={m.value} className={'sa-mode' + (signup.mode === m.value ? ' sa-mode--on' : '')}>
-              <input type="radio" name="sa-signup-mode" checked={signup.mode === m.value} onChange={() => put({ mode: m.value }, 'Sign-up: ' + m.label.toLowerCase() + '.')} />
-              <span><span className="sa-mode-label">{m.label}</span><span className="sa-faint">{m.help}</span></span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      {signup.mode !== 'closed' && (
-        <div className="sa-signup-grid">
-          <Field label="Email domain" help="Internal users always sign in with their BP Logix email.">
-            <div className="sa-fixed sa-fixed--field">@bplogix.com only</div>
-          </Field>
-          <Field label={signup.mode === 'approval' ? 'Suggested access level when approving' : 'Access level new accounts get'} help="Publication Managers and Reviewers see nothing until you choose their products.">
-            <Select
-              options={staffRoles.map(r => ({ value: r.key, label: r.name }))}
-              value={data.signupRole}
-              onChange={e => put({ signupRole: e.target.value }, 'New sign-ups are now ' + staffRoles.find(r => r.key === e.target.value).name + 's.')}
-              width="100%"
-            />
-          </Field>
-        </div>
-      )}
-      <InlineMessage kind="info">External authors don&rsquo;t sign up here: their login comes from their external author profile.</InlineMessage>
-    </section>
   );
 }

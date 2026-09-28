@@ -1,13 +1,14 @@
 // Review types (System Administrator > Review Types): who is required and who is optional on each
 // kind of review round. A participant is { kind: 'internal_authors' | 'external_authors' } (that
-// publication's authors), { kind: 'role', role } (everyone holding the role whose product scope
-// covers the publication) or { kind: 'user', userId }. The Reviews tab resolves them per record.
+// publication's authors, all of them), { kind: 'role', role } (one person holding that product role on
+// the publication's product, round robin) or { kind: 'user', userId }. The Reviews tab resolves them.
+// Admins can remove any review type: past rounds keep their type's name, so history is unaffected.
 const db = require('./db');
 const P = require('./permissions');
 const catalog = require('./products');
 
 const KEY = 'review_types';
-// The review types the publication workflow has steps for: they can't be renamed or deleted.
+// The review types the publication workflow has named steps for: they can't be renamed.
 const BUILT_IN = ['Internal Draft Review', 'Partner Review', 'Author Draft Review', 'Stats / Data QC', 'Compliance and IP Review', 'Author Approval', 'Internal Release Approval'];
 
 const INTERNAL = { kind: 'internal_authors' };
@@ -56,8 +57,7 @@ function clean(list) {
     const optional = (t.optional || []).map(part).filter(Boolean).filter(x => !reqIds.has(id(x)));
     return { name, builtIn: BUILT_IN.includes(name), active: t.active !== false, required, optional };
   });
-  const missing = BUILT_IN.filter(n => !out.some(t => t.name === n));
-  if (missing.length) throw new Error(missing.join(', ') + ' is part of the publication workflow and can\u2019t be removed. Mark it inactive instead.');
+  if (!out.length) throw new Error('Keep at least one review type.');
   if (!out.some(t => t.active)) throw new Error('Keep at least one review type active.');
   return out;
 }
@@ -69,9 +69,6 @@ function list() {
 }
 function save(next) {
   const out = clean(next);
-  // Saved review types are marked inactive, never removed (past rounds keep their type).
-  const gone = list().filter(t => !out.some(x => x.name === t.name || (t.name && next.some(n => n.was === t.name && n.name === x.name))));
-  if (gone.length) throw new Error(gone.map(t => t.name).join(', ') + ' can\u2019t be removed. Mark it inactive instead.');
   P.setSetting(KEY, JSON.stringify(out));
   return out;
 }
@@ -99,4 +96,21 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('review-types-produ
   db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run('review-types-product-roles-2026-09');
 }
 
-module.exports = { list, save, BUILT_IN };
+// Round robin for product roles: who got the last review, per product and role ("product|role").
+const ROTATION_KEY = 'review_rotation';
+function rotation() {
+  try { const v = JSON.parse(P.getSetting(ROTATION_KEY, '{}')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; }
+}
+/** Records who was given a new round: picks = { roleKey: userId } on product. */
+function recordPicks(product, picks) {
+  if (!P.PRODUCTS.includes(product)) throw new Error('Unknown product.');
+  const keys = new Set(catalog.productRoles().map(r => r.key));
+  const r = rotation();
+  Object.entries(picks || {}).forEach(([role, id]) => {
+    if (keys.has(role) && db.prepare('SELECT 1 FROM users WHERE id = ?').get(Number(id))) r[product + '|' + role] = Number(id);
+  });
+  P.setSetting(ROTATION_KEY, JSON.stringify(r));
+  return r;
+}
+
+module.exports = { list, save, rotation, recordPicks, BUILT_IN };

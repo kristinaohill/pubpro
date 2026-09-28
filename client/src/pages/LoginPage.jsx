@@ -1,41 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { api } from '../api';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrandMark, Button, Field, InlineMessage, TextField } from '../ds/pubpro';
 import { useAuth } from '../AuthContext';
 import './LoginPage.css';
 
+// Sign in only. Nobody creates their own account: a System Administrator adds internal and library
+// users, and external authors get their login when they're invited from their author profile.
 export default function LoginPage() {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
-  const [name, setName] = useState('');
   // The default admin login is only prefilled when running locally.
   const [email, setEmail] = useState(import.meta.env.DEV ? 'admin@bplogix.com' : '');
   const [password, setPassword] = useState(import.meta.env.DEV ? 'Password2' : '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const signup = mode === 'signup';
-  // Sign-up rules from System Administrator > Sign-up: open, approval, or closed (+ email domains).
-  const [rules, setRules] = useState({ mode: 'open', domains: [] });
-  const [notice, setNotice] = useState('');
-  useEffect(() => { api.get('/auth/signup-options').then(setRules).catch(() => {}); }, []);
-  const domainHint = rules.domains.length ? 'Use your work email (' + rules.domains.map(d => '@' + d).join(' or ') + ').' : undefined;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      if (signup) {
-        const r = await register(name, email, password);
-        if (r && r.pending) {
-          setMode('signin');
-          setPassword('');
-          setNotice('Thanks, ' + name.trim().split(/\s+/)[0] + '. An administrator needs to approve your account. You can sign in once they have.');
-          return;
-        }
-      } else await login(email, password);
+      await login(email, password);
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -57,48 +42,23 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <h2 className="login-heading">{signup ? 'Create your account' : 'Sign in'}</h2>
+        <h2 className="login-heading">Sign in</h2>
 
         <form onSubmit={handleSubmit} className="login-form">
-          {signup && (
-            <Field label="Name" required>
-              <TextField value={name} onChange={e => setName(e.target.value)} required autoFocus autoComplete="name" />
-            </Field>
-          )}
-          {notice && <InlineMessage kind="info">{notice}</InlineMessage>}
-          <Field label="Email" required help={signup ? domainHint : undefined}>
-            <TextField type="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus={!signup} autoComplete="email" />
+          <Field label="Email" required>
+            <TextField type="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus autoComplete="email" />
           </Field>
-          <Field label="Password" required help={signup ? 'At least 8 characters.' : undefined}>
-            <TextField
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              minLength={signup ? 8 : undefined}
-              autoComplete={signup ? 'new-password' : 'current-password'}
-            />
+          <Field label="Password" required>
+            <TextField type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" />
           </Field>
           {error && <InlineMessage kind="error">{error}</InlineMessage>}
           <Button type="submit" variant="primary" disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
-            {loading ? (signup ? 'Creating account…' : 'Signing in…') : (signup ? 'Create Account' : 'Sign In')}
+            {loading ? 'Signing in…' : 'Sign In'}
           </Button>
         </form>
 
-        {signup && rules.mode === 'approval' && (
-          <div className="login-hint">New accounts are approved by an administrator before you can sign in.</div>
-        )}
-        {rules.mode === 'closed' ? (
-          <div className="login-switch-row">New to PubPro? Ask your system administrator for an account.</div>
-        ) : (
-          <div className="login-switch-row">
-            {signup ? 'Already have an account?' : 'New to PubPro?'}
-            <button type="button" className="login-switch" onClick={() => { setMode(m => (m === 'signup' ? 'signin' : 'signup')); setError(''); setNotice(''); }}>
-              {signup ? 'Sign in' : 'Create an account'}
-            </button>
-          </div>
-        )}
-        {import.meta.env.DEV && !signup && <div className="login-hint">Local default: admin@bplogix.com / Password2</div>}
+        <div className="login-switch-row">No account? Your system administrator sets one up, or you&rsquo;ll get an invitation from BP Logix.</div>
+        {import.meta.env.DEV && <div className="login-hint">Local default: admin@bplogix.com / Password2</div>}
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React from 'react';
 import useDismiss from '../../components/useDismiss';
-import usePeople, { jobTitle, oooText, personNamed, useReviewTypes } from '../../components/usePeople';
+import usePeople, { jobTitle, oooText, personNamed, refreshReviewTypes, useReviewTypes } from '../../components/usePeople';
+import { api } from '../../api';
 import {
   AIActionButton, BandHeader, Button, Checkbox, Icon, IconButton, InlineMessage, Pill,
   SearchSelect, Select, TextArea, TextField,
@@ -49,11 +50,33 @@ const dueRel = due => {
 };
 
 // Who a review type brings in (System Administrator > Review Types): its required and optional
-// participants, resolved for this record. Authors who declined the invitation are left out; a
-// product role brings in whoever holds it on the publication's product.
+// participants, resolved for this record. Authors all take part (unless they declined the
+// invitation); a product role brings in one person who holds it on the publication's product.
 const FALLBACK_TYPE = { required: [], optional: [{ kind: 'internal_authors' }, { kind: 'external_authors' }] };
 
-function resolveSources(st, sources, staff, roleName) {
+/**
+ * Round robin for a product role: which one of its holders on the publication's product gets the
+ * review. Whoever the manager picked, else whoever reviewed an earlier round of this publication in
+ * that role, else the next person after the one who got the last review (skipping anyone out of office).
+ */
+function rolePick(st, roleKey, staff, rotation, roleName) {
+  if (!st.product) return null;
+  const holders = staff.filter(p => (p.productRoles || {})[st.product] === roleKey).sort((a, b) => a.id - b.id);
+  if (!holders.length) return null;
+  const named = n => holders.find(p => p.name === n);
+  const chosen = named((st.rolePicks || {})[roleKey]);
+  if (chosen) return { person: chosen, holders, why: 'Chosen' };
+  const before = (st.rounds || []).slice().reverse()
+    .flatMap(r => r.reviewers.filter(v => v.roleKey === roleKey || (!v.roleKey && v.role === roleName(roleKey))))
+    .map(v => named(v.name)).find(Boolean);
+  if (before) return { person: before, holders, why: 'Reviewed an earlier round' };
+  const last = (rotation || {})[st.product + '|' + roleKey];
+  const at = holders.findIndex(p => p.id === last) + 1;
+  const order = holders.slice(at).concat(holders.slice(0, at));
+  return { person: order.find(p => !p.oooNow) || order[0], holders, why: 'Round robin' };
+}
+
+function resolveSources(st, sources, staff, roleName, rotation) {
   const out = [];
   const notDeclined = a => !(a.invite && a.invite.status === 'declined');
   (sources || []).forEach(src => {
@@ -65,9 +88,9 @@ function resolveSources(st, sources, staff, roleName) {
         out.push({ name: person, role: 'External Author · ' + aff.join('-'), kind: 'external', from: 'External authors' });
       });
     } else if (src.kind === 'role') {
-      // Whoever holds this product role on the publication's product.
-      staff.filter(p => st.product && (p.productRoles || {})[st.product] === src.role)
-        .forEach(p => out.push({ name: p.name, role: roleName(src.role), kind: 'reviewer', from: 'By role' }));
+      // One holder of this product role on the publication's product, in turn.
+      const pick = rolePick(st, src.role, staff, rotation, roleName);
+      if (pick) out.push({ name: pick.person.name, role: roleName(src.role), kind: 'reviewer', from: pick.why, roleKey: src.role, userId: pick.person.id, holders: pick.holders, rr: pick.why === 'Round robin' || pick.why === 'Chosen' });
     } else if (src.kind === 'user') {
       const p = staff.find(x => String(x.id) === String(src.userId));
       if (p) out.push({ name: p.name, role: jobTitle(p) || 'Reviewer', kind: 'reviewer', from: 'Named' });
@@ -78,10 +101,10 @@ function resolveSources(st, sources, staff, roleName) {
 const dedupe = list => list.filter((x, i) => list.findIndex(y => y.name === x.name) === i);
 
 /** { required, optional } for the record's chosen review type. The record's own mandatory reviewers are required too. */
-function participantsFor(st, cfg, staff, roleName) {
+function participantsFor(st, cfg, staff, roleName, rotation) {
   const own = (st.mandatory || []).map(v => ({ name: v.name, role: v.role, kind: 'reviewer', from: 'This publication' }));
-  const required = dedupe(own.concat(resolveSources(st, cfg.required, staff, roleName)));
-  const optional = dedupe(resolveSources(st, cfg.optional, staff, roleName)).filter(x => !required.some(r => r.name === x.name));
+  const required = dedupe(own.concat(resolveSources(st, cfg.required, staff, roleName, rotation)));
+  const optional = dedupe(resolveSources(st, cfg.optional, staff, roleName, rotation)).filter(x => !required.some(r => r.name === x.name));
   return { required, optional };
 }
 
@@ -91,7 +114,7 @@ function roundRecipients(st, parts) {
   const people = parts.required
     .concat(parts.optional.filter(x => !off.includes(x.name)))
     .concat(st.additional.filter(v => v.selected).map(v => ({ name: v.name, role: v.role, kind: /^External/.test(v.role || '') ? 'external' : 'reviewer' })));
-  return dedupe(people).map(x => reviewer(x.name, x.role, x.kind));
+  return dedupe(people).map(x => reviewer(x.name, x.role, x.kind, x.roleKey ? { roleKey: x.roleKey } : undefined));
 }
 
 export default function ReviewsTab({ st, set, bind, commit, saving, userName }) {
@@ -102,7 +125,13 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   const types = rt && rt.types && rt.types.length ? rt.types : REVIEW_TYPE_OPTIONS.map(name => ({ name, ...FALLBACK_TYPE }));
   const roleName = key => ((rt && rt.roles) || []).find(r => r.key === key)?.name || key;
   const typeCfg = name => types.find(t => t.name === name) || FALLBACK_TYPE;
-  const parts = participantsFor(st, typeCfg(st.reviewType), staff, roleName);
+  const rotation = (rt && rt.rotation) || {};
+  const partsOf = s => participantsFor(s, typeCfg(s.reviewType), staff, roleName, rotation);
+  const parts = partsOf(st);
+  // A review type an admin removed: past rounds keep it, but it can't be sent again.
+  const removedType = !!(rt && rt.types && st.reviewType && !types.some(t => t.name === st.reviewType));
+  // Product roles on this review type that nobody holds on the publication's product yet.
+  const unstaffed = st.product ? (typeCfg(st.reviewType).required || []).filter(x => x.kind === 'role' && !staff.some(p => (p.productRoles || {})[st.product] === x.role)).map(x => roleName(x.role)) : [];
   const scopedRoleWaiting = !st.product && (typeCfg(st.reviewType).required || []).some(x => x.kind === 'role');
   const readiness = deriveReadiness(st);
   const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }), () => set({ searchOpen: true }));
@@ -137,43 +166,54 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   // ---- Round actions ---------------------------------------------------------
 
   // Sending, reminding and closing save the record and notify people in PubPro (no email).
-  const sendRound = () => commit(s => {
-    if (openRoundOf(s)) return null;
-    // Anyone out of office (their profile) starts the round marked away, so reminders wait for them.
-    const reviewers = roundRecipients(s, participantsFor(s, typeCfg(s.reviewType), staff, roleName)).map(r => {
-      const away = oooText(personNamed(staff, r.name));
-      return away && !r.ooo ? { ...r, ooo: away } : r;
+  const sendRound = () => {
+    // Round robin: whoever took a turn this round becomes the last one for their role.
+    const all = partsOf(st);
+    const off = st.optionalOff || [];
+    const picks = Object.fromEntries(all.required.concat(all.optional.filter(x => !off.includes(x.name))).filter(x => x.rr).map(x => [x.roleKey, x.userId]));
+    const product = st.product;
+    return commit(s => {
+      if (openRoundOf(s) || removedType) return null;
+      // Anyone out of office (their profile) starts the round marked away, so reminders wait for them.
+      const reviewers = roundRecipients(s, partsOf(s)).map(r => {
+        const away = oooText(personNamed(staff, r.name));
+        return away && !r.ooo ? { ...r, ooo: away } : r;
+      });
+      if (!reviewers.length) return null;
+      const method = s.reviewType === 'Author Approval' ? 'Comment Only' : s.reviewMethod;
+      const due = s.fields.roundDue || '';
+      const round = {
+        num: newRoundNum, type: s.reviewType, method, priority: s.fields.priority || 'Standard Review',
+        due, sentOn: TODAY_STR, closedOn: '', status: 'open', outcome: '', reviewers,
+      };
+      return {
+        rounds: (s.rounds || []).concat([round]),
+        newRoundOpen: false,
+        optionalOff: [],
+        rolePicks: {},
+        currentRoundOpen: true,
+        fields: { ...s.fields, roundDue: '' },
+        audit: (s.audit || []).concat([auditEntry(`${round.type} (Round ${round.num})`, {
+          participants: reviewers.map(r => `${r.name} [${r.role}]`).join('\n'),
+          completed: '-', active: true, roundNum: round.num,
+          comment: `Sent by ${userName} · ${method}` + (due ? ' · due ' + due : ''),
+        })]),
+      };
+    }, {
+      done: 'Review round sent. Reviewers were notified in PubPro.',
+      notices: (rec, s) => {
+        const round = openRoundOf(s);
+        return round ? round.reviewers.map(r => ({
+          recipient: r.name, kind: 'review_request', tab: 'reviewers',
+          title: 'Review requested: ' + round.type,
+          body: `${rec.title} (${rec.record_id}) · ${round.method}` + (round.due ? ' · due ' + round.due : ''),
+        })) : [];
+      },
+    }).then(saved => {
+      if (saved && product && Object.keys(picks).length) api.post('/review-types/rotation', { product, picks }).then(refreshReviewTypes).catch(() => {});
+      return saved;
     });
-    if (!reviewers.length) return null;
-    const method = s.reviewType === 'Author Approval' ? 'Comment Only' : s.reviewMethod;
-    const due = s.fields.roundDue || '';
-    const round = {
-      num: newRoundNum, type: s.reviewType, method, priority: s.fields.priority || 'Standard Review',
-      due, sentOn: TODAY_STR, closedOn: '', status: 'open', outcome: '', reviewers,
-    };
-    return {
-      rounds: (s.rounds || []).concat([round]),
-      newRoundOpen: false,
-      optionalOff: [],
-      currentRoundOpen: true,
-      fields: { ...s.fields, roundDue: '' },
-      audit: (s.audit || []).concat([auditEntry(`${round.type} (Round ${round.num})`, {
-        participants: reviewers.map(r => `${r.name} [${r.role}]`).join('\n'),
-        completed: '-', active: true, roundNum: round.num,
-        comment: `Sent by ${userName} · ${method}` + (due ? ' · due ' + due : ''),
-      })]),
-    };
-  }, {
-    done: 'Review round sent. Reviewers were notified in PubPro.',
-    notices: (rec, s) => {
-      const round = openRoundOf(s);
-      return round ? round.reviewers.map(r => ({
-        recipient: r.name, kind: 'review_request', tab: 'reviewers',
-        title: 'Review requested: ' + round.type,
-        body: `${rec.title} (${rec.record_id}) · ${round.method}` + (round.due ? ' · due ' + round.due : ''),
-      })) : [];
-    },
-  });
+  };
 
   const patchReviewer = (name, patch) => set(s => ({
     rounds: s.rounds.map(r => (r.status === 'open'
@@ -237,7 +277,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     newRoundOpen: true,
     nextReviewerId: s.nextReviewerId + round.reviewers.length,
     additional: round.reviewers
-      .filter(v => v.kind === 'reviewer' && !(p => p.required.concat(p.optional))(participantsFor(s, typeCfg(s.reviewType), staff, roleName)).some(m => m.name === v.name))
+      .filter(v => v.kind === 'reviewer' && !(p => p.required.concat(p.optional))(partsOf(s)).some(m => m.name === v.name))
       .map((v, i) => ({ id: s.nextReviewerId + i, name: v.name, role: v.role, selected: true })),
   }));
 
@@ -296,7 +336,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
             <FormField id="pf-reviewtype" label="Review Type">
               <Select
                 id="pf-reviewtype"
-                options={types.filter(t => t.active !== false || t.name === st.reviewType).map(t => t.name)}
+                options={types.filter(t => t.active !== false || t.name === st.reviewType).map(t => t.name).concat(removedType ? [st.reviewType] : [])}
                 value={st.reviewType}
                 onChange={e => { const v = e.target.value; set(s => ({ reviewType: v, optionalOff: [], reviewMethod: v === 'Author Approval' ? 'Comment Only' : s.reviewMethod })); }}
                 width="100%"
@@ -306,6 +346,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
               <DateField id="pf-rounddue" {...bind('roundDue')} width="100%" />
             </FormField>
           </Pair>
+          {removedType && <InlineMessage kind="warning">{st.reviewType} was removed on System Administrator › Review Types. Choose another review type to send a new round.</InlineMessage>}
           <Pair>
             <FormField id="pf-priority" label="Priority">
               <Select id="pf-priority" options={PRIORITY_OPTIONS} {...bind('priority')} width="100%" />
@@ -338,7 +379,15 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                 <div key={'req-' + v.name} className="pfxc-rv-row">
                   <Checkbox checked locked />
                   <div className="pfxc-rv-name">
-                    <div>{v.name}</div>
+                    {v.holders && v.holders.length > 1 ? (
+                      <Select
+                        options={v.holders.map(p => ({ value: p.name, label: p.name + (oooText(p) ? ' · out of office' : '') }))}
+                        value={v.name}
+                        onChange={e => { const n = e.target.value; set(x => ({ rolePicks: { ...(x.rolePicks || {}), [v.roleKey]: n } })); }}
+                        width="100%"
+                        aria-label={'Who reviews as ' + v.role}
+                      />
+                    ) : <div>{v.name}</div>}
                     {v.kind === 'external' && <SecureLinkNote />}
                   </div>
                   <div className="pfxc-rv-role">{v.role}<span className="pfxc-rv-auto">{v.from}</span></div>
@@ -346,6 +395,9 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                 </div>
               ))}
               {parts.required.length === 0 && <div className="pfxc-rv-empty">No required reviewers for this review type.</div>}
+              {unstaffed.length > 0 && (
+                <div className="pfxc-rv-empty">Nobody is set up as {unstaffed.join(', ')} for {st.product} yet (System Administrator › Internal users).</div>
+              )}
               {scopedRoleWaiting && (
                 <div className="pfxc-rv-empty">Pick a product on the Overview tab to bring in the reviewers whose roles cover it.</div>
               )}
@@ -365,7 +417,15 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                         })}
                       />
                       <div className="pfxc-rv-name">
-                        <div>{v.name}</div>
+                        {v.holders && v.holders.length > 1 ? (
+                      <Select
+                        options={v.holders.map(p => ({ value: p.name, label: p.name + (oooText(p) ? ' · out of office' : '') }))}
+                        value={v.name}
+                        onChange={e => { const n = e.target.value; set(x => ({ rolePicks: { ...(x.rolePicks || {}), [v.roleKey]: n } })); }}
+                        width="100%"
+                        aria-label={'Who reviews as ' + v.role}
+                      />
+                    ) : <div>{v.name}</div>}
                         {v.kind === 'external' && on && <SecureLinkNote />}
                       </div>
                       <div className="pfxc-rv-role">{v.role}<span className="pfxc-rv-auto">{v.from}</span></div>
@@ -424,7 +484,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
             <span className="pfxc-foot-text">{recipients.length + (recipients.length === 1 ? ' person' : ' people')} will be notified</span>
             <div className="pfxc-foot-actions">
               <Button variant="tertiary" onClick={() => set({ newRoundOpen: false })}>Cancel</Button>
-              <Button variant="primary" onClick={sendRound} disabled={!!current || recipients.length === 0 || saving}>Send for Review</Button>
+              <Button variant="primary" onClick={sendRound} disabled={!!current || removedType || recipients.length === 0 || saving}>Send for Review</Button>
             </div>
           </div>
         </Card>

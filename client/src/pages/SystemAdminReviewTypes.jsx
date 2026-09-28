@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Field, Icon, Select, TextField } from '../ds/pubpro';
+import { Button, ConfirmModal, Field, Icon, Select, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import usePeople, { refreshReviewTypes } from '../components/usePeople';
 import useCatalog from '../components/catalog';
@@ -7,8 +7,9 @@ import { ActiveSwitch } from './SystemAdminCatalog';
 
 // System Administrator > Review Types: for each kind of review round, who is required (locked on the
 // round), who is optional (listed and ticked; the publication manager can untick them) and who isn't
-// included. Participants are the publication's internal or external authors, everyone holding a role
-// (following their product scope), or named people.
+// included. Participants are the publication's internal or external authors (all of them), a product
+// role (one person with that role on the publication's product, taken in turn), or named people.
+// Removing a type only stops it being offered: past rounds keep their type's name.
 
 const LEVELS = [['none', 'Not included'], ['optional', 'Optional'], ['required', 'Required']];
 const idOf = x => x.kind + ':' + (x.role || x.userId || '');
@@ -25,6 +26,7 @@ export default function ReviewTypesTab({ onChanged, onError }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [addPerson, setAddPerson] = useState('');
+  const [removing, setRemoving] = useState(null); // saved type about to be removed
 
   // Each type remembers its saved name so a renamed custom type isn't taken for a removed one.
   const load = () => api.get('/review-types').then(r => { const t = r.types.map(x => ({ ...x, was: x.name })); setSaved({ ...r, types: t }); setTypes(t); }).catch(err => onError(err.message));
@@ -40,7 +42,7 @@ export default function ReviewTypesTab({ onChanged, onError }) {
   const rows = [
     { src: { kind: 'internal_authors' }, label: 'Internal authors', hint: 'Everyone on the publication’s Authors tab from BP Logix' },
     { src: { kind: 'external_authors' }, label: 'External authors', hint: 'The publication’s external authors (who haven’t declined)' },
-  ].concat(roles.map(r => ({ src: { kind: 'role', role: r.key }, label: r.name + (inactiveRole(r.key) ? ' (inactive role)' : ''), hint: 'Everyone with this role on the publication\u2019s product' })))
+  ].concat(roles.map(r => ({ src: { kind: 'role', role: r.key }, label: r.name + (inactiveRole(r.key) ? ' (inactive role)' : ''), hint: 'One person with this role on the publication\u2019s product, taking turns (round robin)' })))
     .concat(t.required.concat(t.optional).filter(x => x.kind === 'user').map(x => {
       const p = staff.find(s => String(s.id) === String(x.userId));
       return { src: x, label: p ? p.name : 'Former user', hint: 'Named person', removable: true };
@@ -77,6 +79,7 @@ export default function ReviewTypesTab({ onChanged, onError }) {
     setAdding(false);
     setNewName('');
   };
+  const drop = x => { setTypes(list => list.filter(y => y !== x)); setSel(0); };
   const people = staff.filter(p => !t.required.concat(t.optional).some(x => x.kind === 'user' && String(x.userId) === String(p.id)));
 
   return (
@@ -122,11 +125,8 @@ export default function ReviewTypesTab({ onChanged, onError }) {
               )}
               <span className="sa-faint">{t.builtIn ? 'Part of the publication workflow' : 'Custom review type'}{t.active === false ? ' \u00b7 not offered for new rounds' : ''}</span>
               <span className="sa-grow" />
-              {t.was ? (
-                <ActiveSwitch on={t.active !== false} label={t.name} onChange={v => update({ active: v })} />
-              ) : (
-                <Button variant="secondary" onClick={() => { setTypes(list => list.filter(x => x !== t)); setSel(0); }}>Remove</Button>
-              )}
+              {t.was && <ActiveSwitch on={t.active !== false} label={t.name} onChange={v => update({ active: v })} />}
+              <Button variant="secondary" icon="delete" onClick={() => (t.was ? setRemoving(t) : drop(t))} disabled={types.length === 1}>Remove</Button>
             </div>
 
             <div className="sa-rt-table" role="table" aria-label={'Participants for ' + t.name}>
@@ -173,6 +173,17 @@ export default function ReviewTypesTab({ onChanged, onError }) {
         )}
       </section>
 
+      {removing && (
+        <ConfirmModal
+          title={'Remove ' + removing.name + '?'}
+          confirmLabel="Remove"
+          cancelLabel="Keep"
+          onConfirm={() => { drop(removing); setRemoving(null); }}
+          onCancel={() => setRemoving(null)}
+        >
+          It won&rsquo;t be offered for new review rounds. Rounds already sent keep it as their type, so publications and their history aren&rsquo;t affected. The change applies when you save.
+        </ConfirmModal>
+      )}
     </>
   );
 }

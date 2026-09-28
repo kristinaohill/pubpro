@@ -68,7 +68,7 @@ function writeProfile(userId, cols) {
 /** Active, approved staff: who the pickers offer. */
 function directory() {
   const autoRoles = new Set(db.prepare('SELECT key FROM roles WHERE auto_review = 1').all().map(r => r.key));
-  return db.prepare("SELECT * FROM users WHERE active = 1 AND pending = 0 AND role != 'author' ORDER BY lower(name)").all()
+  return db.prepare("SELECT * FROM users WHERE active = 1 AND pending = 0 AND role NOT IN ('author', 'library') ORDER BY lower(name)").all()
     .map(u => ({
       id: u.id, name: u.name, email: u.email, role: u.role, roles: P.rolesOf(u), roleName: P.roleNamesOf(u), ...profileFields(u),
       // Their role on each of their products ({ product: productRoleKey }): review types bring in
@@ -78,31 +78,6 @@ function directory() {
       reviewFor: P.scopesOf(u).filter(sc => autoRoles.has(sc.role))
         .map(sc => ({ role: sc.role, roleName: P.roleName(sc.role), products: sc.products, label: P.scopeLabel(sc.products) })),
     }));
-}
-
-// ---- Self sign-up rules (System Administrator > Sign-up) --------------------------------------
-const SIGNUP_MODES = ['open', 'approval', 'closed'];
-// Internal users all have @bplogix.com emails (2026-09-28), so self sign-up is limited to it.
-function signupRules() {
-  const mode = P.getSetting('signup_mode', 'open');
-  return {
-    mode: SIGNUP_MODES.includes(mode) ? mode : 'open',
-    domains: ['bplogix.com'],
-    role: P.signupRole(),
-  };
-}
-function setSignupRules({ mode, domains }) {
-  if (mode != null) {
-    if (!SIGNUP_MODES.includes(mode)) throw new Error('Unknown sign-up setting.');
-    P.setSetting('signup_mode', mode);
-  }
-  if (domains != null) {
-    const list = (Array.isArray(domains) ? domains : String(domains).split(/[\s,;]+/))
-      .map(d => String(d).trim().toLowerCase().replace(/^@/, '')).filter(Boolean);
-    const bad = list.find(d => !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d));
-    if (bad) throw new Error('“' + bad + '” isn’t an email domain (e.g. acme-pharma.com).');
-    P.setSetting('signup_domains', [...new Set(list)].join(','));
-  }
 }
 
 // ---- Directory people from the demo data, as real users (once per database) -------------------
@@ -208,4 +183,13 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(EMAIL_SEED_KEY)) {
   if (filled) console.log('Gave ' + filled + ' external author(s) an @bpl.com email.');
 }
 
-module.exports = { placeholderEmail, therapeuticAreas, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow, signupRules, setSignupRules };
+// Sign-up is gone (2026-09-28): anyone still waiting for approval becomes a deactivated user, so an
+// administrator can reactivate them from the Internal users tab if they should have access.
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('no-signup-2026-09')) {
+  const n = db.prepare('UPDATE users SET pending = 0, active = 0 WHERE pending = 1').run().changes;
+  db.prepare("DELETE FROM app_settings WHERE key IN ('signup_mode', 'signup_domains', 'signup_role')").run();
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run('no-signup-2026-09');
+  if (n) console.log('Sign-up removed: ' + n + ' waiting account(s) are now deactivated users.');
+}
+
+module.exports = { placeholderEmail, therapeuticAreas, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow };
