@@ -40,3 +40,37 @@ const us = iso => { const [y, m, d] = String(iso).split('-').map(Number); return
 export const oooText = p => (p && p.oooNow
   ? 'Out of office' + (p.oooNow.to ? ' until ' + us(p.oooNow.to) : '') + (p.oooNow.note ? ': ' + p.oooNow.note : '')
   : '');
+
+// External author profiles (GET /api/pp-authors) for the publication Authors tab: on publications an
+// external author is stored as "Name-Institution" with their display name.
+let extCache = null;
+let extAt = 0;
+let extInflight = null;
+const extListeners = new Set();
+export function refreshExternalAuthors() {
+  if (!extInflight) {
+    extInflight = api.get('/pp-authors')
+      .then(list => {
+        extCache = list.filter(a => a.status !== 'Inactive').map(a => {
+          const display = (a.summary && a.summary.displayName) || a.name;
+          const institution = (a.summary && a.summary.institution) || '';
+          return { profileId: a.id, display, institution, name: institution ? display + '-' + institution : display };
+        });
+        extAt = Date.now();
+        extListeners.forEach(fn => fn(extCache));
+        return extCache;
+      })
+      .catch(() => extCache || [])
+      .finally(() => { extInflight = null; });
+  }
+  return extInflight;
+}
+export function useExternalAuthors() {
+  const [list, setList] = useState(extCache || []);
+  useEffect(() => {
+    extListeners.add(setList);
+    if (!extCache || Date.now() - extAt > 60000) refreshExternalAuthors();
+    return () => { extListeners.delete(setList); };
+  }, []);
+  return list;
+}

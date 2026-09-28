@@ -143,4 +143,37 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(SEED_KEY)) {
   if (added) console.log('Added ' + added + ' directory people as users.');
 }
 
+// ---- External authors named on the sample publications, as author profiles (once) -------------
+// Their names on publications are "Name-Institution", so the profile's institution matches that.
+const EXT_SEED_KEY = 'external-directory-2026-09';
+const EXT_PEOPLE = [
+  ['Steve Altschuler', 'UCLA School of Medicine', '2/11/2026'],
+  ['Priya Raman', 'Karolinska Institutet', '1/8/2026'],
+  ['Helen Marsh', 'Mayo Clinic', ''],
+  ['Kenji Sato', 'University of Tokyo', ''],
+  ['Marie Dubois', 'H\u00f4pital Saint-Louis', '8/10/2025'],
+  ['Henrik Lund', 'Karolinska University Hospital', ''],
+  ['Raj Patel', 'Imperial College London', '8/11/2026'],
+  ['Amara Okafor', 'Imperial College London', ''],
+];
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(EXT_SEED_KEY)) {
+  const { yearCode, nextSequence } = require('./recordIds');
+  let added = 0;
+  for (const [name, institution, coi] of EXT_PEOPLE) {
+    if (db.prepare('SELECT 1 FROM pp_authors WHERE lower(name) = lower(?)').get(name)) continue;
+    const prefix = 'EA-' + yearCode() + '-';
+    const ids = db.prepare('SELECT author_id FROM pp_authors WHERE author_id LIKE ?').all(prefix + '%').map(r => r.author_id);
+    const [firstName, ...rest] = name.split(' ');
+    const form = { firstName, middleInitial: '', lastName: rest.join(' '), displayName: name, email: '', confirmEmail: '', institution, street: '', city: '', state: '', country: '', zip: '' };
+    const signedCoi = coi ? { file: 'ConflictOfInterest-' + name.replace(/\s+/g, '') + '.pdf', created: coi, by: name, signedOn: coi } : null;
+    const data = { active: true, form, na: false, manual: true, checks: [], agreements: [], coi: [], signedCoi, studies: [], audit: [] };
+    const summary = { displayName: name, institution, location: '', lastCheck: '', lastCheckClear: null, pending: 0, studies: 0 };
+    db.prepare('INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by) VALUES (?, ?, NULL, ?, ?, ?, ?, NULL)')
+      .run(prefix + nextSequence(ids, prefix), name, 'Active', 'Kristina Hill', JSON.stringify(summary), JSON.stringify(data));
+    added += 1;
+  }
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(EXT_SEED_KEY);
+  if (added) console.log('Added ' + added + ' external author profiles.');
+}
+
 module.exports = { THERAPEUTIC_AREAS, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow, signupRules, setSignupRules };

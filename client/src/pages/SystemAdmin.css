@@ -164,3 +164,10 @@
 
 .sa-link { border: 0; background: none; padding: 0; font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-bold); color: var(--text-link, #1F6FB2); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .sa-link:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 2px; }
+
+/* All / Can sign in / No sign-in */
+.sa-seg { display: inline-flex; border: 1px solid var(--border-input); border-radius: var(--radius-pill); overflow: hidden; }
+.sa-seg-btn { border: 0; background: var(--white); padding: 6px 14px; font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-bold); color: var(--fg-3); cursor: pointer; }
+.sa-seg-btn + .sa-seg-btn { border-left: 1px solid var(--border-input); }
+.sa-seg-btn[aria-pressed='true'] { background: var(--high-emphasis); color: var(--white); }
+.sa-seg-btn:focus-visible { outline: 2px solid var(--nav); outline-offset: -2px; }

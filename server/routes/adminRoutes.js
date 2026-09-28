@@ -189,6 +189,53 @@ router.post('/users/:id/impersonate', (req, res) => {
   });
 });
 
+// ---- External users: every external author profile, with or without a login ----------------
+router.get('/external', (req, res) => {
+  const logins = new Map(db.prepare("SELECT id, email, name, active, pending, last_login_at, author_profile_id FROM users WHERE role = 'author' AND author_profile_id IS NOT NULL").all()
+    .map(u => [u.author_profile_id, u]));
+  const rows = db.prepare('SELECT id, author_id, name, email, status, summary, data, created_at FROM pp_authors ORDER BY name COLLATE NOCASE, id').all();
+  res.json(rows.map(a => {
+    const sm = parseJson(a.summary, {});
+    const d = parseJson(a.data, {});
+    const u = logins.get(a.id);
+    return {
+      profileId: a.id, authorId: a.author_id, name: a.name, email: a.email || '', status: a.status, created_at: a.created_at,
+      institution: sm.institution || (d.form && d.form.institution) || '',
+      login: u ? { userId: u.id, active: !!u.active, last_login_at: u.last_login_at } : null,
+    };
+  }));
+});
+
+/**
+ * Edit an external author from System Administrator: { name, email, institution }. Updates the
+ * profile and its login; adding an email to someone without a login gives them one (the reply
+ * carries a one-time temporary password).
+ */
+router.put('/external/:profileId', (req, res) => {
+  const a = db.prepare('SELECT id, email FROM pp_authors WHERE id = ?').get(req.params.profileId);
+  if (!a) return res.status(404).json({ error: 'External author not found.' });
+  const name = String(req.body.name || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const institution = req.body.institution == null ? null : String(req.body.institution).trim();
+  if (!name) return res.status(400).json({ error: 'Enter a name.' });
+  if (email && !emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
+  const login = db.prepare("SELECT * FROM users WHERE role = 'author' AND author_profile_id = ?").get(a.id);
+  if (email && db.prepare('SELECT 1 FROM users WHERE lower(email) = ? AND id != ?').get(email, login ? login.id : -1)) {
+    return res.status(400).json({ error: 'Someone already signs in with that email address.' });
+  }
+  if (login && !email) return res.status(400).json({ error: 'They sign in with their email, so it can\u2019t be removed. Deactivate their sign-in instead.' });
+  syncAuthorProfile(a.id, { name, email: email || null, institution });
+  let tempPw = null;
+  if (login) {
+    db.prepare('UPDATE users SET name = ?, email = ? WHERE id = ?').run(name, email, login.id);
+  } else if (email) {
+    tempPw = tempPassword();
+    db.prepare("INSERT INTO users (email, password_hash, name, role, author_profile_id) VALUES (?, ?, ?, 'author', ?)")
+      .run(email, bcrypt.hashSync(tempPw, 10), name, a.id);
+  }
+  res.json({ tempPassword: tempPw });
+});
+
 router.post('/users/:id/reset-password', (req, res) => {
   const u = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
   if (!u) return res.status(404).json({ error: 'User not found.' });

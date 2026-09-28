@@ -5,6 +5,7 @@ import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import { SignupTab, UsersTab } from './SystemAdminUsers';
+import ExternalUsersTab from './SystemAdminExternal';
 import './SystemAdmin.css';
 
 const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many || one + 's');
@@ -48,7 +49,7 @@ export default function SystemAdmin() {
           Internal users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending && x.role !== 'author').length}</span> : null}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'external'} className="sa-tab" onClick={() => setTab('external')}>
-          External users{users ? <span className="sa-tab-n">{users.filter(x => x.role === 'author').length}</span> : null}
+          External users
         </button>
         <button type="button" role="tab" aria-selected={tab === 'roles'} className="sa-tab" onClick={() => setTab('roles')}>
           Roles &amp; permissions{roleData ? <span className="sa-tab-n">{roleData.roles.length}</span> : null}
@@ -61,7 +62,12 @@ export default function SystemAdmin() {
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}
 
-      {tab === 'internal' || tab === 'external' ? (
+      {tab === 'external' ? (
+        <ExternalUsersTab
+          onChanged={msg => { setError(''); if (msg) setNotice(msg); loadUsers(); }}
+          onError={setError}
+        />
+      ) : tab === 'internal' ? (
         <UsersTab
           key={tab}
           kind={tab}
