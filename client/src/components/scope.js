@@ -21,11 +21,14 @@ export function scopeLabel(products) {
 }
 
 /**
- * The products a user's work focuses on: every product any of their roles covers, or null when a
- * role covers all products (or they're a System Administrator). Dashboards open filtered to these.
+ * The products whose publications a user sees: every product their publication roles cover, or null
+ * when one covers all products (or they're a System Administrator).
  */
 export function focusProducts(user) {
-  const scopes = user && Array.isArray(user.roleScopes) ? user.roleScopes.filter(r => r.role !== 'author') : [];
+  // Only roles that give access to publications (see = edit) decide what they see.
+  const scopes = user && Array.isArray(user.roleScopes)
+    ? user.roleScopes.filter(r => r.role !== 'author' && (r.permissions.includes('pubs.edit') || r.permissions.includes('doc.edit')))
+    : [];
   if (!scopes.length || scopes.some(r => !r.products)) return null;
   return [...new Set(scopes.flatMap(r => r.products))];
 }

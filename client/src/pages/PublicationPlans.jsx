@@ -35,7 +35,7 @@ export default function PublicationPlans() {
   const savedPlanId = location.state && location.state.savedPlanId;
   const [plansAll, setPlans] = useState(null);
   const focus = useScopeFocus();
-  const plans = plansAll && focus.filter(plansAll);
+  const plans = plansAll && plansAll;
   const [pubCounts, setPubCounts] = useState({});
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -106,7 +106,7 @@ export default function PublicationPlans() {
         )}
       />
 
-      <ScopeFocusBar focus={focus} hidden={plansAll ? plansAll.length - plans.length : 0} />
+      <ScopeFocusBar focus={focus} what="publication plans" />
       {savedPlanId && !notice && <Flash>Saved {savedPlanId}.</Flash>}
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}

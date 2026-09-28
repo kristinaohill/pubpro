@@ -7,6 +7,48 @@ const db = require('../db');
 const { requireAuth, requirePerm, signToken } = require('../auth');
 const P = require('../permissions');
 const people = require('../people');
+const { yearCode, nextSequence } = require('../recordIds');
+
+// ---- External users: an External Author login and its author profile, kept in step -----------
+const parseJson = (t, f) => { try { return JSON.parse(t || ''); } catch (e) { return f; } };
+function authorInfo(profileId) {
+  if (!profileId) return null;
+  const a = db.prepare('SELECT id, author_id, summary, data FROM pp_authors WHERE id = ?').get(profileId);
+  if (!a) return null;
+  const sm = parseJson(a.summary, {});
+  const d = parseJson(a.data, {});
+  return { profileId: a.id, authorId: a.author_id, institution: sm.institution || (d.form && d.form.institution) || '' };
+}
+const nowStamp = () => new Date().toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }).replace(',', '');
+const splitName = name => { const parts = name.split(/\s+/); return { firstName: parts[0] || '', lastName: parts.slice(1).join(' ') }; };
+function nextAuthorId() {
+  const prefix = 'EA-' + yearCode() + '-';
+  const rows = db.prepare('SELECT author_id FROM pp_authors WHERE author_id LIKE ?').all(prefix + '%');
+  return prefix + nextSequence(rows.map(r => r.author_id), prefix);
+}
+/** Creates the author profile for a new external user; returns its id. */
+function createAuthorProfile(req, name, email, institution) {
+  const form = { firstName: '', middleInitial: '', lastName: '', ...splitName(name), displayName: name, email, confirmEmail: email, institution, street: '', city: '', state: '', country: 'United States', zip: '' };
+  const data = {
+    active: true, form, na: false, manual: true, checks: [], agreements: [], coi: [], signedCoi: null, studies: [],
+    audit: [{ action: 'Profile created', user: req.user.name, at: nowStamp(), detail: 'Added as an external user in System Administrator', icon: 'person_add', color: 'var(--ok)' }],
+  };
+  const summary = { displayName: name, institution, location: 'United States', lastCheck: '', lastCheckClear: null, pending: 0, studies: 0 };
+  return db.prepare('INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(nextAuthorId(), name, email, 'Active', req.user.name || null, JSON.stringify(summary), JSON.stringify(data), req.user.id || null).lastInsertRowid;
+}
+/** Name, email or institution changed on an external user: update their author profile to match. */
+function syncAuthorProfile(profileId, { name, email, institution }) {
+  const a = db.prepare('SELECT summary, data FROM pp_authors WHERE id = ?').get(profileId);
+  if (!a) return;
+  const sm = parseJson(a.summary, {});
+  const d = parseJson(a.data, {});
+  d.form = { ...(d.form || {}), ...splitName(name), displayName: name, email, confirmEmail: email };
+  sm.displayName = name;
+  if (institution != null) { d.form.institution = institution; d.manual = true; d.na = false; sm.institution = institution; }
+  db.prepare("UPDATE pp_authors SET name = ?, email = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?")
+    .run(name, email, JSON.stringify(sm), JSON.stringify(d), profileId);
+}
 
 router.use(requireAuth, requirePerm('admin.users'));
 
@@ -20,7 +62,7 @@ const logAdmin = (req, action, target) => db.prepare('INSERT INTO admin_log (act
 
 const USER_COLS = 'id, email, name, role, extra_roles, role_scopes, active, pending, created_at, last_login_at, author_profile_id, title, department, phone, therapeutic_areas, ooo_from, ooo_to, ooo_note';
 const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, role_scopes, ...u }) => ({
-  ...u, active: !!u.active, pending: !!u.pending,
+  ...u, active: !!u.active, pending: !!u.pending, author: u.role === 'author' ? authorInfo(u.author_profile_id) : null,
   scopes: Object.fromEntries(P.scopesOf({ role: u.role, extra_roles, role_scopes }).map(sc => [sc.role, sc.products || 'all'])),
   roles: P.rolesOf({ role: u.role, extra_roles }), role_name: P.roleNamesOf({ role: u.role, extra_roles }),
   ...people.profileFields({ therapeutic_areas, ooo_from, ooo_to, ooo_note, title: u.title, department: u.department, phone: u.phone }),
@@ -50,11 +92,20 @@ router.post('/users', (req, res) => {
   if (!emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
   let cols;
   try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
-  if (!roles.length || roles.some(k => !P.roleRow(k) || k === 'author')) return res.status(400).json({ error: 'Choose one or more staff roles. External author logins are created from their author profile.' });
+  const external = roles.length === 1 && roles[0] === 'author';
+  if (!roles.length || roles.some(k => !P.roleRow(k)) || (!external && roles.includes('author'))) {
+    return res.status(400).json({ error: 'Choose one or more staff roles, or External Author on its own.' });
+  }
   if (db.prepare('SELECT 1 FROM users WHERE lower(email) = ?').get(email)) return res.status(400).json({ error: 'Someone already uses that email address.' });
+  const institution = String(req.body.institution || '').trim();
+  if (external && !institution) return res.status(400).json({ error: 'Enter their institution.' });
+  if (external && db.prepare('SELECT 1 FROM pp_authors WHERE lower(email) = ?').get(email)) {
+    return res.status(400).json({ error: 'An external author profile already uses that email. Add the email on that profile to give them a login.' });
+  }
   const password = tempPassword();
-  const r = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)')
-    .run(email, bcrypt.hashSync(password, 10), name, role);
+  const profileId = external ? createAuthorProfile(req, name, email, institution) : null;
+  const r = db.prepare('INSERT INTO users (email, password_hash, name, role, author_profile_id) VALUES (?, ?, ?, ?, ?)')
+    .run(email, bcrypt.hashSync(password, 10), name, role, profileId);
   people.writeProfile(r.lastInsertRowid, cols);
   P.setRoles(r.lastInsertRowid, roles);
   try { P.setScopes(r.lastInsertRowid, req.body.scopes); } catch (e) { return res.status(400).json({ error: e.message }); }
@@ -88,6 +139,9 @@ router.put('/users/:id', (req, res) => {
     return res.status(400).json({ error: 'Keep at least one active System Administrator.' });
   }
   db.prepare('UPDATE users SET name = ?, email = ?, active = ? WHERE id = ?').run(name, email, active ? 1 : 0, u.id);
+  if (u.role === 'author' && u.author_profile_id) {
+    syncAuthorProfile(u.author_profile_id, { name, email, institution: req.body.institution == null ? null : String(req.body.institution).trim() });
+  }
   people.writeProfile(u.id, cols);
   if (changedRoles) { try { P.setRoles(u.id, roles); } catch (e) { return res.status(400).json({ error: e.message }); } }
   // Scopes can change on your own account too (they narrow, they never add roles).

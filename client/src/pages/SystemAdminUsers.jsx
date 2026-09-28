@@ -19,11 +19,13 @@ const copy = text => { try { navigator.clipboard.writeText(text); } catch (e) { 
 
 const draftOf = u => ({
   name: u.name || '', email: u.email || '', roles: u.roles || (u.role ? [u.role] : ['reviewer']), scopes: u.scopes || {},
+  institution: (u.author && u.author.institution) || '',
   title: u.title || '', department: u.department || '', phone: u.phone || '', therapeuticAreas: u.therapeuticAreas || [],
   oooOn: !!(u.ooo && (u.ooo.from || u.ooo.to)), oooFrom: mdy(u.ooo && u.ooo.from), oooTo: mdy(u.ooo && u.ooo.to), oooNote: (u.ooo && u.ooo.note) || '',
 });
 const bodyOf = d => ({
   name: d.name, email: d.email, roles: d.roles,
+  ...(d.roles.includes('author') ? { institution: d.institution } : {}),
   scopes: Object.fromEntries(d.roles.filter(r => r !== 'admin' && r !== 'author').map(r => [r, d.scopes[r] || 'all'])),
   title: d.title, department: d.department, phone: d.phone, therapeuticAreas: d.therapeuticAreas,
   ooo: d.oooOn ? { from: iso(d.oooFrom), to: iso(d.oooTo), note: d.oooNote } : { from: '', to: '', note: '' },
@@ -68,6 +70,17 @@ function RoleScope({ roleName, value, onChange, options }) {
 }
 
 /** The fields shared by Add User and Edit: identity, role, work details, out of office. */
+/** External users: name, email and institution (the rest lives on their author profile). */
+function ExternalFields({ d, set }) {
+  return (
+    <div className="sa-add-grid">
+      <Field label="Name" required><TextField value={d.name} onChange={e => set({ name: e.target.value })} /></Field>
+      <Field label="Email (sign-in)" required><TextField type="email" value={d.email} onChange={e => set({ email: e.target.value })} /></Field>
+      <Field label="Institution" required><TextField value={d.institution} onChange={e => set({ institution: e.target.value })} placeholder="e.g. Mayo Clinic" /></Field>
+    </div>
+  );
+}
+
 function UserFields({ d, set, roleOptions, options, roleLocked, roleNote, withOoo }) {
   const depts = (options.departments.includes(d.department) || !d.department ? [] : [d.department]).concat(options.departments);
   return (
@@ -144,14 +157,15 @@ function UserFields({ d, set, roleOptions, options, roleLocked, roleNote, withOo
   );
 }
 
-export function UsersTab({ me, users, roles, options, onChanged, onError }) {
+export function UsersTab({ kind = 'internal', me, users, roles, options, onChanged, onError }) {
+  const external = kind === 'external';
   const navigate = useNavigate();
   const { impersonate, refreshMe, impersonator } = useAuth();
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState(draftOf({}));
+  const [draft, setDraft] = useState(() => draftOf(external ? { roles: ['author'] } : {}));
   const [editing, setEditing] = useState(null); // { id, d }
   const [busy, setBusy] = useState(false);
   const [secret, setSecret] = useState(null); // { name, email, password, reset }
@@ -161,11 +175,12 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
   const opts = options || { therapeuticAreas: [], departments: [] };
   const roleOptions = roles.filter(r => r.key !== 'author').map(r => ({ value: r.key, label: r.name }));
   const q = query.trim().toLowerCase();
-  const pending = (users || []).filter(u => u.pending);
-  const list = (users || []).filter(u => !u.pending && (showInactive || u.active)
+  const inTab = u => (u.role === 'author') === external;
+  const pending = (users || []).filter(u => u.pending && inTab(u));
+  const list = (users || []).filter(u => inTab(u) && !u.pending && (showInactive || u.active)
     && (!roleFilter || (u.roles || [u.role]).includes(roleFilter))
-    && (!q || [u.name, u.email, u.title, u.department].join(' ').toLowerCase().includes(q)));
-  const inactiveCount = (users || []).filter(u => !u.active && !u.pending).length;
+    && (!q || [u.name, u.email, u.title, u.department, u.author && u.author.institution, u.author && u.author.authorId].join(' ').toLowerCase().includes(q)));
+  const inactiveCount = (users || []).filter(u => inTab(u) && !u.active && !u.pending).length;
   const replace = saved => (users || []).map(x => (x.id === saved.id ? saved : x));
   const isSelf = u => String(u.id) === String(me && me.id);
 
@@ -189,7 +204,7 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
     const r = await api.post('/admin/users', bodyOf(draft));
     setSecret({ name: r.user.name, email: r.user.email, password: r.tempPassword });
     setAdding(false);
-    setDraft(draftOf({ role: draft.role }));
+    setDraft(draftOf(external ? { roles: ['author'] } : { roles: draft.roles }));
     return r.user;
   }, u => 'Added ' + u.name + ' (' + u.role_name + ').');
 
@@ -276,8 +291,8 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
 
       <section className="sa-card">
         <div className="sa-toolbar">
-          <TextField iconBefore="search" placeholder="Search by name, email, title or department" value={query} onChange={e => setQuery(e.target.value)} width="320px" aria-label="Search users" />
-          <Select options={[{ value: '', label: 'All roles' }].concat(roles.map(r => ({ value: r.key, label: r.name })))} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} width="220px" aria-label="Filter by role" />
+          <TextField iconBefore="search" placeholder={external ? 'Search by name, email, institution or author ID' : 'Search by name, email, title or department'} value={query} onChange={e => setQuery(e.target.value)} width="320px" aria-label="Search users" />
+          {!external && <Select options={[{ value: '', label: 'All roles' }].concat(roles.filter(r => r.key !== 'author').map(r => ({ value: r.key, label: r.name })))} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} width="220px" aria-label="Filter by role" />}
           {inactiveCount > 0 && (
             <label className="sa-check">
               <input type="checkbox" checked={showInactive} onChange={() => setShowInactive(v => !v)} />
@@ -285,28 +300,32 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
             </label>
           )}
           <span className="sa-grow" />
-          {!adding && <Button variant="primary" icon="person_add" onClick={() => { setAdding(true); setEditing(null); }}>Add User</Button>}
+          {!adding && <Button variant="primary" icon="person_add" onClick={() => { setAdding(true); setEditing(null); }}>{external ? 'Add External User' : 'Add User'}</Button>}
         </div>
 
         {adding && (
           <div className="sa-add">
-            <UserFields d={draft} set={p => setDraft(x => ({ ...x, ...p }))} roleOptions={roleOptions} options={opts} />
+            {external
+              ? <ExternalFields d={draft} set={p => setDraft(x => ({ ...x, ...p }))} />
+              : <UserFields d={draft} set={p => setDraft(x => ({ ...x, ...p }))} roleOptions={roleOptions} options={opts} />}
             <div className="sa-add-foot">
-              <span className="sa-faint">PubPro creates a temporary password for you to pass on. External authors get their login from their author profile instead.</span>
+              <span className="sa-faint">{external
+                ? 'Creates their external author profile too (agreements, COI and debarment checks live there). PubPro makes a temporary password for you to pass on.'
+                : 'PubPro creates a temporary password for you to pass on.'}</span>
               <span className="sa-grow" />
               <Button variant="secondary" onClick={() => setAdding(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim() || !draft.roles.length || emptyScope(draft)}>{busy ? 'Adding…' : 'Add User'}</Button>
+              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim() || !draft.roles.length || emptyScope(draft) || (external && !draft.institution.trim())}>{busy ? 'Adding…' : external ? 'Add External User' : 'Add User'}</Button>
             </div>
           </div>
         )}
 
         {users === null ? <div className="empty-state empty-state--inset">Loading&hellip;</div> : list.length === 0 ? (
-          <div className="empty-state empty-state--inset">No users match. Clear the search or filters to see everyone.</div>
+          <div className="empty-state empty-state--inset">{(users || []).some(inTab) ? 'No users match. Clear the search or filters to see everyone.' : external ? 'No external users yet. Use Add External User, or add an email on an external author profile.' : 'No internal users yet.'}</div>
         ) : (
           <div className="sa-table" role="table" aria-label="Users">
             <div className="sa-row sa-row--head" role="row">
               <span role="columnheader">User</span>
-              <span role="columnheader">Role</span>
+              <span role="columnheader">{external ? 'Author profile' : 'Role'}</span>
               <span role="columnheader">Status</span>
               <span role="columnheader">Last sign-in</span>
               <span role="columnheader"><span className="sa-sr">Actions</span></span>
@@ -322,11 +341,14 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
                       <span className="sa-avatar" aria-hidden="true">{initials(u.name)}</span>
                       <span>
                         <span className="sa-name">{u.name}{self && <span className="sa-you"> (you)</span>}</span>
-                        <span className="sa-email">{[u.email, u.title].filter(Boolean).join(' · ')}</span>
+                        <span className="sa-email">{[u.email, external ? u.author && u.author.institution : u.title].filter(Boolean).join(' · ')}</span>
                       </span>
                     </span>
                     <span role="cell" className="sa-rolecell">
-                      {(u.roles || [u.role]).map(r => {
+                      {external && (u.author
+                        ? <button type="button" className="sa-link" onClick={() => navigate('/external-author/' + u.author.profileId)}>{u.author.authorId}</button>
+                        : <span className="sa-faint">No profile</span>)}
+                      {!external && (u.roles || [u.role]).map(r => {
                         const name = (roles.find(x => x.key === r) || {}).name || r;
                         const sc = u.scopes && Array.isArray(u.scopes[r]) ? u.scopes[r] : null;
                         return <span key={r} className="sa-rolechip">{name}{sc ? <span className="sa-rolechip-scope"> · {scopeLabel(sc)}</span> : null}</span>;
@@ -346,6 +368,9 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
                   </div>
                   {open && (
                     <div className="sa-edit" role="region" aria-label={'Edit ' + u.name}>
+                      {external ? (
+                        <ExternalFields d={editing.d} set={p => setEditing(x => ({ ...x, d: { ...x.d, ...p } }))} />
+                      ) : (
                       <UserFields
                         d={editing.d}
                         set={p => setEditing(x => ({ ...x, d: { ...x.d, ...p } }))}
@@ -355,6 +380,7 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
                         roleLocked={author ? 'External Author' : self ? u.role_name : null}
                         roleNote={author ? 'Comes from their external author profile.' : self ? 'Another administrator can change your roles.' : undefined}
                       />
+                      )}
                       <div className="sa-add-foot">
                         {!self && (u.active ? (
                           <>
@@ -364,6 +390,7 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
                         ) : (
                           <Button variant="secondary" onClick={() => run(() => api.put('/admin/users/' + u.id, { active: true }), s => s.name + ' can sign in again.')} disabled={busy}>Reactivate</Button>
                         ))}
+                        {external && u.author && <Button variant="tertiary" icon="open_in_new" onClick={() => navigate('/external-author/' + u.author.profileId)}>Open Author Profile</Button>}
                         <span className="sa-faint">Member since {fmtSaved(u.created_at)}</span>
                         <span className="sa-grow" />
                         <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>

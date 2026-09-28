@@ -145,9 +145,9 @@ export default function WriterDashboard() {
   const [savedAll, setSaved] = useState([]);
   // Live (not cancelled) records with their data, for the author, congress and review panels.
   const [liveAll, setLive] = useState([]);
-  // Opens on the products this person's roles cover.
+  // The server only sends what this person's roles cover.
   const focus = useScopeFocus();
-  const live = focus.filter(liveAll);
+  const live = liveAll;
   const inFocus = new Set(live.map(p => p.id));
   const saved = savedAll.filter(p => inFocus.has(p.savedId));
   const [message, setMessage] = useState(null);
@@ -264,7 +264,7 @@ export default function WriterDashboard() {
         title="Publication Manager Dashboard"
         description={<>Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</>}
       />
-      <ScopeFocusBar focus={focus} hidden={liveAll.length - live.length} />
+      <ScopeFocusBar focus={focus} />
 
       {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
 

@@ -12,7 +12,7 @@ const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many || one + 's');
 /** System Administrator (Workspaces menu): users, roles and what each role can do. Needs admin.users. */
 export default function SystemAdmin() {
   const { user, can } = useAuth();
-  const [tab, setTab] = useState('users');
+  const [tab, setTab] = useState('internal');
   const [users, setUsers] = useState(null);
   const [roleData, setRoleData] = useState(null);
   const [error, setError] = useState('');
@@ -44,8 +44,11 @@ export default function SystemAdmin() {
         description="Who can sign in, their roles, and what each role can do. Changes apply as soon as they're saved."
       />
       <div className="sa-tabs" role="tablist" aria-label="System Administrator sections">
-        <button type="button" role="tab" aria-selected={tab === 'users'} className="sa-tab" onClick={() => setTab('users')}>
-          Users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending).length}</span> : null}
+        <button type="button" role="tab" aria-selected={tab === 'internal'} className="sa-tab" onClick={() => setTab('internal')}>
+          Internal users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending && x.role !== 'author').length}</span> : null}
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'external'} className="sa-tab" onClick={() => setTab('external')}>
+          External users{users ? <span className="sa-tab-n">{users.filter(x => x.role === 'author').length}</span> : null}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'roles'} className="sa-tab" onClick={() => setTab('roles')}>
           Roles &amp; permissions{roleData ? <span className="sa-tab-n">{roleData.roles.length}</span> : null}
@@ -58,8 +61,10 @@ export default function SystemAdmin() {
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}
 
-      {tab === 'users' ? (
+      {tab === 'internal' || tab === 'external' ? (
         <UsersTab
+          key={tab}
+          kind={tab}
           me={user} users={users} roles={roleData ? roleData.roles : []} options={roleData && roleData.options}
           onChanged={(msg, list) => { setError(''); if (msg) setNotice(msg); if (list) setUsers(list); else loadUsers(); loadRoles(); }}
           onError={setError}

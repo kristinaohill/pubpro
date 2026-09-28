@@ -80,7 +80,8 @@ export default function PublicationForm() {
   const [plans, setPlans] = useState([]);
   useEffect(() => {
     // With their data so the Planning tab can show the parent plan's real budget figures.
-    api.get('/pp-plans?include=data')
+    // Plans this person may link as a parent (they may not see plans otherwise).
+    api.get('/pp-plans?include=data&for=linking')
       .then(list => setPlans(list.filter(p => p.status !== 'Cancelled').map(p => {
         const d = p.data || {};
         const sum = (xs, k) => (xs || []).reduce((a, x) => a + ((k ? x[k] : x) || 0), 0);

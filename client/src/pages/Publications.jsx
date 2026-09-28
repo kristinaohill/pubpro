@@ -56,7 +56,7 @@ export default function Publications() {
   const savedRecordId = location.state && location.state.savedRecordId;
   const [pubsAll, setPubs] = useState(null);
   const focus = useScopeFocus();
-  const pubs = pubsAll && focus.filter(pubsAll);
+  const pubs = pubsAll && pubsAll;
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showCancelled, setShowCancelled] = useState(true);
@@ -119,7 +119,7 @@ export default function Publications() {
         )}
       />
 
-      <ScopeFocusBar focus={focus} hidden={pubsAll ? pubsAll.length - pubs.length : 0} />
+      <ScopeFocusBar focus={focus} />
       {savedRecordId && !notice && <Flash>Saved {savedRecordId}.</Flash>}
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}

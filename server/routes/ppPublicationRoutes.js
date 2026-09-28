@@ -36,7 +36,12 @@ function involves(dataText, person) {
     .concat((d.rounds || []).flatMap(r => (r.reviewers || []).map(v => v.name)));
   return names.some(n => norm(n) === who);
 }
-const authorCanSee = (req, dataText) => req.user.role !== 'author' || involves(dataText, req.user.name);
+// If you can see it you can edit it: staff see the publications their roles let them edit (for
+// the record's product), plus, for now, Reviewers see the ones they can review. External authors see
+// the publications that list them.
+const canSee = (req, row) => (req.user.role === 'author'
+  ? involves(row.data, req.user.name)
+  : can(req, 'pubs.edit', row.product || null) || can(req, 'doc.edit', row.product || null));
 
 const LIST_COLUMNS = 'id, record_id, title, pub_type, product, status, owner, summary, created_at, updated_at';
 
@@ -81,13 +86,13 @@ function readBody(body) {
 router.get('/', requireAuth, (req, res) => {
   const full = req.query.include === 'data';
   const rows = db.prepare(`SELECT ${LIST_COLUMNS}, data FROM pp_publications ORDER BY updated_at DESC, id DESC`).all()
-    .filter(r => authorCanSee(req, r.data));
+    .filter(r => canSee(req, r));
   res.json(rows.map(({ data, ...r }) => (full ? { ...listRow(r), data: parse(data, {}) } : listRow(r))));
 });
 
 router.get('/:id', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
-  if (!row || !authorCanSee(req, row.data)) return res.status(404).json({ error: 'Publication not found' });
+  if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
   res.json({ ...listRow(row), data: parse(row.data, {}) });
 });
 
@@ -124,7 +129,7 @@ router.post('/sample', requireAuth, blockAuthors, (req, res) => {
 // Publication Type and the record ID are fixed once the record exists.
 router.put('/:id', requireAuth, (req, res) => {
   const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
-  if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
+  if (!existing || !canSee(req, existing)) return res.status(404).json({ error: 'Publication not found' });
   // External authors update their own invitation and review responses (their dashboard); staff need pubs.edit.
   if (req.user.role !== 'author' && !can(req, 'pubs.edit')) return res.status(403).json({ error: 'Your role does not allow editing publications.' });
   const { title, product, status, summary } = readBody(req.body);
@@ -172,8 +177,8 @@ function activeViewers(pubId) {
  * other people in the document and, when the saved version is newer than knownVersion, the document.
  */
 router.post('/:id/document/presence', requireAuth, (req, res) => {
-  const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
-  if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
+  const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!existing || !canSee(req, existing)) return res.status(404).json({ error: 'Publication not found' });
   const key = String(existing.id);
   if (!presence.has(key)) presence.set(key, new Map());
   const room = presence.get(key);
@@ -203,7 +208,7 @@ const SESSION_MS = 30 * 60 * 1000;
  */
 router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => {
   const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
-  if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
+  if (!existing || !canSee(req, existing)) return res.status(404).json({ error: 'Publication not found' });
   if (!can(req, 'doc.edit', existing.product)) return res.status(403).json({ error: outOfScope(req, 'doc.edit', existing.product) });
   const data = parse(existing.data, {});
   if (data.cancelled) return res.status(400).json({ error: 'This publication is cancelled. Reinstate it to change the document.' });

@@ -4,11 +4,11 @@ const db = require('./db');
 const { PRODUCTS, PRODUCT_TA } = require('./products');
 
 const PERMISSIONS = [
-  { key: 'pubs.edit', group: 'Publications', label: 'Create and edit publications', help: 'Details, authors, targets, reviews and planning. Without it, publications open read-only.' },
+  { key: 'pubs.edit', group: 'Publications', label: 'See and edit publications', help: 'Including the publication document. Without it, people don\u2019t see publications at all (Reviewers excepted for now).', requires: ['doc.edit'] },
   { key: 'pubs.cancel', group: 'Publications', label: 'Cancel and reinstate publications', requires: ['pubs.edit'] },
   { key: 'doc.edit', group: 'Publication document', label: 'Edit the publication document', help: 'Edits are tracked and marked with the editor’s name.' },
   { key: 'doc.review', group: 'Publication document', label: 'Accept or reject anyone’s changes', help: 'Also lets the user turn change tracking off. Everyone else can only undo their own changes.', requires: ['doc.edit'] },
-  { key: 'plans.edit', group: 'Plans and authors', label: 'Create and edit publication plans' },
+  { key: 'plans.edit', group: 'Plans and authors', label: 'See and edit publication plans', help: 'Without it, people don\u2019t see plans (a publication can still name its parent plan).' },
   { key: 'authors.edit', group: 'Plans and authors', label: 'Create and edit external author profiles' },
   { key: 'admin.users', group: 'Administration', label: 'Manage users, roles and permissions' },
 ];
@@ -19,12 +19,15 @@ const PERM_KEYS = PERMISSIONS.map(p => p.key);
 const LOCKED = { admin: 'all', author: 'fixed' };
 const FIXED = { author: ['doc.edit'] };
 const AUTHOR_DESCRIPTION = 'External authors sign in to their own dashboard and can suggest tracked changes to the documents of publications they\u2019re an author on. Logins come from external author profiles.';
+// If you can see it you can edit it (2026-09-28): Executives edit what their therapeutic areas cover.
+const EXEC_DESCRIPTION = 'Sees and edits publications and plans for their products or therapeutic areas; dashboards open on them.';
+const EXEC_PERMS = ['pubs.edit', 'doc.edit', 'plans.edit'];
 const BUILT_IN = [
   { key: 'admin', name: 'System Administrator', description: 'Full access, including users, roles and permissions.', permissions: PERM_KEYS },
   { key: 'pub_manager', name: 'Publication Manager', description: 'Runs publications and plans end to end.', permissions: ['pubs.edit', 'pubs.cancel', 'doc.edit', 'doc.review', 'plans.edit', 'authors.edit'] },
   { key: 'writer', name: 'Medical Writer', description: 'Writes and revises publications and their documents.', permissions: ['pubs.edit', 'doc.edit', 'doc.review'] },
   { key: 'reviewer', name: 'Reviewer', description: 'Reads publications and suggests tracked changes to the document.', permissions: ['doc.edit'] },
-  { key: 'executive', name: 'Executive', description: 'Read-only access to publications, plans and dashboards.', permissions: [] },
+  { key: 'executive', name: 'Executive', description: EXEC_DESCRIPTION, permissions: EXEC_PERMS },
   { key: 'author', name: 'External Author', description: AUTHOR_DESCRIPTION, permissions: FIXED.author },
 ];
 
@@ -50,6 +53,12 @@ BUILT_IN.forEach((r, i) => {
   db.prepare('INSERT OR IGNORE INTO roles (key, name, description, permissions, built_in, sort) VALUES (?, ?, ?, ?, 1, ?)')
     .run(r.key, r.name, r.description, JSON.stringify(r.permissions), i);
 });
+// View = edit (once per database): the Executive role, read-only before, now sees and edits.
+db.exec("CREATE TABLE IF NOT EXISTS app_seeds (key TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))");
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('view-equals-edit-2026-09')) {
+  db.prepare("UPDATE roles SET permissions = ?, description = ? WHERE key = 'executive'").run(JSON.stringify(EXEC_PERMS), EXEC_DESCRIPTION);
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run('view-equals-edit-2026-09');
+}
 // The External Author role's wording and permissions are fixed; keep existing databases in step.
 db.prepare('UPDATE roles SET description = ?, permissions = ? WHERE key = ?').run(AUTHOR_DESCRIPTION, JSON.stringify(FIXED.author), 'author');
 // Staff accounts from before roles existed ('user') had full staff access: they become Publication Managers.

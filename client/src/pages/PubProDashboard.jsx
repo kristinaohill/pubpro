@@ -323,10 +323,10 @@ export default function PubProDashboard() {
   const [, setTick] = useState(0);
   const [savedAll, setSaved] = useState([]);
   const [savedPlansAll, setSavedPlans] = useState([]);
-  // Opens on the products this person's roles cover (e.g. an exec's therapeutic areas).
+  // The server only sends what this person's roles cover (e.g. an exec's therapeutic areas).
   const focus = useScopeFocus();
-  const saved = focus.filter(savedAll);
-  const savedPlans = focus.filter(savedPlansAll);
+  const saved = savedAll;
+  const savedPlans = savedPlansAll;
   const loadSaved = () => {
     api.get('/pp-publications?include=data').then(setSaved).catch(() => setSaved([]));
     api.get('/pp-plans?include=data').then(setSavedPlans).catch(() => setSavedPlans([]));
@@ -402,7 +402,7 @@ export default function PubProDashboard() {
         title="Executive Dashboard"
         description={focus.active ? 'Tasks, pipeline, spend and outcomes for ' + focus.label + '.' : 'Tasks, pipeline, spend and outcomes across every PubPro publication.'}
       />
-      <ScopeFocusBar focus={focus} hidden={savedAll.length - saved.length} />
+      <ScopeFocusBar focus={focus} />
       {savedNotice && <Flash watch={savedNotice}>{savedNotice}</Flash>}
 
       {/* My Task List */}

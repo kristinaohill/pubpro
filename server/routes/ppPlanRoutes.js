@@ -41,15 +41,22 @@ function readBody(body) {
 }
 
 // ?include=data adds each record's full data (the dashboard and reports chart from it).
+// If you can see it you can edit it. ?for=linking: plans a publication may name as its parent
+// (with budget figures), for people who edit publications of that product.
+const canSeePlan = (req, row, linking) => can(req, 'plans.edit', row.product || null)
+  || (linking && can(req, 'pubs.edit', row.product || null));
+
 router.get('/', requireAuth, (req, res) => {
   const full = req.query.include === 'data';
-  const rows = db.prepare(`SELECT ${LIST_COLUMNS}${full ? ', data' : ''} FROM pp_plans ORDER BY updated_at DESC, id DESC`).all();
+  const linking = req.query.for === 'linking';
+  const rows = db.prepare(`SELECT ${LIST_COLUMNS}${full ? ', data' : ''} FROM pp_plans ORDER BY updated_at DESC, id DESC`).all()
+    .filter(r => canSeePlan(req, r, linking));
   res.json(rows.map(r => (full ? { ...listRow(r), data: parse(r.data, {}) } : listRow(r))));
 });
 
 router.get('/:id', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM pp_plans WHERE id = ?').get(req.params.id);
-  if (!row) return res.status(404).json({ error: 'Publication plan not found' });
+  if (!row || !canSeePlan(req, row, false)) return res.status(404).json({ error: 'Publication plan not found' });
   res.json({ ...listRow(row), data: parse(row.data, {}) });
 });
 
