@@ -197,9 +197,9 @@
 
 /* Products and product roles */
 .sa-cat { border: 1px solid #E3E7EC; border-radius: 10px; overflow: hidden; }
-.sa-cat-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 120px 40px; gap: 12px; align-items: center; padding: 8px 12px; border-top: 1px solid #EEF1F4; }
+.sa-cat-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 120px 110px; gap: 12px; align-items: center; padding: 8px 12px; border-top: 1px solid #EEF1F4; }
 .sa-cat-row:first-child { border-top: 0; }
-.sa-cat--roles .sa-cat-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) 40px; }
+.sa-cat--roles .sa-cat-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) 110px; }
 .sa-cat-row--head { background: #F3F5F8; font-size: 11px; font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); padding-top: 8px; padding-bottom: 8px; }
 
 /* A Publication Manager's or Reviewer's products and role on each */
@@ -212,3 +212,16 @@
 .sa-align-product { min-width: 300px; }
 .sa-rolechip--product { background: #EAF2FA; }
 @media (max-width: 800px) { .sa-cat-row { grid-template-columns: 1fr; } .sa-align-product { min-width: 0; } }
+
+/* Active / Inactive (products, product roles, review types) */
+.sa-cat-row--off { background: #F7F8FA; }
+.sa-cat-row--off input { color: var(--fg-3); }
+.sa-switch { display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 2px; cursor: pointer; font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-semibold); color: var(--fg-3); }
+.sa-switch-knob { width: 32px; height: 18px; border-radius: 9px; background: #C5CCD4; position: relative; flex: none; transition: background var(--dur-base, .15s); }
+.sa-switch-knob::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--white); transition: left var(--dur-base, .15s); }
+.sa-switch--on { color: #2E7D4F; }
+.sa-switch--on .sa-switch-knob { background: #2E9E5B; }
+.sa-switch--on .sa-switch-knob::after { left: 16px; }
+.sa-switch:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 2px; border-radius: 10px; }
+@media (prefers-reduced-motion: reduce) { .sa-switch-knob, .sa-switch-knob::after { transition: none; } }
+.sa-inactive { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: var(--radius-pill); background: #EEF1F4; color: var(--fg-3); font-size: 11px; font-weight: var(--fw-semibold); }

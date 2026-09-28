@@ -54,10 +54,11 @@ function clean(list) {
     const required = (t.required || []).map(part).filter(Boolean);
     const reqIds = new Set(required.map(id));
     const optional = (t.optional || []).map(part).filter(Boolean).filter(x => !reqIds.has(id(x)));
-    return { name, builtIn: BUILT_IN.includes(name), required, optional };
+    return { name, builtIn: BUILT_IN.includes(name), active: t.active !== false, required, optional };
   });
   const missing = BUILT_IN.filter(n => !out.some(t => t.name === n));
-  if (missing.length) throw new Error(missing.join(', ') + ' is part of the publication workflow and can’t be removed.');
+  if (missing.length) throw new Error(missing.join(', ') + ' is part of the publication workflow and can\u2019t be removed. Mark it inactive instead.');
+  if (!out.some(t => t.active)) throw new Error('Keep at least one review type active.');
   return out;
 }
 
@@ -68,6 +69,9 @@ function list() {
 }
 function save(next) {
   const out = clean(next);
+  // Saved review types are marked inactive, never removed (past rounds keep their type).
+  const gone = list().filter(t => !out.some(x => x.name === t.name || (t.name && next.some(n => n.was === t.name && n.name === x.name))));
+  if (gone.length) throw new Error(gone.map(t => t.name).join(', ') + ' can\u2019t be removed. Mark it inactive instead.');
   P.setSetting(KEY, JSON.stringify(out));
   return out;
 }

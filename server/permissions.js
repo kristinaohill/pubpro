@@ -10,7 +10,7 @@
 // Publication Managers and Reviewers are aligned to products, with one product role on each
 // (users.product_roles = { product: productRoleKey }; see products.js).
 const db = require('./db');
-const { PRODUCTS, PRODUCT_TA, productRoles } = require('./products');
+const { PRODUCTS, ACTIVE_PRODUCTS, PRODUCT_TA, productRoles } = require('./products');
 
 const PERMISSIONS = [
   { key: 'pubs.edit', group: 'Publications', label: 'See and edit publications', help: 'Including the publication document. Without it, people don’t see publications at all (Reviewers excepted for now).', requires: ['doc.edit'] },
@@ -185,13 +185,19 @@ function setRoles(userId, keys) {
 
 /** Sets which products a Publication Manager or Reviewer works on and their role on each: { product: roleKey }. */
 function setProductRoles(userId, map) {
-  const u = db.prepare('SELECT role FROM users WHERE id = ?').get(userId);
+  const u = db.prepare('SELECT role, product_roles FROM users WHERE id = ?').get(userId);
   if (!u || ALL_PRODUCTS.has(u.role) || u.role === 'author') return;
-  const keys = new Set(productRoles().map(r => r.key));
+  const roles = productRoles();
+  const keys = new Set(roles.map(r => r.key));
+  const before = parseMap(u.product_roles);
   const clean = {};
   Object.entries(map || {}).forEach(([product, roleKey]) => {
     if (!PRODUCTS.includes(product)) return;
     if (!keys.has(roleKey)) throw new Error('Choose their role on ' + product.split(' ')[0] + '.');
+    // Inactive products and roles stay with people who already have them, but can't be newly given.
+    if (!ACTIVE_PRODUCTS.includes(product) && !(product in before)) throw new Error(product + ' is inactive.');
+    const role = roles.find(r => r.key === roleKey);
+    if (!role.active && before[product] !== roleKey) throw new Error(role.name + ' is inactive.');
     clean[product] = roleKey;
   });
   if (!Object.keys(clean).length) throw new Error('Choose at least one product and their role on it.');

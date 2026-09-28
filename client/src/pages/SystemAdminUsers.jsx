@@ -44,13 +44,20 @@ const bodyOf = d => ({
  * Products and Product roles tabs). E.g. Daxafort: Medical Reviewer, Biologix: Legal Reviewer.
  */
 function ProductAlignment({ value, onChange, options }) {
-  const products = options.products || [];
-  const roles = options.productRoles || [];
+  // Active products and roles, plus any retired one this person already has.
+  const active = options.activeProducts || options.products || [];
+  const products = (options.products || []).filter(p => active.includes(p) || p in value);
+  const allRoles = options.productRoles || [];
+  const roles = allRoles.filter(r => r.active !== false);
   const [bulk, setBulk] = useState('');
   const byTa = {};
   products.forEach(p => { const ta = (options.productTa || {})[p] || 'Other'; (byTa[ta] = byTa[ta] || []).push(p); });
   const put = (p, role) => { const next = { ...value }; if (role === null) delete next[p]; else next[p] = role; onChange(next); };
   const roleOpts = [{ value: '', label: 'Choose their role\u2026' }].concat(roles.map(r => ({ value: r.key, label: r.name })));
+  const optsFor = p => {
+    const cur = allRoles.find(r => r.key === value[p]);
+    return cur && cur.active === false ? roleOpts.concat([{ value: cur.key, label: cur.name + ' (inactive)' }]) : roleOpts;
+  };
   const chosen = Object.keys(value);
   if (!products.length) return <div className="sa-faint">Add products on the Products tab first.</div>;
   if (!roles.length) return <div className="sa-faint">Add roles on the Product roles tab first.</div>;
@@ -68,7 +75,7 @@ function ProductAlignment({ value, onChange, options }) {
             <span>{ta}</span>
             <button type="button" className="sa-link" onClick={() => onChange(ps.every(p => p in value)
               ? Object.fromEntries(Object.entries(value).filter(([p]) => !ps.includes(p)))
-              : { ...Object.fromEntries(ps.map(p => [p, ''])), ...value })}
+              : { ...Object.fromEntries(ps.filter(p => active.includes(p)).map(p => [p, ''])), ...value })}
             >
               {ps.every(p => p in value) ? 'Clear' : 'Select all'}
             </button>
@@ -79,9 +86,9 @@ function ProductAlignment({ value, onChange, options }) {
               <div key={p} className={'sa-align-row' + (on ? ' sa-align-row--on' : '')}>
                 <label className="sa-check sa-align-product">
                   <input type="checkbox" checked={on} onChange={() => put(p, on ? null : '')} />
-                  <span><strong>{shortProduct(p)}</strong> <span className="sa-faint">{p}</span></span>
+                  <span><strong>{shortProduct(p)}</strong> <span className="sa-faint">{p}</span>{!active.includes(p) && <span className="sa-inactive">Inactive</span>}</span>
                 </label>
-                {on && <Select options={roleOpts} value={value[p]} onChange={e => put(p, e.target.value)} width="240px" aria-label={'Role on ' + p} />}
+                {on && <Select options={optsFor(p)} value={value[p]} onChange={e => put(p, e.target.value)} width="240px" aria-label={'Role on ' + p} />}
                 {on && !value[p] && <span className="sa-scope-warn">Choose a role</span>}
               </div>
             );

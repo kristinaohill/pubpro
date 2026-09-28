@@ -16,6 +16,9 @@ db.exec(`CREATE TABLE IF NOT EXISTS product_roles (
   sort INTEGER NOT NULL DEFAULT 100
 )`);
 
+// Retired roles are marked inactive rather than deleted, so people who hold them keep them.
+try { db.exec('ALTER TABLE product_roles ADD COLUMN active INTEGER NOT NULL DEFAULT 1'); } catch (e) { /* exists */ }
+
 const DEFAULT_PRODUCTS = [
   { name: 'Biologix (All)', ta: 'Cardiovascular & Metabolism', code: 'BLX' },
   { name: 'Daxafont (DMD)', ta: 'Neuroscience', code: 'DAXN' },
@@ -36,15 +39,19 @@ const DEFAULT_PRODUCT_ROLES = [
 const getSetting = (k, f) => { const r = db.prepare('SELECT value FROM app_settings WHERE key = ?').get(k); return r ? r.value : f; };
 const setSetting = (k, v) => db.prepare('INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(k, v);
 
+// PRODUCTS holds every product (existing records and alignments keep working when one is retired);
+// ACTIVE_PRODUCTS only the ones that can be picked for something new.
 const PRODUCTS = [];
+const ACTIVE_PRODUCTS = [];
 const PRODUCT_TA = {};
 let catalog = [];
 
 function load() {
   let list = null;
   try { list = JSON.parse(getSetting('products', 'null')); } catch (e) { list = null; }
-  catalog = Array.isArray(list) && list.length ? list : DEFAULT_PRODUCTS;
+  catalog = (Array.isArray(list) && list.length ? list : DEFAULT_PRODUCTS).map(p => ({ ...p, active: p.active !== false }));
   PRODUCTS.splice(0, PRODUCTS.length, ...catalog.map(p => p.name));
+  ACTIVE_PRODUCTS.splice(0, ACTIVE_PRODUCTS.length, ...catalog.filter(p => p.active).map(p => p.name));
   Object.keys(PRODUCT_TA).forEach(k => delete PRODUCT_TA[k]);
   catalog.forEach(p => { PRODUCT_TA[p.name] = p.ta; });
 }
@@ -54,9 +61,9 @@ const products = () => catalog.map(p => ({ ...p }));
 const codeOf = name => (catalog.find(p => p.name === name) || {}).code || null;
 
 /**
- * Saves the product list: [{ name, ta, code, was? }]. `was` is the old name of a renamed product;
- * its publications, plans and user alignments follow the new name. A product still used by a
- * publication or plan can't be removed.
+ * Saves the product list: [{ name, ta, code, active, was? }]. `was` is the old name of a renamed
+ * product; its publications, plans and user alignments follow the new name. Saved products are
+ * never removed: mark them inactive instead, so nothing that uses them breaks.
  */
 function saveProducts(list) {
   if (!Array.isArray(list) || !list.length) throw new Error('Keep at least one product.');
@@ -71,14 +78,13 @@ function saveProducts(list) {
     if (codes.has(code)) throw new Error('Two products use the code ' + code + '.');
     names.add(name.toLowerCase());
     codes.add(code);
-    return { name, ta, code, was: p.was && String(p.was) !== name ? String(p.was) : null };
+    return { name, ta, code, active: p.active !== false, was: p.was && String(p.was) !== name ? String(p.was) : null };
   });
   const kept = new Set(clean.map(p => p.was || p.name));
   for (const old of catalog) {
-    if (kept.has(old.name)) continue;
-    const n = db.prepare('SELECT (SELECT COUNT(*) FROM pp_publications WHERE product = ?) + (SELECT COUNT(*) FROM pp_plans WHERE product = ?) AS c').get(old.name, old.name).c;
-    if (n) throw new Error(old.name + ' is used by ' + n + ' publication(s) or plan(s), so it can’t be removed.');
+    if (!kept.has(old.name)) throw new Error(old.name + ' can\u2019t be removed. Mark it inactive instead: its publications, plans and people keep it.');
   }
+  if (!clean.some(p => p.active)) throw new Error('Keep at least one product active.');
   // Renames: records and alignments follow the new name.
   for (const p of clean.filter(x => x.was)) {
     db.prepare('UPDATE pp_publications SET product = ? WHERE product = ?').run(p.name, p.was);
@@ -95,7 +101,7 @@ function saveProducts(list) {
       if (m[p.was]) { m[p.name] = m[p.was]; delete m[p.was]; db.prepare('UPDATE users SET product_roles = ? WHERE id = ?').run(JSON.stringify(m), u.id); }
     }
   }
-  setSetting('products', JSON.stringify(clean.map(({ name, ta, code }) => ({ name, ta, code }))));
+  setSetting('products', JSON.stringify(clean.map(({ name, ta, code, active }) => ({ name, ta, code, active }))));
   load();
   return products();
 }
@@ -106,11 +112,11 @@ if (!db.prepare('SELECT COUNT(*) AS c FROM product_roles').get().c) {
     db.prepare('INSERT OR IGNORE INTO product_roles (key, name, description, sort) VALUES (?, ?, ?, ?)').run(key, name, description, i);
   });
 }
-const productRoles = () => db.prepare('SELECT key, name, description FROM product_roles ORDER BY sort, name').all();
+const productRoles = () => db.prepare('SELECT key, name, description, active FROM product_roles ORDER BY sort, name').all().map(r => ({ ...r, active: !!r.active }));
 const productRoleName = key => (db.prepare('SELECT name FROM product_roles WHERE key = ?').get(key) || {}).name || key;
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40) || 'role';
 
-/** Saves the product roles: [{ key?, name, description }]. A role someone holds can't be removed. */
+/** Saves the product roles: [{ key?, name, description, active }]. Saved roles are marked inactive, never removed. */
 function saveProductRoles(list) {
   if (!Array.isArray(list)) throw new Error('Nothing to save.');
   const seen = new Set();
@@ -119,14 +125,14 @@ function saveProductRoles(list) {
     if (!name) throw new Error('Name every role.');
     if (seen.has(name.toLowerCase())) throw new Error('Two roles are called ' + name + '.');
     seen.add(name.toLowerCase());
-    return { key: r.key ? String(r.key) : null, name, description: String(r.description || '').trim().slice(0, 200) };
+    return { key: r.key ? String(r.key) : null, name, description: String(r.description || '').trim().slice(0, 200), active: r.active !== false };
   });
   const keep = new Set(clean.filter(r => r.key).map(r => r.key));
   const held = new Set();
   db.prepare("SELECT product_roles FROM users WHERE product_roles IS NOT NULL AND active = 1").all()
     .forEach(u => { try { Object.values(JSON.parse(u.product_roles)).forEach(k => held.add(k)); } catch (e) { /* skip */ } });
   for (const r of productRoles()) {
-    if (!keep.has(r.key) && held.has(r.key)) throw new Error(r.name + ' is still given to someone, so it can’t be removed.');
+    if (!keep.has(r.key)) throw new Error(r.name + ' can\u2019t be removed. Mark it inactive instead: people who have it keep it.');
   }
   db.exec('BEGIN');
   try {
@@ -134,8 +140,8 @@ function saveProductRoles(list) {
     clean.forEach((r, i) => {
       let key = r.key;
       if (!key) { key = slug(r.name); for (let n = 2; db.prepare('SELECT 1 FROM product_roles WHERE key = ?').get(key); n += 1) key = slug(r.name) + '_' + n; }
-      db.prepare('INSERT INTO product_roles (key, name, description, sort) VALUES (?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET name = excluded.name, description = excluded.description, sort = excluded.sort')
-        .run(key, r.name, r.description, i);
+      db.prepare('INSERT INTO product_roles (key, name, description, sort, active) VALUES (?, ?, ?, ?, ?) ON CONFLICT(key) DO UPDATE SET name = excluded.name, description = excluded.description, sort = excluded.sort, active = excluded.active')
+        .run(key, r.name, r.description, i, r.active ? 1 : 0);
     });
     db.exec('COMMIT');
   } catch (e) {
@@ -145,4 +151,4 @@ function saveProductRoles(list) {
   return productRoles();
 }
 
-module.exports = { PRODUCTS, PRODUCT_TA, products, codeOf, saveProducts, productRoles, productRoleName, saveProductRoles };
+module.exports = { PRODUCTS, ACTIVE_PRODUCTS, PRODUCT_TA, products, codeOf, saveProducts, productRoles, productRoleName, saveProductRoles };

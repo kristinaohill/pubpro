@@ -279,7 +279,7 @@ router.post('/users/:id/reset-password', (req, res) => {
 const rolesPayload = () => ({
   roles: P.listRoles(), permissions: P.PERMISSIONS, signupRole: P.signupRole(),
   signup: people.signupRules(),
-  options: { therapeuticAreas: people.therapeuticAreas(), departments: people.DEPARTMENTS, products: P.PRODUCTS, productTa: P.PRODUCT_TA, productRoles: catalog.productRoles() },
+  options: { therapeuticAreas: people.therapeuticAreas(), departments: people.DEPARTMENTS, products: P.PRODUCTS, activeProducts: catalog.ACTIVE_PRODUCTS, productTa: P.PRODUCT_TA, productRoles: catalog.productRoles() },
 });
 
 router.get('/roles', (req, res) => res.json(rolesPayload()));

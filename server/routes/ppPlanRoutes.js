@@ -5,6 +5,9 @@ const { requireAuth: authOnly, requirePerm, can, blockAuthors } = require('../au
 
 const requireAuth = [authOnly, blockAuthors];
 const canEdit = requirePerm('plans.edit');
+const { ACTIVE_PRODUCTS } = require('../products');
+const retired = (product, current) => product && product !== current && !ACTIVE_PRODUCTS.includes(product)
+  ? product + ' is inactive, so it can\u2019t be picked for a plan.' : null;
 // Plans roles limited to some products can only save plans for those products.
 const scopeError = (req, product) => (can(req, 'plans.edit', product) ? null
   : 'Your role covers publication plans for other products, not ' + String(product).split(' ')[0] + '.');
@@ -64,6 +67,7 @@ router.post('/', requireAuth, canEdit, (req, res) => {
   const { title, product, status, summary, data } = readBody(req.body);
   const scoped = scopeError(req, product);
   if (scoped) return res.status(403).json({ error: scoped });
+  if (retired(product)) return res.status(400).json({ error: retired(product) });
   if (!title) return res.status(400).json({ error: 'A plan title is required to save the plan.' });
   const planId = nextPlanId(product);
   const r = db.prepare(`INSERT INTO pp_plans (plan_id, title, product, status, owner, summary, data, created_by)
@@ -96,6 +100,7 @@ router.put('/:id', requireAuth, canEdit, (req, res) => {
   const { title, product, status, summary, data } = readBody(req.body);
   const scoped = scopeError(req, existing.product) || scopeError(req, product);
   if (scoped) return res.status(403).json({ error: scoped });
+  if (retired(product, existing.product)) return res.status(400).json({ error: retired(product, existing.product) });
   if (!title) return res.status(400).json({ error: 'A plan title is required to save the plan.' });
   db.prepare(`UPDATE pp_plans SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(title, product, status, summary, data, req.params.id);

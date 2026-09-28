@@ -296,7 +296,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
             <FormField id="pf-reviewtype" label="Review Type">
               <Select
                 id="pf-reviewtype"
-                options={types.map(t => t.name)}
+                options={types.filter(t => t.active !== false || t.name === st.reviewType).map(t => t.name)}
                 value={st.reviewType}
                 onChange={e => { const v = e.target.value; set(s => ({ reviewType: v, optionalOff: [], reviewMethod: v === 'Author Approval' ? 'Comment Only' : s.reviewMethod })); }}
                 width="100%"

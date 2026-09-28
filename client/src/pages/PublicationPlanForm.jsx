@@ -359,7 +359,7 @@ function OverviewTab({ overview, setField, planColor, setPlanColor, status, setS
         </Field>
         <Field label="Product">
           <Select
-            options={productsForTA(overview.ta)}
+            options={productsForTA(overview.ta).concat(overview.product && !productsForTA(overview.ta).includes(overview.product) ? [overview.product] : [])}
             placeholder="Please select"
             value={overview.product}
             onChange={e => {

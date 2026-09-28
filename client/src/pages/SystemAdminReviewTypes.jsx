@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Button, ConfirmModal, Field, Icon, Select, TextField } from '../ds/pubpro';
+import { Button, Field, Icon, Select, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import usePeople, { refreshReviewTypes } from '../components/usePeople';
+import useCatalog from '../components/catalog';
+import { ActiveSwitch } from './SystemAdminCatalog';
 
 // System Administrator > Review Types: for each kind of review round, who is required (locked on the
 // round), who is optional (listed and ticked; the publication manager can untick them) and who isn't
@@ -15,6 +17,7 @@ const summary = t => [t.required.length && t.required.length + ' required', t.op
 
 export default function ReviewTypesTab({ onChanged, onError }) {
   const staff = usePeople();
+  const cat = useCatalog();
   const [saved, setSaved] = useState(null); // { types, roles }
   const [types, setTypes] = useState(null);
   const [sel, setSel] = useState(0);
@@ -22,20 +25,22 @@ export default function ReviewTypesTab({ onChanged, onError }) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [addPerson, setAddPerson] = useState('');
-  const [toDelete, setToDelete] = useState(null);
 
-  const load = () => api.get('/review-types').then(r => { setSaved(r); setTypes(r.types); }).catch(err => onError(err.message));
+  // Each type remembers its saved name so a renamed custom type isn't taken for a removed one.
+  const load = () => api.get('/review-types').then(r => { const t = r.types.map(x => ({ ...x, was: x.name })); setSaved({ ...r, types: t }); setTypes(t); }).catch(err => onError(err.message));
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
 
   if (!types) return <section className="sa-card"><div className="empty-state empty-state--inset">Loading&hellip;</div></section>;
 
   const dirty = JSON.stringify(types) !== JSON.stringify(saved.types);
   const t = types[Math.min(sel, types.length - 1)];
-  const roles = saved.roles.filter(r => r.key !== 'author' && r.key !== 'admin');
+  // Active product roles, plus any retired one this type still uses.
+  const inactiveRole = key => (cat.productRoles.find(r => r.key === key) || {}).active === false;
+  const roles = saved.roles.filter(r => !inactiveRole(r.key) || t.required.concat(t.optional).some(x => x.kind === 'role' && x.role === r.key));
   const rows = [
     { src: { kind: 'internal_authors' }, label: 'Internal authors', hint: 'Everyone on the publication’s Authors tab from BP Logix' },
     { src: { kind: 'external_authors' }, label: 'External authors', hint: 'The publication’s external authors (who haven’t declined)' },
-  ].concat(roles.map(r => ({ src: { kind: 'role', role: r.key }, label: r.name, hint: 'Everyone with this role for the publication’s product' })))
+  ].concat(roles.map(r => ({ src: { kind: 'role', role: r.key }, label: r.name + (inactiveRole(r.key) ? ' (inactive role)' : ''), hint: 'Everyone with this role on the publication\u2019s product' })))
     .concat(t.required.concat(t.optional).filter(x => x.kind === 'user').map(x => {
       const p = staff.find(s => String(s.id) === String(x.userId));
       return { src: x, label: p ? p.name : 'Former user', hint: 'Named person', removable: true };
@@ -52,7 +57,7 @@ export default function ReviewTypesTab({ onChanged, onError }) {
   const save = async () => {
     setBusy(true);
     try {
-      const out = await api.put('/admin/review-types', { types });
+      const out = (await api.put('/admin/review-types', { types })).map(x => ({ ...x, was: x.name }));
       setSaved({ ...saved, types: out });
       setTypes(out);
       refreshReviewTypes();
@@ -67,7 +72,7 @@ export default function ReviewTypesTab({ onChanged, onError }) {
     const name = newName.trim();
     if (!name) return;
     if (types.some(x => x.name.toLowerCase() === name.toLowerCase())) { onError('There’s already a review type called ' + name + '.'); return; }
-    setTypes(list => list.concat([{ name, builtIn: false, required: [], optional: [{ kind: 'internal_authors' }] }]));
+    setTypes(list => list.concat([{ name, builtIn: false, active: true, required: [], optional: [{ kind: 'internal_authors' }] }]));
     setSel(types.length);
     setAdding(false);
     setNewName('');
@@ -102,7 +107,7 @@ export default function ReviewTypesTab({ onChanged, onError }) {
           <nav className="sa-rt-list" aria-label="Review types">
             {types.map((x, i) => (
               <button key={x.name + i} type="button" className="sa-rt-item" aria-current={i === Math.min(sel, types.length - 1) ? 'true' : undefined} onClick={() => setSel(i)}>
-                <span className="sa-rt-name">{x.name}</span>
+                <span className="sa-rt-name">{x.name}{x.active === false && <span className="sa-inactive">Inactive</span>}</span>
                 <span className="sa-faint">{summary(x)}</span>
               </button>
             ))}
@@ -115,9 +120,13 @@ export default function ReviewTypesTab({ onChanged, onError }) {
               ) : (
                 <Field label="Name"><TextField value={t.name} onChange={e => update({ name: e.target.value })} width="320px" /></Field>
               )}
-              <span className="sa-faint">{t.builtIn ? 'Part of the publication workflow' : 'Custom review type'}</span>
+              <span className="sa-faint">{t.builtIn ? 'Part of the publication workflow' : 'Custom review type'}{t.active === false ? ' \u00b7 not offered for new rounds' : ''}</span>
               <span className="sa-grow" />
-              {!t.builtIn && <Button variant="fatal" onClick={() => setToDelete(t)}>Delete</Button>}
+              {t.was ? (
+                <ActiveSwitch on={t.active !== false} label={t.name} onChange={v => update({ active: v })} />
+              ) : (
+                <Button variant="secondary" onClick={() => { setTypes(list => list.filter(x => x !== t)); setSel(0); }}>Remove</Button>
+              )}
             </div>
 
             <div className="sa-rt-table" role="table" aria-label={'Participants for ' + t.name}>
@@ -164,17 +173,6 @@ export default function ReviewTypesTab({ onChanged, onError }) {
         )}
       </section>
 
-      {toDelete && (
-        <ConfirmModal
-          title={'Delete ' + toDelete.name + '?'}
-          confirmLabel="Delete Review Type"
-          cancelLabel="Keep"
-          onConfirm={() => { setTypes(list => list.filter(x => x !== toDelete)); setSel(0); setToDelete(null); }}
-          onCancel={() => setToDelete(null)}
-        >
-          Rounds already sent keep their reviewers. Save Changes to apply.
-        </ConfirmModal>
-      )}
     </>
   );
 }

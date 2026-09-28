@@ -3,6 +3,10 @@ const router = express.Router();
 const db = require('../db');
 const { requireAuth, requirePerm, can, blockAuthors } = require('../auth');
 const doc = require('../docMarkup');
+const { ACTIVE_PRODUCTS } = require('../products');
+// Retired (inactive) products stay on the records that have them but can't be picked for new ones.
+const retired = (product, current) => product && product !== current && !ACTIVE_PRODUCTS.includes(product)
+  ? product + ' is inactive, so it can\u2019t be picked for a publication.' : null;
 const { productCode, yearCode, nextSequence } = require('../recordIds');
 
 // Record IDs follow the PubPro pattern: <yy>-<type>-<product>-<seq>-V01, e.g. 26-M-DAX-015-V01.
@@ -99,6 +103,7 @@ router.get('/:id', requireAuth, (req, res) => {
 router.post('/', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
   const { title, pubType, product, status, summary } = readBody(req.body);
   if (!can(req, 'pubs.edit', product)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', product) });
+  if (retired(product)) return res.status(400).json({ error: retired(product) });
   const data = keepDocument(readBody(req.body).data, {});
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
   if (!TYPE_CODES[pubType]) return res.status(400).json({ error: 'Choose a publication type.' });
@@ -140,6 +145,7 @@ router.put('/:id', requireAuth, (req, res) => {
     }
   }
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
+  if (retired(product, existing.product)) return res.status(400).json({ error: retired(product, existing.product) });
   const prevData = parse(existing.data, {});
   const data = keepDocument(readBody(req.body).data, prevData);
   if (!!prevData.cancelled !== !!parse(data, {}).cancelled && !can(req, 'pubs.cancel', existing.product)) {

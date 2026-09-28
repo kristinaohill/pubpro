@@ -151,13 +151,14 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
           </FormField>
           <FormField id="pf-product" label="Product">
             {/* Only the products this person's roles let them work on (plus the current one). */}
-            <Select id="pf-product" options={productsForTA(ta).filter(p => !allowedProducts || allowedProducts.includes(p) || p === st.product)} placeholder="Please select" value={st.product} onChange={onProduct} width="100%" />
+            <Select id="pf-product" options={productsForTA(ta).filter(p => !allowedProducts || allowedProducts.includes(p) || p === st.product).concat(st.product && !productsForTA(ta).includes(st.product) ? [st.product] : [])} placeholder="Please select" value={st.product} onChange={onProduct} width="100%" />
           </FormField>
         </Pair>
         <fieldset className="pfx-fieldset">
           <legend className="pfx-label">Additional Products</legend>
           <div className="pfx-chips">
-            {PRODUCTS.filter(p => p !== st.product).map(p => (
+            {/* Active products, plus any retired one this record already lists. */}
+            {PRODUCTS.concat(st.additionalProducts.filter(p => !PRODUCTS.includes(p))).filter(p => p !== st.product).map(p => (
               <ChipCheck key={p} label={p} checked={st.additionalProducts.includes(p)} onChange={() => toggleProduct(p)} />
             ))}
           </div>
