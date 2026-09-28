@@ -1,0 +1,104 @@
+/* Planning and Reviews tabs (redesign). Builds on the ui.css kit; every class here is pfxc-. */
+
+/* ---- Shared ---- */
+.pfxc-note {
+  border: 1px dashed #C5CCD4; border-radius: 10px; padding: 16px 18px;
+  font-size: 13px; line-height: 1.45; color: var(--pfx-sub); background: #FAFBFC;
+}
+.pfxc-hint { margin-top: -8px; font-size: 12px; color: var(--pfx-meta); }
+.pfxc-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--pfx-line-soft); padding-top: 16px; }
+.pfxc-foot--plain { border-top: 0; padding-top: 0; }
+.pfxc-foot-text { font-size: 12px; color: var(--pfx-meta); }
+.pfxc-foot-text strong { color: var(--pfx-text); }
+.pfxc-foot-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pfxc-lockline { display: inline-flex; align-items: center; gap: 6px; }
+.pfxc-inline-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--pfx-text); }
+
+/* ---- Planning: vendor and schedule ---- */
+.pfxc-alert { display: inline-flex; align-items: flex-start; gap: 6px; font-size: 13px; color: var(--fatal-text); }
+.pfxc-alert .pf-strong { font-weight: 700; }
+.pfxc-budget { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; vertical-align: bottom; }
+.pfxc-budget--ok { color: #1B6B33; }
+.pfxc-budget--over { color: var(--fatal-text); }
+.pfxc-statgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+/* ---- Planning: milestones and stages (one ListRow per row, billing on a second line) ---- */
+.pfx-row.pfxc-msrow { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px; }
+.pfxc-ms-main { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.pfxc-dot { width: 10px; height: 10px; flex: none; border-radius: 5px; background: #C5CCD4; }
+.pfxc-dot--done { background: var(--ok); }
+.pfxc-dot--current { background: #3E73A6; }
+.pfxc-ms-step { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pfxc-ms-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.pfxc-core { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--pfx-meta); }
+.pfxc-ms-dates { width: 112px; flex: none; display: flex; flex-direction: column; gap: 4px; }
+.pfxc-ms-progress { width: 76px; flex: none; }
+.pfxc-ms-billing { width: 92px; flex: none; }
+.pfxc-ms-actions { width: 102px; flex: none; display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.pfxc-ms-bill {
+  margin-left: 24px; padding: 10px 12px; border-radius: 8px; background: #F7F9FB;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 18px; min-width: 0;
+}
+.pfxc-ms-amount { display: inline-flex; align-items: center; gap: 8px; }
+.pfxc-mini-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pfx-meta); }
+.pfxc-ms-payactions { margin-left: auto; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+
+/* ---- Reviews: round cards ---- */
+.pfxc-round-meta { margin-top: -6px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--pfx-sub); }
+.pfxc-round .pf-stepline { border-top: 0; border-radius: 8px; background: #F6F8FA; padding: 10px 14px; color: var(--pfx-sub); }
+.pfxc-round .pf-readiness { border-color: #E3E7EC; border-radius: 10px; }
+.pfxc-collapse {
+  width: 34px; height: 34px; flex: none; border-radius: 8px; border: 1px solid #D5DBE2; background: var(--white);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+}
+.pfxc-collapse:hover { border-color: var(--nav); }
+.pfxc-collapse:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 2px; }
+
+/* New round: reviewer groups */
+.pfxc-rvgroup { border: 1px solid #E3E7EC; border-radius: 10px; overflow: hidden; }
+.pfxc-rv-row { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-top: 1px solid var(--pfx-line-soft); font-size: 14px; min-width: 0; }
+.pfxc-rv-name { flex: 1.4 1 0; min-width: 0; overflow-wrap: anywhere; }
+.pfxc-rv-role { flex: 1 1 0; min-width: 0; color: var(--fg-3); overflow-wrap: anywhere; }
+.pfxc-rv-end { width: 26px; flex: none; display: flex; justify-content: flex-end; }
+.pfxc-rv-empty { padding: 10px 12px; font-size: 13px; font-style: italic; color: var(--pfx-meta); border-top: 1px solid var(--pfx-line-soft); }
+.pfxc-rv-search { width: 100%; min-width: 0; }
+
+/* Current round: reviewer rows */
+.pfx-row.pfxc-stackrow { flex-direction: column; align-items: stretch; gap: 10px; }
+.pfxc-rrow { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.pfxc-rrow-who { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pfxc-rrow-name { font-size: 14px; font-weight: 700; color: var(--pfx-text); overflow-wrap: anywhere; }
+.pfxc-rrow-role { font-size: 12px; color: var(--pfx-meta); overflow-wrap: anywhere; }
+.pfxc-rrow-resp { width: 220px; flex: none; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pfxc-rrow-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+.pfxc-rrow-comment { font-size: 12px; font-style: italic; color: var(--pfx-sub); overflow-wrap: anywhere; }
+.pfxc-rrow-remind { width: 90px; flex: none; font-size: 13px; color: var(--pfx-meta); }
+.pfxc-rrow-actions { width: 150px; flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
+/* Record / edit response */
+.pfxc-respond {
+  display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; gap: 12px 16px; align-items: end;
+  padding: 14px 16px; border: 1px solid #E3E7EC; border-radius: 10px; background: #F7F9FB;
+}
+.pfxc-respond-actions { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+
+/* Earlier rounds */
+.pfxc-past-list { display: flex; flex-direction: column; gap: 12px; }
+.pfxc-past { border: 1px solid #E3E7EC; border-radius: 10px; overflow: hidden; background: var(--white); }
+.pfxc-past-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 12px 16px; cursor: pointer; }
+.pfxc-past-head:hover { background: #F7F9FB; }
+.pfxc-past-head:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: -2px; }
+.pfxc-past-type { font-size: 14px; font-weight: 700; color: var(--nav); }
+.pfxc-past-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pfxc-past-body { padding: 14px 16px 16px; border-top: 1px solid var(--pfx-line-soft); display: flex; flex-direction: column; gap: 12px; }
+.pfxc-past-resp { width: 240px; flex: none; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pfxc-past-dec { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.pfxc-past-on { width: 84px; flex: none; font-size: 13px; color: var(--pfx-sub); }
+
+/* Narrow screens: let row cells wrap instead of overflowing. */
+@media (max-width: 700px) {
+  .pfxc-ms-main, .pfxc-rrow, .pfx-row.pfxc-past-row { flex-wrap: wrap; }
+  .pfxc-ms-bill { margin-left: 0; }
+  .pfxc-rrow-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; width: auto; }
+  .pfxc-respond { grid-template-columns: minmax(0, 1fr); }
+}

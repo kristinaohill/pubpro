@@ -1,0 +1,46 @@
+/* Extra styles for the Overview, Studies and Publication tabs (redesign). Built on ui.css tokens. */
+
+/* ---- Search box + suggestion menu (menu uses .pf-menu from PublicationForm.css) ---- */
+.pfxa-search { position: relative; width: 100%; min-width: 0; }
+.pfxa-lock { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ---- Linked parent plan ---- */
+.pfxa-linked {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px;
+  border: 1px solid var(--pfx-line); border-radius: 10px; background: #F7F9FB; min-width: 0;
+}
+.pfxa-linked-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.pfxa-linked-id { font-size: 14px; font-weight: 700; color: var(--nav); display: inline-flex; align-items: center; gap: 6px; }
+.pf-page a.pfxa-linked-id { text-decoration: none; color: var(--text-link); }
+.pf-page a.pfxa-linked-id:hover { text-decoration: underline; color: var(--nav); }
+.pfxa-linked-name { font-size: 13px; color: var(--pfx-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Selected study card ---- */
+.pfxa-study { border: 1px solid #E3E7EC; border-radius: 10px; padding: 16px 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.pfxa-study-head { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.pfxa-study-titles { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.pfxa-study-id { font-size: 12px; font-weight: 700; }
+.pf-page .pfxa-study-id a { text-decoration: none; }
+.pf-page .pfxa-study-id a:hover { text-decoration: underline; }
+.pfxa-study-title { font-size: 15px; font-weight: 700; color: var(--nav); text-wrap: pretty; overflow-wrap: anywhere; }
+.pfxa-study-head .pfx-tag { margin-top: 2px; }
+.pfxa-studies { display: flex; flex-direction: column; gap: 14px; }
+
+/* ---- Publication document ---- */
+.pfxa-docstart {
+  border: 2px dashed #C5CCD4; border-radius: 12px; background: #FAFBFC; padding: 30px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
+}
+.pfxa-docstart-title { font-size: 16px; font-weight: 700; color: var(--nav); }
+.pfxa-docstart-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pfxa-docstart-alt { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.pfxa-docstart-hint { font-size: 12px; color: var(--pfx-meta); }
+
+.pfxa-file {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  border: 1px solid #E3E7EC; border-radius: 10px; padding: 14px 16px; min-width: 0;
+}
+.pfxa-file-text { display: flex; flex-direction: column; gap: 3px; flex: 1 1 240px; min-width: 0; }
+.pfxa-file-name { font-size: 15px; font-weight: 700; color: var(--nav); overflow-wrap: anywhere; }
+.pfxa-file-meta { font-size: 13px; color: var(--pfx-meta); }
+.pfxa-file-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

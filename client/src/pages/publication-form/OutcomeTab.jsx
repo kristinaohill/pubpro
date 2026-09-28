@@ -1,9 +1,10 @@
 import React from 'react';
 import {
-  Button, Checkbox, CommentComposer, DropZone, EyebrowLabel, Field, Icon, MoneyField, Pill,
-  SectionHeading, Select,
+  Button, Checkbox, CommentComposer, DropZone, Icon, MoneyField, Pill, Select,
 } from '../../ds/pubpro';
 import DateField from '../../components/DateField';
+import { Card, Empty, FormField, ListBox, ListRow, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
+import './tabs-d.css';
 import { CONFERENCE_DIRECTORY, OUTCOME_STATUS_OPTIONS, PROOF_STEPS, RESPONSE_CYCLE, TIMEZONE_OPTIONS, TODAY_STR } from './data';
 
 export default function OutcomeTab({ st, set, bind, navigate, userName }) {
@@ -35,56 +36,60 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
   });
 
   return (
-    <div>
-      <div className="pf-row-end pf-mb14">
-        <SectionHeading>Outcome</SectionHeading>
-        <div className="pf-ml-auto">
-          <Button variant="secondary" icon="difference" onClick={createChild}>Create Child Publication</Button>
-        </div>
-      </div>
+    <Stack>
+      <TabHead
+        title="Outcome"
+        sub="What happened to this publication after submission."
+        actions={<Button variant="secondary" style={ON_GREY} icon="difference" onClick={createChild}>Create Child Publication</Button>}
+      />
 
-      <div className="pf-related">
-        <div className="pf-h3 pf-mb4">Related Publications</div>
-        <div className="pf-related-note">A child publication duplicates this record's document and metadata — change the title and type, then manage it (including its own vendor and financials) independently.</div>
+      <Card title="Related publications">
+        <div className="pfx-help">A child publication duplicates this record's document and metadata — change the title and type, then manage it (including its own vendor and financials) independently.</div>
         {st.childPubs.length > 0 ? (
-          <div className="pf-col pf-gap6">
+          <ListBox>
             {st.childPubs.map(c => (
-              <div key={c.id} className="pf-child-row">
+              <ListRow key={c.id} className="pfxd-child-row">
                 <Icon name="menu_book" size={18} color="var(--high-emphasis)" />
-                <a href="/publication" className="pf-strong pf-13" onClick={e => { e.preventDefault(); navigate('/publication'); }}>{c.id}</a>
-                <span className="pf-meta pf-ellipsis-1">{c.title}</span>
-                <span className="pf-faint12 pf-ml-auto pf-nowrap-text">{c.type}</span>
-              </div>
+                <a href="/publication" onClick={e => { e.preventDefault(); navigate('/publication'); }}>{c.id}</a>
+                <span className="pfxd-text pfxd-ellipsis pfxd-grow">{c.title}</span>
+                <Tag tone="outline">{c.type}</Tag>
+              </ListRow>
             ))}
-          </div>
+          </ListBox>
         ) : (
-          <div className="pf-faint13 pf-italic">No child publications yet.</div>
+          <Empty>No child publications yet.</Empty>
         )}
-      </div>
+      </Card>
 
-      <div className="pf-stack16 pf-pl22">
-        <Field label="Status">
-          <Select
-            options={OUTCOME_STATUS_OPTIONS}
-            placeholder="Please select"
-            value={st.outcomeStatus}
-            onChange={e => set({ outcomeStatus: e.target.value, returnedToSubmission: false })}
-            width="300px"
-          />
-          {st.returnedToSubmission && (
-            <div className="pf-iconrow pf-meta pf-mt6">
-              <Icon name="undo" size={16} color="var(--high-emphasis)" />Returned to Submission — now targeting {primaryTargetName}.
-            </div>
-          )}
-        </Field>
+      <Card title="Status and dates">
+        <Pair>
+          <FormField id="pfxd-outcome-status" label="Status">
+            <Select
+              id="pfxd-outcome-status"
+              options={OUTCOME_STATUS_OPTIONS}
+              placeholder="Please select"
+              value={st.outcomeStatus}
+              onChange={e => set({ outcomeStatus: e.target.value, returnedToSubmission: false })}
+              width="100%"
+            />
+            {st.returnedToSubmission && (
+              <div className="pfxd-iconline">
+                <Icon name="undo" size={16} color="var(--high-emphasis)" />Returned to Submission — now targeting {primaryTargetName}.
+              </div>
+            )}
+          </FormField>
+          <div />
+        </Pair>
 
         {st.outcomeStatus === 'Changes Requested' && (
-          <div className="pf-outcome-card">
-            <div className="pf-h3">Response Cycle</div>
-            <div className="pf-meta pf-cycle-note">{rcIdx < 0 ? 'Response cycle complete — ready to resubmit.' : 'Current: ' + RESPONSE_CYCLE[rcIdx]}</div>
-            <div className="pf-col pf-gap8">
+          <div className="pfxd-sub">
+            <div className="pfxd-grow">
+              <h4 className="pfxd-sub-title">Response Cycle</h4>
+              <span className="pfxd-text">{rcIdx < 0 ? 'Response cycle complete — ready to resubmit.' : 'Current: ' + RESPONSE_CYCLE[rcIdx]}</span>
+            </div>
+            <div className="pfxd-steps">
               {RESPONSE_CYCLE.map((s, i) => (
-                <div key={s} className="pf-row pf-gap10">
+                <div key={s} className="pfxd-step">
                   <Checkbox
                     checked={!!st.responseDone[s]}
                     onChange={() => set(x => ({ responseDone: { ...x.responseDone, [s]: !x.responseDone[s] } }))}
@@ -98,37 +103,33 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
         )}
 
         {st.outcomeStatus === 'Rejected' && (
-          <div className="pf-outcome-card">
-            <div className="pf-row-end">
-              <div>
-                <div className="pf-h3">Rejected by {primaryTargetName}</div>
-                <div className="pf-meta pf-mt2">
+          <div className="pfxd-sub">
+            <div className="pfxd-sub-head">
+              <div className="pfxd-grow">
+                <h4 className="pfxd-sub-title">Rejected by {primaryTargetName}</h4>
+                <span className="pfxd-text">
                   {nextAlt
                     ? 'Next alternate on the Target shortlist: ' + nextAlt + '. The record stays the same and returns to Submission.'
                     : 'No alternates on the Target shortlist. Add one on the Target tab.'}
-                </div>
+                </span>
               </div>
-              <div className="pf-ml-auto">
-                <Button variant="secondary" onClick={retarget} disabled={!nextAlt}>Retarget to Next Journal</Button>
-              </div>
+              <Button variant="secondary" onClick={retarget} disabled={!nextAlt}>Retarget to Next Journal</Button>
             </div>
           </div>
         )}
 
         {st.outcomeStatus === 'Accepted' && (
-          <div className="pf-outcome-card">
-            <div className="pf-row-end">
-              <div>
-                <div className="pf-h3">Proof Review</div>
-                <div className="pf-meta pf-mt2">Both proof reviews must be complete before the final disposition is recorded.</div>
+          <div className="pfxd-sub">
+            <div className="pfxd-sub-head">
+              <div className="pfxd-grow">
+                <h4 className="pfxd-sub-title">Proof Review</h4>
+                <span className="pfxd-text">Both proof reviews must be complete before the final disposition is recorded.</span>
               </div>
               {proofAll && !st.dispositionRecorded && (
-                <div className="pf-ml-auto">
-                  <Button variant="secondary" onClick={() => set({ dispositionRecorded: true, dispositionOn: TODAY_STR, dispositionBy: userName })}>Record Final Disposition</Button>
-                </div>
+                <Button variant="secondary" onClick={() => set({ dispositionRecorded: true, dispositionOn: TODAY_STR, dispositionBy: userName })}>Record Final Disposition</Button>
               )}
             </div>
-            <div className="pf-col pf-gap8 pf-mt10">
+            <div className="pfxd-steps">
               {PROOF_STEPS.map((s, i) => (
                 <Checkbox
                   key={s}
@@ -143,7 +144,7 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
               ))}
             </div>
             {st.dispositionRecorded && (
-              <div className="pf-iconrow pf-ok13 pf-mt10">
+              <div className="pfxd-iconline pfxd-iconline--ok">
                 <Icon name="check_circle" size={16} />Final disposition recorded {st.dispositionOn || '9/24/2026'} by {st.dispositionBy || 'Kristina Hill'}.
               </div>
             )}
@@ -151,47 +152,62 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
         )}
 
         {st.rejectionHistory.length > 0 && (
-          <div className="pf-maxw640">
-            <EyebrowLabel style={{ marginBottom: 6 }}>Rejection History</EyebrowLabel>
-            {st.rejectionHistory.map((h, i) => (
-              <div key={i} className="pf-history-row">
-                <Icon name="cancel" size={16} color="var(--fatal-text)" />
-                <span className="pf-strong">{h.target}</span>
-                <span className="pf-fg3">Rejected {h.date} · retargeted to {h.next}</span>
-              </div>
-            ))}
+          <div className="pfx-field">
+            <span className="pfxd-eyebrow">Rejection History</span>
+            <ListBox>
+              {st.rejectionHistory.map((h, i) => (
+                <ListRow key={i} className="pfxd-history-row">
+                  <Icon name="cancel" size={16} color="var(--fatal-text)" />
+                  <span className="pfxd-strong">{h.target}</span>
+                  <span className="pfxd-text">Rejected {h.date} · retargeted to {h.next}</span>
+                </ListRow>
+              ))}
+            </ListBox>
           </div>
         )}
 
-        <Field label="Date Submitted"><DateField width="178px" /></Field>
-        <Field label="Status Date"><DateField width="178px" /></Field>
-        <Field label="Embargo Date"><DateField width="178px" /></Field>
-        <Field label="Embargo Time">
-          <div className="pf-row pf-gap8">
-            <DateField time width="178px" />
-            <Select options={TIMEZONE_OPTIONS} {...bind('timezone')} width="100px" />
-          </div>
-        </Field>
-        <div>
-          <div className="pf-label pf-mb0">Planned Cost</div>
-          <div className="pf-14 pf-mt2">
-            {'$' + (st.planBudget || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-        </div>
-        <Field label="Actual Cost">
-          <MoneyField {...bind('actualCost')} width="150px" />
-        </Field>
-        <div>
-          <div className="pf-label pf-mb6">Outcome Comments</div>
-          <CommentComposer layout="stacked" width="100%" height="76px" />
-        </div>
-        <div>
-          <div className="pf-label pf-label--bold pf-mb10">
-            Attach Final Publication <Icon name="info" size={16} color="var(--high-emphasis)" title="Attach Final Publication" />
-          </div>
-          <DropZone newDocumentLabel="" />
-        </div>
-      </div>
-    </div>
+        <Pair>
+          <FormField id="pfxd-date-submitted" label="Date Submitted"><DateField id="pfxd-date-submitted" width="100%" /></FormField>
+          <FormField id="pfxd-status-date" label="Status Date"><DateField id="pfxd-status-date" width="100%" /></FormField>
+        </Pair>
+        <Pair>
+          <FormField id="pfxd-embargo-date" label="Embargo Date"><DateField id="pfxd-embargo-date" width="100%" /></FormField>
+          <FormField id="pfxd-embargo-time" label="Embargo Time">
+            <div className="pfxd-time">
+              <DateField id="pfxd-embargo-time" time width="100%" />
+              <Select options={TIMEZONE_OPTIONS} {...bind('timezone')} width="100%" aria-label="Time zone" />
+            </div>
+          </FormField>
+        </Pair>
+      </Card>
+
+      <Card title="Cost">
+        <Pair>
+          <FormField label="Planned Cost">
+            <div className="pfxd-money">
+              {'$' + (st.planBudget || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </FormField>
+          <FormField id="pfxd-actual-cost" label="Actual Cost">
+            <MoneyField id="pfxd-actual-cost" {...bind('actualCost')} width="100%" />
+          </FormField>
+        </Pair>
+      </Card>
+
+      <Card title="Outcome comments">
+        <CommentComposer layout="stacked" width="100%" height="76px" />
+      </Card>
+
+      <Card
+        title={(
+          <>
+            Attach final publication
+            <span className="pfxd-title-icon"><Icon name="info" size={16} color="var(--high-emphasis)" title="Attach Final Publication" /></span>
+          </>
+        )}
+      >
+        <DropZone newDocumentLabel="" />
+      </Card>
+    </Stack>
   );
 }

@@ -1,12 +1,13 @@
 import React from 'react';
 import useDismiss from '../../components/useDismiss';
-import { EyebrowLabel, Field, Icon, IconButton, SectionHeading, Select, TextArea, TextField } from '../../ds/pubpro';
+import { Icon, IconButton, Select, TextArea, TextField } from '../../ds/pubpro';
 import {
   PLANS, PRODUCT_TA, PRODUCTS, productsForTA, PUBTYPE_OPTIONS, REVIEW_DEPT_OPTIONS, REVIEW_SPONSOR_OPTIONS,
   REVIEW_SUBTYPE_OPTIONS, REVIEW_THERAPEUTIC_AREA_OPTIONS, TEMPLATE_FOR_TYPE, NO_VENDOR,
 } from './data';
 import { stageTemplatePatch } from './state';
-import { BoxCheck } from './shared';
+import { Card, ChipCheck, ChipChoice, FormField, Pair, Stack, TabHead } from './ui';
+import './tabs-a.css';
 
 export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans }) {
   const onPubType = e => {
@@ -53,70 +54,80 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
       : s.additionalProducts.concat([p]),
   }));
 
-  return (
-    <div className="pf-overview">
-      <SectionHeading subtitle="Core record details for this publication.">Overview</SectionHeading>
+  const abbrev = bind('abbrevTitle');
+  const isAbstract = st.pubType === 'Abstract';
+  const subTypeOptions = REVIEW_SUBTYPE_OPTIONS.filter(o => o.value);
 
-      <div className="pf-group">
-        <EyebrowLabel>Publication Identity</EyebrowLabel>
-        <Field label="Abbreviated Title" info="Maximum 60 characters">
-          <TextField {...bind('abbrevTitle')} maxLength={60} width="620px" style={{ maxWidth: '100%' }} />
-        </Field>
-        <Field label="Publication Title" info="Publication Title">
-          <TextArea {...bind('pubTitle')} width="620px" height="58px" style={{ maxWidth: '100%' }} />
-        </Field>
-        <Field label="Publication Type">
-          <Select options={PUBTYPE_OPTIONS} value={st.pubType} onChange={onPubType} width="300px" disabled={typeLocked} />
-          {typeLocked && <div className="pf-faint13 pf-mt5">Locked once the record is saved. Cancel the record and create a new one to change it.</div>}
-        </Field>
-        <Field label="Publication Sub-Type">
-          <Select
-            options={REVIEW_SUBTYPE_OPTIONS}
-            value={st.pubType === 'Abstract' ? st.subType : ''}
-            onChange={e => set({ subType: e.target.value })}
-            disabled={st.pubType !== 'Abstract'}
-            width="300px"
+  return (
+    <Stack>
+      <TabHead title="Overview" sub="Core record details for this publication." />
+
+      <Card title="Publication identity">
+        <FormField id="pf-abbrev" label="Abbreviated Title" counter={String(abbrev.value || '').length + ' / 60'} help="Maximum 60 characters">
+          <TextField id="pf-abbrev" {...abbrev} maxLength={60} width="100%" />
+        </FormField>
+        <FormField id="pf-pubtitle" label="Publication Title">
+          <TextArea id="pf-pubtitle" {...bind('pubTitle')} width="100%" height="58px" />
+        </FormField>
+        <Pair>
+          <FormField
+            id="pf-pubtype"
+            label="Publication Type"
+            help={typeLocked && (
+              <span className="pfxa-lock">
+                <Icon name="lock" size={14} color="var(--pfx-meta)" />
+                Locked once the record is saved. Cancel the record and create a new one to change it.
+              </span>
+            )}
+          >
+            <Select id="pf-pubtype" options={PUBTYPE_OPTIONS} value={st.pubType} onChange={onPubType} width="100%" disabled={typeLocked} />
+          </FormField>
+          <ChipChoice
+            label="Publication Sub-Type"
+            options={subTypeOptions}
+            value={isAbstract ? st.subType : ''}
+            onChange={v => set({ subType: v })}
+            disabled={!isAbstract}
+            help={!isAbstract ? 'Only used for abstracts.' : undefined}
           />
-          {st.pubType !== 'Abstract' && <div className="pf-faint13 pf-mt5">Only used for abstracts.</div>}
-        </Field>
-        <Field label="Parent Planning ID" info="Parent Planning ID">
+        </Pair>
+        <FormField id="pf-parentplan" label="Parent Planning ID">
           {st.parentPlan ? (
-            <div className="pf-planchip">
-              <div className="pf-flex1">
+            <div className="pfxa-linked">
+              <div className="pfxa-linked-text">
                 {planHref ? (
                   <a
                     href={planHref}
-                    className="pf-planchip-link"
+                    className="pfxa-linked-id"
                     onClick={e => { e.preventDefault(); navigate(planHref); }}
                   >
                     {st.parentPlan.id}
                     <Icon name="open_in_new" size={15} />
                   </a>
                 ) : (
-                  <span className="pf-planchip-link" title="This plan is not saved in PubPro">{st.parentPlan.id}</span>
+                  <span className="pfxa-linked-id" title="This plan is not saved in PubPro">{st.parentPlan.id}</span>
                 )}
-                <div className="pf-planchip-name">{st.parentPlan.name}</div>
+                <div className="pfxa-linked-name">{st.parentPlan.name}</div>
               </div>
               <IconButton
                 icon="close"
                 tone="fatal"
-                size={24}
+                size={30}
                 title="Remove parent plan"
                 onClick={() => set({ parentPlan: null, planQuery: '', planFocused: false })}
               />
             </div>
           ) : (
-            <div className="pf-search pf-search--340" ref={planRef}>
-              <div className="pf-search-box">
-                <Icon name="search" size={19} color="var(--text-meta)" style={{ padding: '0 6px 0 9px' }} />
-                <input
-                  value={st.planQuery}
-                  onChange={e => set({ planQuery: e.target.value })}
-                  onFocus={() => set({ planFocused: true })}
-                  placeholder="Search by plan ID or name"
-                  className="pf-search-input"
-                />
-              </div>
+            <div className="pfxa-search" ref={planRef}>
+              <TextField
+                id="pf-parentplan"
+                iconBefore="search"
+                width="100%"
+                value={st.planQuery}
+                onChange={e => set({ planQuery: e.target.value })}
+                onFocus={() => set({ planFocused: true })}
+                placeholder="Search by plan ID or name"
+              />
               {showPlanSuggestions && (
                 <div className="pf-menu">
                   {planMatches.map(p => (
@@ -130,35 +141,36 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
               )}
             </div>
           )}
-        </Field>
-      </div>
+        </FormField>
+      </Card>
 
-      <div className="pf-group">
-        <EyebrowLabel>Classification</EyebrowLabel>
-        <Field label="Therapeutic Area">
-          <Select options={REVIEW_THERAPEUTIC_AREA_OPTIONS} placeholder="Please select" value={ta} onChange={onTA} width="300px" />
-        </Field>
-        <Field label="Product">
-          <Select options={productsForTA(ta)} placeholder="Please select" value={st.product} onChange={onProduct} width="300px" />
-        </Field>
-        <Field label="Additional Products">
-          <div className="pf-checklist-box">
+      <Card title="Classification">
+        <Pair>
+          <FormField id="pf-ta" label="Therapeutic Area">
+            <Select id="pf-ta" options={REVIEW_THERAPEUTIC_AREA_OPTIONS} placeholder="Please select" value={ta} onChange={onTA} width="100%" />
+          </FormField>
+          <FormField id="pf-product" label="Product">
+            <Select id="pf-product" options={productsForTA(ta)} placeholder="Please select" value={st.product} onChange={onProduct} width="100%" />
+          </FormField>
+        </Pair>
+        <fieldset className="pfx-fieldset">
+          <legend className="pfx-label">Additional Products</legend>
+          <div className="pfx-chips">
             {PRODUCTS.filter(p => p !== st.product).map(p => (
-              <label key={p} className="pf-checkline" onClick={() => toggleProduct(p)}>
-                <BoxCheck on={st.additionalProducts.includes(p)} size={16} fill="var(--high-emphasis)" border="var(--high-emphasis)" />
-                {p}
-              </label>
+              <ChipCheck key={p} label={p} checked={st.additionalProducts.includes(p)} onChange={() => toggleProduct(p)} />
             ))}
           </div>
-          {st.additionalProducts.length === 0 && <div className="pf-faint13 pf-italic pf-mt5">No additional products selected.</div>}
-        </Field>
-        <Field label="Department">
-          <Select options={REVIEW_DEPT_OPTIONS} placeholder="Please select" {...bind('department')} width="300px" />
-        </Field>
-        <Field label="Sponsor Type">
-          <Select options={REVIEW_SPONSOR_OPTIONS} placeholder="Please select" {...bind('sponsorType')} width="300px" />
-        </Field>
-      </div>
-    </div>
+          {st.additionalProducts.length === 0 && <div className="pfx-help">No additional products selected.</div>}
+        </fieldset>
+        <Pair>
+          <FormField id="pf-dept" label="Department">
+            <Select id="pf-dept" options={REVIEW_DEPT_OPTIONS} placeholder="Please select" {...bind('department')} width="100%" />
+          </FormField>
+          <FormField id="pf-sponsor" label="Sponsor Type">
+            <Select id="pf-sponsor" options={REVIEW_SPONSOR_OPTIONS} placeholder="Please select" {...bind('sponsorType')} width="100%" />
+          </FormField>
+        </Pair>
+      </Card>
+    </Stack>
   );
 }

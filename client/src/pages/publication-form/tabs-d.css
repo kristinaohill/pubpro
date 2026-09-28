@@ -1,0 +1,103 @@
+/* Compliance, Outcome, Citations, Task Options, Documents and Audit Trail tabs (redesign). */
+
+/* ---- Shared bits ---- */
+.pfxd-grow { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pfxd-strong { font-size: 14px; font-weight: 700; color: var(--pfx-text); }
+.pfxd-text { font-size: 13px; color: var(--pfx-sub); }
+.pfxd-note { font-size: 12px; color: var(--pfx-meta); line-height: 1.45; }
+.pfxd-ellipsis { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pfxd-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pfxd-actions--end { justify-content: flex-end; }
+.pfxd-push { margin-left: auto; }
+.pfxd-bar { display: block; height: 6px; border-radius: 3px; background: #E6EAEF; overflow: hidden; flex: none; }
+.pfxd-bar > span { display: block; height: 100%; background: var(--ok); }
+.pfxd-iconline { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--pfx-sub); }
+.pfxd-iconline--ok { color: var(--ok); font-weight: 600; }
+
+/* ---- Compliance ---- */
+.pfxd-progress { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.pfxd-progress-label { font-size: 14px; font-weight: 700; color: var(--nav); white-space: nowrap; }
+.pfxd-progress .pfxd-bar { width: 180px; background: var(--pfx-line); }
+.pfxd-ready-count { font-size: 13px; color: var(--pfx-sub); margin-top: -8px; }
+.pfxd-ready-count strong { color: #9E1B1B; }
+.pfxd-ready-count--ok strong { color: #1B6B33; }
+.pfxd-ready-row { padding: 10px 14px; }
+.pfxd-ready-label { font-size: 13px; color: var(--pfx-text); }
+
+.pfxd-group + .pfxd-group { border-top: 1px solid var(--pfx-line); }
+.pfxd-group-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--white); }
+.pfxd-group--open .pfxd-group-head { background: #F6F8FA; }
+.pfxd-group-toggle {
+  width: 28px; height: 28px; flex: none; border-radius: 6px; border: 1px solid #D5DBE2; background: var(--white);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; color: var(--nav);
+}
+.pfxd-group-toggle:hover { border-color: var(--nav); }
+.pfxd-group-toggle:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 2px; }
+.pfxd-group-name { flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 700; color: var(--nav); }
+.pfxd-group-head .pfxd-bar { width: 110px; }
+.pfxd-group-count { width: 96px; flex: none; text-align: right; font-size: 12px; color: var(--pfx-meta); }
+.pfxd-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px 11px 56px; border-top: 1px solid var(--pfx-line-soft); }
+.pfxd-item-check { flex: none; display: flex; cursor: pointer; }
+.pfxd-item-label { flex: 1 1 auto; min-width: 0; font-size: 14px; color: var(--pfx-text); }
+.pfxd-item--done .pfxd-item-label { color: var(--pfx-meta); text-decoration: line-through; }
+.pfxd-item-owner { width: 100px; flex: none; font-size: 13px; color: var(--pfx-sub); }
+.pfxd-item-due { width: 80px; flex: none; font-size: 13px; color: var(--pfx-sub); }
+.pfxd-item-req { width: 76px; flex: none; display: flex; justify-content: flex-end; }
+@media (max-width: 700px) {
+  .pfxd-group-head .pfxd-bar { display: none; }
+  .pfxd-item { flex-wrap: wrap; padding-left: 16px; }
+  .pfxd-item-label { flex-basis: calc(100% - 32px); }
+  .pfxd-item-owner, .pfxd-item-due { width: auto; }
+  .pfxd-item-req { width: auto; margin-left: auto; }
+}
+
+/* ---- Outcome ---- */
+.pfxd-sub {
+  border: 1px solid var(--pfx-line); border-radius: 10px; background: #F8FAFC;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 12px;
+}
+.pfxd-sub-head { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.pfxd-sub-title { margin: 0; font-size: 14px; font-weight: 700; color: var(--nav); }
+.pfxd-steps { display: flex; flex-direction: column; gap: 8px; }
+.pfxd-step { display: flex; align-items: center; gap: 10px; }
+.pfxd-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--pfx-meta); text-transform: uppercase; }
+.pfxd-history-row { padding: 10px 14px; gap: 10px; font-size: 13px; }
+.pfxd-child-row { padding: 12px 16px; gap: 12px; }
+.pfxd-child-row a { font-size: 13px; font-weight: 700; white-space: nowrap; }
+.pfxd-time { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 8px; }
+.pfxd-money { height: 36px; display: flex; align-items: center; font-size: 16px; font-weight: 700; color: var(--nav); }
+.pfxd-title-icon { display: inline-flex; cursor: help; }
+
+/* ---- Citations ---- */
+.pfxd-cite-row { align-items: center; }
+.pfxd-cite-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pfxd-cite-source { font-size: 13px; color: var(--pfx-sub); }
+.pfxd-cite-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pfxd-cite-checks { width: 200px; flex: none; display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.pfxd-cite-status { font-size: 13px; font-weight: 700; }
+.pfxd-cite-check { font-size: 12px; color: var(--pfx-meta); display: flex; align-items: center; gap: 6px; }
+@media (max-width: 700px) {
+  .pfxd-cite-row { flex-wrap: wrap; }
+  .pfxd-cite-main { flex-basis: 100%; }
+}
+
+/* ---- Task Options ---- */
+.pfxd-radios { display: flex; gap: 20px; flex-wrap: wrap; }
+
+/* ---- Audit Trail ---- */
+.pfxd-file-row { gap: 14px; }
+.pfxd-timeline { display: flex; flex-direction: column; }
+.pfxd-entry { display: flex; gap: 14px; }
+.pfxd-entry-rail { display: flex; flex-direction: column; align-items: center; flex: none; }
+.pfxd-entry-dot { width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; background: #E3ECF5; color: var(--nav); }
+.pfxd-entry--active .pfxd-entry-dot { background: #DDF0E3; color: var(--ok); }
+.pfxd-entry-line { flex: 1 1 auto; width: 2px; background: #E3E7EC; margin-top: 4px; }
+.pfxd-entry-body { flex: 1 1 auto; min-width: 0; padding-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+.pfxd-entry:last-child .pfxd-entry-body { padding-bottom: 0; }
+.pfxd-entry-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pfxd-entry-action { font-size: 14px; font-weight: 700; color: var(--nav); }
+.pfxd-preline { white-space: pre-line; overflow-wrap: anywhere; }
+.pfxd-entry-people { font-size: 13px; color: var(--pfx-text); }
+
+/* A meta line tucked under a card title. */
+.pfxd-lead { margin-top: -8px; }

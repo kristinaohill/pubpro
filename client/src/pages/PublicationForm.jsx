@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Button, ConfirmModal, Field, FormActionBar, Icon, InlineMessage, Pill, SideTabRail, TextArea, Tooltip } from '../ds/pubpro';
+import { Button, ConfirmModal, Field, InlineMessage, TextArea } from '../ds/pubpro';
 import Flash from '../components/Flash';
 import { api } from '../api';
 import { STATUS_TONE } from './Publications';
 import { useAuth } from '../AuthContext';
 import DocumentPanel from './publication-form/DocumentPanel';
-import { TABS, TODAY_STR } from './publication-form/data';
+import { AtAGlance, RecordSummary, SectionNav } from './publication-form/frame';
+import { TODAY_STR } from './publication-form/data';
 import {
   FIELD_DEFAULTS, auditEntry, blankState, changedSections, deriveProgress, fromSavedData, missingFlags,
   openRoundOf, statusOf, summarize, titleOf, toSavedData,
@@ -43,81 +44,6 @@ const TAB_VIEWS = {
   documents: DocumentsTab,
   audit: AuditTab,
 };
-
-function ProgressStrip({ prog, onOpenReviews, onOpenPlanning }) {
-  // Full-width timeline under the cards: one segment per step, labels only on the current and
-  // next step, and every step's name and date in a tooltip on hover or keyboard focus.
-  const [hover, setHover] = useState(null);
-  const steps = prog.progSteps;
-  const doneCount = steps.filter(s => s.state === 'done').length;
-  const currentIdx = steps.findIndex(s => s.state === 'current');
-  const nextIdx = currentIdx < 0 ? -1 : steps.findIndex((s, i) => i > currentIdx && s.state !== 'done');
-  return (
-    <>
-      <div className="pf-prog">
-        <div className="pf-prog-cell pf-prog-cell--link" onClick={onOpenPlanning} title="Open the Planning tab">
-          <div className="pf-eyebrow">{prog.progStepOf}</div>
-          <div className="pf-prog-step">{prog.progStepName}</div>
-          <div className="pf-prog-due">
-            <Pill tone={prog.progDueTone}>{prog.progDueRel}</Pill>
-            {prog.progDue !== '—' && <span className="pf-nowrap-text">Due {prog.progDue}</span>}
-          </div>
-        </div>
-        <div className="pf-prog-cell pf-prog-cell--link" onClick={onOpenReviews} title="Open the Reviews tab">
-          <div className="pf-eyebrow">{prog.progHasRound ? 'RESPONSES · ' + prog.progRoundLabel.toUpperCase() : 'RESPONSES'}</div>
-          <div className="pf-prog-val16">{prog.progDoneLabel}</div>
-          <div className="pf-prog-bar"><div className="pf-prog-bar-fill" style={{ width: prog.progPct }} /></div>
-          <div className="pf-prog-ooo">
-            <Icon name={prog.progHasRound ? 'event_busy' : 'rate_review'} size={14} />{prog.progOooLabel}
-          </div>
-        </div>
-        <div className="pf-prog-cell">
-          <div className="pf-eyebrow">NEXT STEP</div>
-          <div className="pf-prog-val14">{prog.progNextName}</div>
-          {prog.progNextDate !== '—' && <div className="pf-meta">Planned {prog.progNextDate}</div>}
-        </div>
-        <div className="pf-prog-cell">
-          <div className="pf-eyebrow">SUBMISSION DEADLINE</div>
-          <div className="pf-prog-val14">{prog.progDeadline}</div>
-          <div className="pf-meta">{prog.progDeadlineNote}</div>
-        </div>
-      </div>
-      {steps.length > 0 && (
-        <div className="pf-tl" role="list" aria-label={doneCount + ' of ' + steps.length + ' steps done'}>
-          {steps.map((s, i) => {
-            const label = i === currentIdx ? 'Now' : i === nextIdx ? 'Next' : '';
-            return (
-              <div
-                key={s.name + i}
-                role="listitem"
-                tabIndex={0}
-                aria-label={s.name + ': ' + s.tip}
-                className={'pf-tl-step pf-tl-step--' + s.state + (label ? ' pf-tl-step--labelled' : '')}
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover(null)}
-                onFocus={() => setHover(i)}
-                onBlur={() => setHover(null)}
-              >
-                <div className="pf-tl-seg" />
-                {label && (
-                  <div className="pf-tl-label">
-                    <span className="pf-tl-eyebrow">{label}</span>
-                    {s.name}
-                  </div>
-                )}
-                {hover === i && (
-                  <Tooltip title={s.name} align={i < steps.length / 2 ? 'left' : 'right'} width={230}>
-                    {'Step ' + (i + 1) + ' of ' + steps.length + ' · ' + s.tip}
-                  </Tooltip>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </>
-  );
-}
 
 /**
  * /publication/new is a blank record; /publication/:id is a saved one.
@@ -321,7 +247,8 @@ export default function PublicationForm() {
   const cancelled = st.cancelled;
   const prog = deriveProgress(st);
   const missing = missingFlags(st);
-  const tabs = TABS.map(([tid, label, icon]) => ({ id: tid, label: label.toUpperCase(), icon, flagged: !!missing[tid] }));
+  const status = statusOf(st);
+  const openTab = tid => set({ tab: tid });
 
   const TabView = TAB_VIEWS[st.tab] || OverviewTab;
   const tabProps = {
@@ -333,67 +260,52 @@ export default function PublicationForm() {
   };
 
   return (
-    <div className="pf-page">
-      <div className="pf-shell pf-head">
-        <div className="pf-head-top">
-          <img src="/ds/assets/icons/icon-pubpro.svg" alt="PubPro" className="pf-head-icon" />
-          <div className="pf-head-titles">
-            <div className="pf-title">{title}</div>
-            <div className="pf-subtitle">
-              {record ? prog.currentStepName + ' ' + recordId : 'Not saved yet · the record ID is assigned on first save'}
-            </div>
-          </div>
-          <div className="pf-head-owner">
-            <div>Owner: {owner}</div>
-            <div>Product: <strong>{st.product || '—'}</strong></div>
-            {record && <div className="pf-mt3"><Pill tone={STATUS_TONE[statusOf(st)]}>{statusOf(st)}</Pill></div>}
-          </div>
-        </div>
+    <div className="pf-page pfx-page">
+      <div className="pfx-shell">
+        <RecordSummary
+          st={st} title={title} recordId={recordId} saved={!!record} owner={owner}
+          status={status} statusTone={STATUS_TONE[status]} prog={prog} onTab={openTab}
+        />
         {cancelled && (
-          <div className="pf-mb12">
-            <InlineMessage kind="warning">
-              Cancelled {cancelled.on} by {cancelled.by}: {cancelled.reason}. The record is read-only; reinstate it to make changes.
-            </InlineMessage>
+          <InlineMessage kind="warning">
+            Cancelled {cancelled.on} by {cancelled.by}: {cancelled.reason}. The record is read-only; reinstate it to make changes.
+          </InlineMessage>
+        )}
+
+        <div className="pfx-body">
+          <SectionNav active={st.tab} flags={missing} onSelect={openTab} />
+          <div className={'pfx-main' + (cancelled ? ' pf-panel--readonly' : '')}>
+            <fieldset className="pf-fieldset pfx-main" disabled={!!cancelled}>
+              <TabView {...tabProps} />
+            </fieldset>
           </div>
-        )}
-        <ProgressStrip prog={prog} onOpenReviews={() => set({ tab: 'reviewers' })} onOpenPlanning={() => set({ tab: 'planning' })} />
-      </div>
-
-      <div className="pf-shell pf-body">
-        <div className="pf-rail">
-          <SideTabRail tabs={tabs} active={st.tab} onSelect={tid => set({ tab: tid })} style={{ alignSelf: 'stretch' }} />
+          <AtAGlance st={st} record={record} recordId={recordId} onTab={openTab} />
         </div>
-        <div className={'pf-panel' + (cancelled ? ' pf-panel--readonly' : '')}>
-          <fieldset className="pf-fieldset" disabled={!!cancelled}>
-            <TabView {...tabProps} />
-          </fieldset>
+
+        {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
+
+        <div className="pfx-actions">
+          {cancelled ? (
+            <Button variant="secondary" onClick={() => navigate('/publications')}>Close</Button>
+          ) : (
+            <>
+              {record && <Button variant="fatal" onClick={() => setCancelOpen(true)} disabled={saving}>Cancel Publication</Button>}
+              <Button variant="tertiary">Send Note</Button>
+            </>
+          )}
+          <div className="pfx-actions-right">
+            {cancelled ? (
+              <Button variant="secondary" onClick={reinstate} disabled={saving}>Reinstate Publication</Button>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => navigate('/publications')}>Close Without Saving</Button>
+                <Button variant="secondary" onClick={() => persist(st)} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
+                <Button variant="primary" onClick={() => persist(st, { close: true })} disabled={saving}>Save &amp; Close</Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-
-      {message && (
-        <Flash kind={message.kind} watch={message} className="pf-shell pf-status">{message.text}</Flash>
-      )}
-
-      <FormActionBar
-        style={{ padding: '26px var(--page-gutter) 30px', gap: 12 }}
-        left={cancelled ? (
-          <Button variant="secondary" onClick={() => navigate('/publications')}>Close</Button>
-        ) : (
-          <>
-            {record && <Button variant="fatal" onClick={() => setCancelOpen(true)} disabled={saving}>Cancel Publication</Button>}
-            <Button variant="secondary" onClick={() => navigate('/publications')}>Close Without Saving</Button>
-            <Button variant="tertiary">Send Note</Button>
-          </>
-        )}
-        right={cancelled ? (
-          <Button variant="secondary" onClick={reinstate} disabled={saving}>Reinstate Publication</Button>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={() => persist(st)} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>
-            <Button variant="primary" onClick={() => persist(st, { close: true })} disabled={saving}>Save &amp; Close</Button>
-          </>
-        )}
-      />
 
       {docOpen && (
         <DocumentPanel st={st} set={set} commit={commit} saving={saving} recordId={recordId} userName={userName} onClose={() => setDocOpen(false)} />

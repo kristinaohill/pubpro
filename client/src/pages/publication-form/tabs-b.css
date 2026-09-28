@@ -1,0 +1,64 @@
+/* Authors and Target tabs (redesign). Builds on the ui.css kit; every class here is pfxb-. */
+
+/* ---- Authors: add-author bar ---- */
+.pfxb-addbar { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.pfxb-addbar-search { flex: 1 1 300px; min-width: 0; }
+
+/* ---- Authors: one card per author ---- */
+.pfxb-authors { display: flex; flex-direction: column; gap: 12px; }
+.pfxb-author {
+  border: 1px solid #E3E7EC; border-radius: 10px; padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 14px; min-width: 0; background: var(--white);
+}
+.pfxb-author-top { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.pfxb-order {
+  width: 28px; height: 28px; flex: none; border-radius: 14px; background: #E3ECF5; color: var(--nav);
+  font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.pfxb-author-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.pfxb-author-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pfxb-author-name { font-size: 15px; font-weight: 700; color: var(--nav); overflow-wrap: anywhere; }
+a.pfxb-author-name { color: var(--text-link); text-decoration: none; }
+a.pfxb-author-name:hover { color: var(--nav); text-decoration: underline; }
+.pfxb-affil { font-size: 13px; color: var(--pfx-sub); overflow-wrap: anywhere; }
+.pfxb-flags { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
+.pfxb-flag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--nav); }
+.pfxb-invite { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; flex: none; max-width: 220px; }
+.pfxb-invite-label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.pfxb-invite-meta { font-size: 12px; color: var(--pfx-meta); }
+.pfxb-remove { flex: none; padding-top: 1px; }
+.pfxb-author-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: -4px; padding-left: 40px; }
+
+/* Status tiles: Agreement, COI, Debarment, ICMJE */
+.pfxb-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 700px) { .pfxb-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.pfxb-tile {
+  border-radius: 8px; background: #F6F8FA; padding: 10px 12px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0;
+}
+.pfxb-tile-label { font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--pfx-meta); text-transform: uppercase; }
+.pfxb-tile-value { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.pfxb-tile-meta { font-size: 12px; color: var(--pfx-meta); }
+.pfxb-tile-action { margin-top: 4px; }
+.pfxb-icmje { display: flex; gap: 2px; }
+.pfxb-icmje-all { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--ok); }
+
+/* CRediT roles */
+.pfxb-credit { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; min-width: 0; }
+.pfxb-credit-label { font-size: 13px; font-weight: 600; color: var(--pfx-text); }
+.pfxb-credit-summary { min-width: 0; flex: 0 1 auto; overflow-wrap: anywhere; }
+.pfxb-credit-editor { border-top: 1px solid var(--pfx-line-soft); padding-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ---- Authors: split tables layout ---- */
+.pfxb-split-empty { font-size: 13px; color: var(--pfx-meta); font-style: italic; padding: 4px 2px; }
+.pfxb-split-add { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+
+/* ---- Target: shortlist ---- */
+.pfxb-drag { display: flex; cursor: grab; flex: none; }
+.pfxb-target-row { cursor: grab; }
+.pfxb-rank { width: 22px; flex: none; font-size: 14px; font-weight: 700; color: var(--nav); }
+.pfxb-target-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pfxb-target-name { font-size: 14px; font-weight: 700; color: var(--pfx-text); overflow-wrap: anywhere; }
+.pfxb-target-meta { font-size: 12px; color: var(--pfx-meta); }
+.pfxb-primary-name { font-size: 14px; font-weight: 600; color: var(--pfx-text); }
+.pfxb-moved { font-size: 12px; color: var(--warn-text); margin-top: 2px; }

@@ -1,7 +1,9 @@
 import React from 'react';
-import { AIActionButton, Button, Field, IconButton, Pill, SectionHeading, Select, TextField } from '../../ds/pubpro';
+import { AIActionButton, Button, IconButton, Pill, Select, TextField } from '../../ds/pubpro';
 import DateField from '../../components/DateField';
 import { CITATION_TYPE_OPTIONS } from './data';
+import { Card, FormField, ListBox, ListRow, Pair, Stack, TabHead, Tag } from './ui';
+import './tabs-d.css';
 
 const CITATIONS = [
   { ref: 'Hill K, Ternal I, Altschuler S, et al.', source: 'Journal of Cardiometabolic Medicine. 2027;14(3):211-224.', type: 'Journal Article', doi: '10.1093/jcm/ehx2027', v: ['Verified', 'var(--ok)', 'Clear', 'Relevant'] },
@@ -22,61 +24,58 @@ export default function CitationsTab({ st, set, bind }) {
   }));
 
   return (
-    <div className="pf-stack24">
-      <div className="pf-divided-block pf-pb20">
-        <SectionHeading style={{ marginBottom: 12 }}>Citations</SectionHeading>
-        <div className="pf-cite-bar">
-          <div className="pf-h3">Linked Citations</div>
-          <div className="pf-ml-auto">
-            <AIActionButton onClick={() => set({ citationsVerified: true })}>AI: Verify All Citations</AIActionButton>
-          </div>
-        </div>
-        {done && <div className="pf-meta pf-cite-note">Checked against PubMed 9/24/2026 · 1 retracted · 2 need a relevance review</div>}
-        <div className="pf-scroll-x">
-          <div className="pf-cite-grid pf-cite-head">
-            <div>Authors</div>
-            <div>Source</div>
-            <div>Citation Type</div>
-            <div>DOI</div>
-            <div>Status</div>
-            <div>Retraction Check</div>
-            <div>Relevance</div>
-            <div />
-          </div>
-          {citations.map(c => (
-            <div key={c.ref} className="pf-cite-grid pf-cite-row">
-              <div className="pf-ellipsis">{c.ref}</div>
-              <div className="pf-ellipsis">{c.source}</div>
-              <div className="pf-ellipsis">{c.type}</div>
-              <div className="pf-ellipsis">{c.doi}</div>
-              <div className="pf-strong pf-min0" style={{ color: c.statusColor }}>{c.status}</div>
-              <div><Pill tone={c.retractionTone}>{c.retraction}</Pill></div>
-              <div><Pill tone={c.relevanceTone}>{c.relevance}</Pill></div>
-              <div className="pf-justify-end">
-                <IconButton icon="close" tone="fatal" size={26} title="Remove citation" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <Stack>
+      <TabHead
+        title="Citations"
+        sub="References cited by this publication."
+        actions={<AIActionButton onClick={() => set({ citationsVerified: true })}>AI: Verify All Citations</AIActionButton>}
+      />
 
-      <div>
-        <SectionHeading level="subsection" style={{ marginBottom: 14 }}>Add Citation</SectionHeading>
-        <div className="pf-cite-form">
-          <Field label="Citation Type">
-            <Select options={CITATION_TYPE_OPTIONS} {...bind('citationType')} width="100%" />
-          </Field>
-          <Field label="Journal / Source"><TextField width="100%" /></Field>
-          <Field label="Volume / Issue / Pages"><TextField width="100%" /></Field>
-          <Field label="Publication Date"><DateField width="100%" /></Field>
-          <Field label="DOI"><TextField placeholder="10.xxxx/xxxxx" width="100%" /></Field>
-          <Field label="PMID"><TextField width="100%" /></Field>
-        </div>
-        <div className="pf-row pf-gap12 pf-mt18 pf-pl22">
+      <Card title="Linked citations" meta={`${citations.length} citation${citations.length === 1 ? '' : 's'}`}>
+        {done && <div className="pfxd-text pfxd-lead">Checked against PubMed 9/24/2026 · 1 retracted · 2 need a relevance review</div>}
+        <ListBox>
+          {citations.map(c => (
+            <ListRow key={c.ref} className="pfxd-cite-row">
+              <div className="pfxd-cite-main">
+                <span className="pfxd-strong">{c.ref}</span>
+                <span className="pfxd-cite-source">{c.source}</span>
+                <span className="pfxd-cite-meta">
+                  <Tag tone="outline">{c.type}</Tag>
+                  <span className="pfxd-note">DOI {c.doi}</span>
+                </span>
+              </div>
+              <div className="pfxd-cite-checks">
+                <span className="pfxd-cite-status" style={{ color: c.statusColor }}>{c.status}</span>
+                <span className="pfxd-cite-check">Retraction: <Pill tone={c.retractionTone}>{c.retraction}</Pill></span>
+                <span className="pfxd-cite-check">Relevance: <Pill tone={c.relevanceTone}>{c.relevance}</Pill></span>
+              </div>
+              <IconButton icon="close" tone="fatal" size={26} title="Remove citation" />
+            </ListRow>
+          ))}
+        </ListBox>
+      </Card>
+
+      <Card title="Add citation">
+        <Pair>
+          <FormField id="pfxd-cite-type" label="Citation Type">
+            <Select id="pfxd-cite-type" options={CITATION_TYPE_OPTIONS} {...bind('citationType')} width="100%" />
+          </FormField>
+          <FormField id="pfxd-cite-date" label="Publication Date"><DateField id="pfxd-cite-date" width="100%" /></FormField>
+        </Pair>
+        <FormField id="pfxd-cite-source" label="Journal / Source"><TextField id="pfxd-cite-source" width="100%" /></FormField>
+        <Pair>
+          <FormField id="pfxd-cite-vol" label="Volume / Issue / Pages"><TextField id="pfxd-cite-vol" width="100%" /></FormField>
+          <div />
+        </Pair>
+        <Pair>
+          <FormField id="pfxd-cite-doi" label="DOI"><TextField id="pfxd-cite-doi" placeholder="10.xxxx/xxxxx" width="100%" /></FormField>
+          <FormField id="pfxd-cite-pmid" label="PMID"><TextField id="pfxd-cite-pmid" width="100%" /></FormField>
+        </Pair>
+        <div className="pfxd-actions">
           <Button variant="primary">Add Citation</Button>
           <AIActionButton>AI: Look Up by DOI</AIActionButton>
         </div>
-      </div>
-    </div>
+      </Card>
+    </Stack>
   );
 }

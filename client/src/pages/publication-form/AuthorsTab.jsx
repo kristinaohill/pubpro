@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import useDismiss from '../../components/useDismiss';
 import { api } from '../../api';
 import {
-  Button, CheckboxGroup, DataTable, Field, Icon, IconButton, Pill, SearchSelect, SectionHeading,
+  Button, CheckboxGroup, DataTable, Icon, IconButton, SearchSelect,
   SegmentedToggle, Select, TextField,
 } from '../../ds/pubpro';
 import {
@@ -10,6 +10,8 @@ import {
   INTERNAL_AUTHOR_DIRECTORY, REVIEWER_DIRECTORY, TODAY, TODAY_STR,
 } from './data';
 import { auditEntry } from './state';
+import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
+import './tabs-b.css';
 
 // ICMJE criteria read from the record's review rounds.
 const gaveFeedback = (st, person) => (st.rounds || []).some(r => r.type !== 'Author Approval'
@@ -17,20 +19,7 @@ const gaveFeedback = (st, person) => (st.rounds || []).some(r => r.type !== 'Aut
 const gaveApproval = (st, person) => (st.rounds || []).some(r => r.type === 'Author Approval'
   && r.reviewers.some(v => v.name === person && v.decision === 'approve'));
 
-const KV_COLS = [
-  { header: 'Order', width: '52px', sortable: true },
-  { header: 'Author', width: 'minmax(150px,1.6fr)', sortable: true },
-  { header: 'Type', width: '92px', sortable: true },
-  { header: 'Invitation', width: '130px', sortable: true },
-  { header: 'Agreement', width: '120px', sortable: true },
-  { header: 'COI', width: '130px', sortable: true },
-  { header: 'Debarment', width: '104px', sortable: true },
-  { header: 'ORCID iD', width: '176px', sortable: true },
-  { header: 'CRediT Roles', width: '190px', sortable: true },
-  { header: 'ICMJE', width: '110px', sortable: true },
-  { header: 'Display Name', width: 'minmax(130px,1fr)', sortable: true },
-  { header: '', width: '30px' },
-];
+// Knowledge View card order: the same sort keys the old table's columns used (st.kvSort.by indexes these).
 const KV_SORT_KEYS = ['order', 'person', 'typeLabel', 'inviteRank', 'signedTs', 'coiTs', 'debarRank', 'orcid', 'creditCount', 'icmjeCount', 'display'];
 
 const INTERNAL_COLS = [
@@ -51,6 +40,9 @@ const FILTER_OPTIONS = ['All', 'Internal', 'External'];
 const INVITED = { status: 'sent', sent: TODAY_STR };
 
 const ROLE_OF = n => (REVIEWER_DIRECTORY.find(p => p.name === n) || {}).role || 'Internal Author';
+
+// Row tones (DS Pill names) shown as layout-kit Tags.
+const TAG_TONE = { draft: 'grey', outline: 'outline', 'on-track': 'green', overdue: 'red' };
 
 const sortList = (list, sort, keys) => {
   const k = keys[sort.by];
@@ -219,152 +211,175 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
     return { external: s.external.concat([{ ...base, ...d }]), authorQuery: '', authorSearchOpen: false };
   });
 
+  const accepted = kvAll.filter(a => a.inviteRank === 3).length;
+
   return (
-    <div className="pf-stack14">
-      <div className="pf-row-end">
-        <SectionHeading>Authors</SectionHeading>
-        <div className="pf-meta pf-pb5">{kvAll.filter(a => a.inviteRank === 3).length} of {kvAll.length} authors accepted</div>
-        {kvAll.some(a => a.canInvite) && (
-          <div className="pf-ml-auto">
-            <Button variant="secondary" onClick={inviteAllPending} disabled={saving}>Invite All Pending</Button>
-          </div>
+    <Stack>
+      <TabHead
+        title="Authors"
+        sub={accepted + ' of ' + kvAll.length + ' authors accepted'}
+        actions={kvAll.some(a => a.canInvite) && (
+          <Button variant="secondary" style={ON_GREY} onClick={inviteAllPending} disabled={saving}>Invite All Pending</Button>
         )}
-      </div>
+      />
 
-      <div className="pf-row pf-wrap pf-gap-16-26">
-        <Field label="Presenting Author">
-          <Select options={roleOptions} value={st.presentingAuthor} onChange={e => set({ presentingAuthor: e.target.value })} width="260px" />
-        </Field>
-        <Field label="Corresponding Author">
-          <Select options={roleOptions} value={st.correspondingAuthor} onChange={e => set({ correspondingAuthor: e.target.value })} width="260px" />
-        </Field>
-      </div>
+      <Card title="Roles">
+        <Pair>
+          <FormField id="pfxb-presenting" label="Presenting Author">
+            <Select id="pfxb-presenting" options={roleOptions} value={st.presentingAuthor} onChange={e => set({ presentingAuthor: e.target.value })} width="100%" />
+          </FormField>
+          <FormField id="pfxb-corresponding" label="Corresponding Author">
+            <Select id="pfxb-corresponding" options={roleOptions} value={st.correspondingAuthor} onChange={e => set({ correspondingAuthor: e.target.value })} width="100%" />
+          </FormField>
+        </Pair>
+      </Card>
 
-      <div className="pf-row-end">
-        <div className="pf-col pf-gap5 pf-maxw100" ref={authorRef}>
-          <div className="pf-label pf-mb0">Add Author</div>
-          <SearchSelect
-            value={st.authorQuery}
-            placeholder="Search by name, role, or institution"
-            suggestions={authorPool}
-            open={st.authorSearchOpen}
-            emptyLabel={aq ? 'No authors match “' + st.authorQuery + '”.' : 'Everyone in the directory is already an author.'}
-            width="360px"
-            onChange={e => set({ authorQuery: e.target.value, authorSearchOpen: true })}
-            onFocus={() => set({ authorSearchOpen: true })}
-            onClear={() => set({ authorQuery: '', authorSearchOpen: false })}
-            onPick={pickAuthor}
-            style={{ maxWidth: '100%' }}
-          />
-        </div>
-        <div className="pf-ml-auto pf-row pf-gap12">
-          <div className="pf-faint13">{kvFiltered.length + (kvFiltered.length === 1 ? ' author' : ' authors')}</div>
+      <Card title="Authors" meta={kvFiltered.length + (kvFiltered.length === 1 ? ' author' : ' authors')}>
+        <div className="pfxb-addbar">
+          <div className="pfxb-addbar-search" ref={authorRef}>
+            <FormField label="Add Author">
+              <SearchSelect
+                value={st.authorQuery}
+                placeholder="Search by name, role, or institution"
+                suggestions={authorPool}
+                open={st.authorSearchOpen}
+                emptyLabel={aq ? 'No authors match “' + st.authorQuery + '”.' : 'Everyone in the directory is already an author.'}
+                width="100%"
+                onChange={e => set({ authorQuery: e.target.value, authorSearchOpen: true })}
+                onFocus={() => set({ authorSearchOpen: true })}
+                onClear={() => set({ authorQuery: '', authorSearchOpen: false })}
+                onPick={pickAuthor}
+                style={{ maxWidth: '100%' }}
+              />
+            </FormField>
+          </div>
           <SegmentedToggle options={FILTER_OPTIONS} value={st.authorFilter} onChange={v => set({ authorFilter: v })} />
         </div>
-      </div>
 
-      <div className="pf-scroll-x">
-        <div className="pf-kv-min">
-          <DataTable columns={KV_COLS} headerTone="knowledge" sortBy={st.kvSort.by} sortDir={st.kvSort.dir} onSort={i => set(s => ({ kvSort: nextSort(s.kvSort, i) }))}>
+        {rows.length > 0 && (
+          <div className="pfxb-authors">
             {rows.map(a => (
-              <div key={a.key} className="pf-kv-row">
-                <div className="pf-kv-grid">
-                  <div className="pf-strong">{a.order}</div>
-                  <div className="pf-min0">
-                    {a.isExternal ? (
-                      <a
-                        href="/external-authors"
-                        className="pf-strong"
-                        onClick={e => { e.preventDefault(); openProfile(a.person); }}
-                      >
-                        {a.person}
-                      </a>
-                    ) : (
-                      <div className="pf-strong">{a.person}</div>
+              <article key={a.key} className="pfxb-author">
+                <div className="pfxb-author-top">
+                  <span className="pfxb-order" aria-label={'Author order ' + a.order}>{a.order}</span>
+                  <div className="pfxb-author-id">
+                    <div className="pfxb-author-line">
+                      {a.isExternal ? (
+                        <a
+                          href="/external-authors"
+                          className="pfxb-author-name"
+                          onClick={e => { e.preventDefault(); openProfile(a.person); }}
+                        >
+                          {a.person}
+                        </a>
+                      ) : (
+                        <span className="pfxb-author-name">{a.person}</span>
+                      )}
+                      <Tag tone={TAG_TONE[a.typeTone] || 'grey'}>{a.typeLabel}</Tag>
+                    </div>
+                    <span className="pfxb-affil">{a.affiliation}</span>
+                    {(a.isPresenting || a.isCorresponding) && (
+                      <div className="pfxb-flags">
+                        {a.isPresenting && <span className="pfxb-flag"><Icon name="record_voice_over" size={14} />Presenting author</span>}
+                        {a.isCorresponding && <span className="pfxb-flag"><Icon name="mail" size={14} />Corresponding author</span>}
+                      </div>
                     )}
-                    <div className="pf-note12 pf-mt2 pf-break">{a.affiliation}</div>
-                    {a.isPresenting && <div className="pf-author-flag"><Icon name="record_voice_over" size={14} />Presenting author</div>}
-                    {a.isCorresponding && <div className="pf-author-flag"><Icon name="mail" size={14} />Corresponding author</div>}
                   </div>
-                  <div><Pill tone={a.typeTone}>{a.typeLabel}</Pill></div>
-                  <div className="pf-min0">
-                    <div className="pf-iconrow" style={{ color: a.inviteColor }}>
+                  <div className="pfxb-invite">
+                    <span className="pfxb-invite-label" style={{ color: a.inviteColor }}>
                       <Icon name={a.inviteGlyph} size={16} />
-                      <span>{a.inviteLabel}</span>
-                    </div>
-                    <div className="pf-note12 pf-mt2">{a.inviteMeta}</div>
-                    {a.canInvite && (
-                      <div className="pf-mt6">
-                        <Button variant="tertiary" onClick={() => invite(a.group, a.id, a.person)} disabled={saving}>Send Invitation</Button>
-                      </div>
-                    )}
-                    {a.inviteRank === 2 && (
-                      <div className="pf-mt6 pf-row pf-gap8">
-                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'accepted', on: TODAY_STR } })}>Mark Accepted</Button>
-                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'declined', on: TODAY_STR } })}>Mark Declined</Button>
-                      </div>
-                    )}
+                      {a.inviteLabel}
+                    </span>
+                    <span className="pfxb-invite-meta">{a.inviteMeta}</span>
                   </div>
-                  <div className="pf-min0">
-                    <div className="pf-iconrow" style={{ color: a.agreementColor }}>
-                      <Icon name={a.agreementGlyph} size={16} title={a.agreementTooltip || undefined} />
-                      <span>{a.agreementText}</span>
-                    </div>
-                    {a.agreementExpired && <div className="pf-mt6"><Button variant="secondary">Request New</Button></div>}
-                  </div>
-                  <div className="pf-min0">
-                    <div className="pf-iconrow" style={{ color: a.coiColor }}>
-                      <Icon name={a.coiGlyph} size={16} />
-                      <span>{a.coiLabel}</span>
-                    </div>
-                    <div className="pf-note12 pf-mt2">{a.coiMeta}</div>
-                  </div>
-                  <div><Pill tone={a.debarTone}>{a.debarLabel}</Pill></div>
-                  <div className="pf-min0">
-                    <TextField value={a.orcid} onChange={e => setMeta(a.person, { orcid: e.target.value })} placeholder="0000-0000-0000-0000" width="100%" />
-                  </div>
-                  <div className="pf-min0 pf-credit">
-                    <div className="pf-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}</div>
-                    <Button variant="tertiary" onClick={() => set(s => ({ creditOpen: s.creditOpen === a.person ? null : a.person }))}>
-                      {a.creditOpen ? 'Done' : 'Edit'}
-                    </Button>
-                  </div>
-                  <div className="pf-min0">
-                    {a.icmjeCount === 4 ? (
-                      <div title="All four ICMJE criteria met" className="pf-icmje-all"><Icon name="check_circle" size={18} />All 4 met</div>
-                    ) : (
-                      <>
-                        <div className="pf-icmje">
-                          {a.icmje.map(k => <Icon key={k.k} name={k.glyph} size={17} color={k.color} title={k.tip} />)}
-                        </div>
-                        <div className="pf-note12 pf-mt2">{a.icmjeCount} of 4 met</div>
-                      </>
-                    )}
-                  </div>
-                  <div className="pf-min0">
-                    <TextField value={a.display} onChange={e => patchAuthor(a.group, a.id, { display: e.target.value })} width="100%" />
-                  </div>
-                  <div className="pf-kv-remove">
+                  <div className="pfxb-remove">
                     <IconButton icon="close" tone="fatal" size={26} title="Remove author" onClick={() => removeAuthor(a.group, a.id)} />
                   </div>
                 </div>
+
+                {(a.canInvite || a.inviteRank === 2) && (
+                  <div className="pfxb-author-actions">
+                    {a.canInvite && (
+                      <Button variant="tertiary" onClick={() => invite(a.group, a.id, a.person)} disabled={saving}>Send Invitation</Button>
+                    )}
+                    {a.inviteRank === 2 && (
+                      <>
+                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'accepted', on: TODAY_STR } })}>Mark Accepted</Button>
+                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'declined', on: TODAY_STR } })}>Mark Declined</Button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="pfxb-tiles">
+                  <div className="pfxb-tile">
+                    <span className="pfxb-tile-label">Agreement</span>
+                    <span className="pfxb-tile-value" style={{ color: a.agreementColor }}>
+                      <Icon name={a.agreementGlyph} size={16} title={a.agreementTooltip || undefined} />
+                      <span>{a.agreementText}</span>
+                    </span>
+                    {a.agreementExpired && <div className="pfxb-tile-action"><Button variant="secondary">Request New</Button></div>}
+                  </div>
+                  <div className="pfxb-tile">
+                    <span className="pfxb-tile-label">COI</span>
+                    <span className="pfxb-tile-value" style={{ color: a.coiColor }}>
+                      <Icon name={a.coiGlyph} size={16} />
+                      <span>{a.coiLabel}</span>
+                    </span>
+                    <span className="pfxb-tile-meta">{a.coiMeta}</span>
+                  </div>
+                  <div className="pfxb-tile">
+                    <span className="pfxb-tile-label">Debarment</span>
+                    <Tag tone={TAG_TONE[a.debarTone] || 'outline'}>{a.debarLabel}</Tag>
+                  </div>
+                  <div className="pfxb-tile">
+                    <span className="pfxb-tile-label">ICMJE</span>
+                    {a.icmjeCount === 4 ? (
+                      <span title="All four ICMJE criteria met" className="pfxb-icmje-all"><Icon name="check_circle" size={18} />All 4 met</span>
+                    ) : (
+                      <>
+                        <span className="pfxb-icmje">
+                          {a.icmje.map(k => <Icon key={k.k} name={k.glyph} size={17} color={k.color} title={k.tip} />)}
+                        </span>
+                        <span className="pfxb-tile-meta">{a.icmjeCount} of 4 met</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <Pair>
+                  <FormField id={'pfxb-orcid-' + a.key} label="ORCID iD">
+                    <TextField id={'pfxb-orcid-' + a.key} value={a.orcid} onChange={e => setMeta(a.person, { orcid: e.target.value })} placeholder="0000-0000-0000-0000" width="100%" />
+                  </FormField>
+                  <FormField id={'pfxb-display-' + a.key} label="Display Name">
+                    <TextField id={'pfxb-display-' + a.key} value={a.display} onChange={e => patchAuthor(a.group, a.id, { display: e.target.value })} width="100%" />
+                  </FormField>
+                </Pair>
+
+                <div className="pfxb-credit">
+                  <span className="pfxb-credit-label">CRediT roles</span>
+                  <span className="pfxb-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}</span>
+                  <Button variant="tertiary" onClick={() => set(s => ({ creditOpen: s.creditOpen === a.person ? null : a.person }))}>
+                    {a.creditOpen ? 'Done' : 'Edit'}
+                  </Button>
+                </div>
                 {a.creditOpen && (
-                  <div className="pf-credit-editor">
-                    <div className="pf-label pf-mb6">CRediT roles for {a.person}</div>
+                  <div className="pfxb-credit-editor">
+                    <div className="pfx-label">CRediT roles for {a.person}</div>
                     <CheckboxGroup options={CREDIT_ROLES} value={a.credit} onChange={v => setMeta(a.person, { credit: v })} columns={3} />
                   </div>
                 )}
-              </div>
+              </article>
             ))}
-          </DataTable>
-        </div>
-      </div>
-      {kvFiltered.length === 0 && (
-        <div className="empty-state">
-          {kvAll.length === 0 ? 'No authors on this publication yet. Use Add Author above to add one.' : 'No ' + st.authorFilter.toLowerCase() + ' authors on this publication.'}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+        {kvFiltered.length === 0 && (
+          <Empty>
+            {kvAll.length === 0 ? 'No authors on this publication yet. Use Add Author above to add one.' : 'No ' + st.authorFilter.toLowerCase() + ' authors on this publication.'}
+          </Empty>
+        )}
+      </Card>
+    </Stack>
   );
 }
 
@@ -389,11 +404,10 @@ function SplitAuthors({ st, set, navigate }) {
   });
 
   return (
-    <div className="pf-stack14">
-      <SectionHeading>Authors</SectionHeading>
+    <Stack>
+      <TabHead title="Authors" />
 
-      <div className="pf-split-block">
-        <SectionHeading level="subsection" style={{ marginBottom: 12 }}>Internal Authors</SectionHeading>
+      <Card title="Internal Authors">
         <div className="pf-scroll-x">
           <DataTable columns={INTERNAL_COLS} sortBy={st.internalSort.by} sortDir={st.internalSort.dir} onSort={i => set(s => ({ internalSort: nextSort(s.internalSort, i) }))}>
             {internalAuthors.map(a => (
@@ -406,15 +420,14 @@ function SplitAuthors({ st, set, navigate }) {
             ))}
           </DataTable>
         </div>
-        {st.internal.length === 0 && <div className="pf-faint13 pf-italic pf-pad12">No internal authors added.</div>}
-        <div className="pf-add-row">
-          <Select options={internalOptions} placeholder="Select internal author" value={st.internalAuthorPick} onChange={e => set({ internalAuthorPick: e.target.value })} width="300px" />
+        {st.internal.length === 0 && <div className="pfxb-split-empty">No internal authors added.</div>}
+        <div className="pfxb-split-add">
+          <Select options={internalOptions} placeholder="Select internal author" value={st.internalAuthorPick} onChange={e => set({ internalAuthorPick: e.target.value })} width="300px" style={{ maxWidth: '100%' }} />
           <Button variant="tertiary" onClick={addInternal} disabled={!st.internalAuthorPick}>Add Internal Author</Button>
         </div>
-      </div>
+      </Card>
 
-      <div className="pf-split-block pf-mt8">
-        <SectionHeading level="subsection" style={{ marginBottom: 12 }}>External Authors</SectionHeading>
+      <Card title="External Authors">
         <div className="pf-scroll-x">
           <DataTable columns={EXTERNAL_COLS} sortBy={st.externalSort.by} sortDir={st.externalSort.dir} onSort={i => set(s => ({ externalSort: nextSort(s.externalSort, i) }))}>
             {externalAuthors.map(a => (
@@ -436,12 +449,12 @@ function SplitAuthors({ st, set, navigate }) {
             ))}
           </DataTable>
         </div>
-        {st.external.length === 0 && <div className="pf-faint13 pf-italic pf-pad12">No external authors added.</div>}
-        <div className="pf-add-row">
-          <Select options={externalOptions} placeholder="Select external author" value={st.externalAuthorPick} onChange={e => set({ externalAuthorPick: e.target.value })} width="300px" />
+        {st.external.length === 0 && <div className="pfxb-split-empty">No external authors added.</div>}
+        <div className="pfxb-split-add">
+          <Select options={externalOptions} placeholder="Select external author" value={st.externalAuthorPick} onChange={e => set({ externalAuthorPick: e.target.value })} width="300px" style={{ maxWidth: '100%' }} />
           <Button variant="tertiary" onClick={addExternal} disabled={!st.externalAuthorPick}>Add External Author</Button>
         </div>
-      </div>
-    </div>
+      </Card>
+    </Stack>
   );
 }
