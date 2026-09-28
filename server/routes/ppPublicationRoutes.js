@@ -48,7 +48,7 @@ const getListRow = id => listRow(db.prepare(`SELECT ${LIST_COLUMNS} FROM pp_publ
 
 // The document's text and tracked changes are only written through PUT /:id/document, so a form
 // save (or one from a dashboard) never overwrites someone's document edits with a stale copy.
-const DOC_KEYS = ['pubDocText', 'pubDocMarkup', 'pubDocTrack'];
+const DOC_KEYS = ['pubDocText', 'pubDocMarkup', 'pubDocTrack', 'pubDocVersion'];
 function keepDocument(dataJson, existingData) {
   const next = parse(dataJson, {});
   const prev = existingData || {};
@@ -128,17 +128,71 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json(getListRow(req.params.id));
 });
 
+// ---- The publication document: live co-editing -------------------------------------------
+// A light stand-in for real co-authoring (the product would use Office 365): the editor autosaves
+// every second or so with the version it started from, and polls /presence every ~2 seconds for
+// who else is in the document and for newer versions. A save based on an older version gets a 409
+// with the latest document; the client merges its edits onto it and saves again.
+
+const docOut = d => ({
+  pubDoc: d.pubDoc, pubDocMarkup: doc.markupOf(d), pubDocText: d.pubDocText || '',
+  pubDocTrack: d.pubDocTrack !== false, pubDocVersion: d.pubDocVersion || 0, audit: d.audit || [],
+});
+
+// Who has each document open: pubId -> Map(userId -> { name, uid, section, editing, at }).
+const presence = new Map();
+const PRESENCE_TTL_MS = 15000;
+function activeViewers(pubId) {
+  const room = presence.get(String(pubId));
+  if (!room) return [];
+  const now = Date.now();
+  for (const [k, v] of room) if (now - v.at > PRESENCE_TTL_MS) room.delete(k);
+  return [...room.values()];
+}
+
 /**
- * Saves the publication document: { markup, track, audit }. markup is the full list of segments
- * (text plus tracked insertions/deletions); the server derives the plain text from it and checks
- * the change against the user's permissions (docMarkup.checkEdit).
+ * Heartbeat from an open document: { section, editing, knownVersion, leaving }. Answers with the
+ * other people in the document and, when the saved version is newer than knownVersion, the document.
  */
-// External authors (doc.edit is fixed on their role) may only edit publications that list them.
+router.post('/:id/document/presence', requireAuth, (req, res) => {
+  const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
+  const key = String(existing.id);
+  if (!presence.has(key)) presence.set(key, new Map());
+  const room = presence.get(key);
+  if (req.body.leaving) room.delete(String(req.user.id));
+  else {
+    room.set(String(req.user.id), {
+      name: req.user.name, uid: req.user.id, at: Date.now(),
+      section: String(req.body.section || '').slice(0, 80), editing: !!req.body.editing,
+    });
+  }
+  const data = parse(existing.data, {});
+  const version = data.pubDocVersion || 0;
+  const others = activeViewers(key).filter(v => String(v.uid) !== String(req.user.id))
+    .map(({ name, uid, section, editing }) => ({ name, uid, section, editing }));
+  const newer = req.body.knownVersion != null && Number(req.body.knownVersion) !== version;
+  res.json({ viewers: others, version, document: newer ? docOut(data) : undefined });
+});
+
+// Autosaves arrive every second or so: one audit entry per person per editing session (30 min).
+const SESSION_MS = 30 * 60 * 1000;
+
+/**
+ * Saves the publication document: { markup, track, audit, baseVersion }. markup is the full list
+ * of segments (text plus tracked insertions/deletions); the server derives the plain text and
+ * checks the change against the user's permissions (docMarkup.checkEdit).
+ * External authors (doc.edit is fixed on their role) may only edit publications that list them.
+ */
 router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => {
   const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
   const data = parse(existing.data, {});
   if (data.cancelled) return res.status(400).json({ error: 'This publication is cancelled. Reinstate it to change the document.' });
+  const version = data.pubDocVersion || 0;
+  if (req.body.baseVersion != null && Number(req.body.baseVersion) !== version) {
+    return res.status(409).json({ error: 'Someone else changed the document. Merging their changes\u2026', document: docOut(data) });
+  }
   const next = doc.clean(req.body.markup);
   if (!next) return res.status(400).json({ error: 'Nothing to save.' });
   if (next.reduce((n, x) => n + x.t.length, 0) > doc.MAX_DOC_CHARS) return res.status(400).json({ error: 'The document is too long to save here.' });
@@ -147,18 +201,31 @@ router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => 
   if (problem) return res.status(403).json({ error: problem });
   data.pubDocMarkup = next;
   data.pubDocText = doc.visibleText(next);
+  data.pubDocVersion = version + 1;
   if (canReview && typeof req.body.track === 'boolean') data.pubDocTrack = req.body.track;
   if (!data.pubDoc) data.pubDoc = 'new';
   const a = req.body.audit;
   if (a && typeof a === 'object' && a.action) {
     const str = v => String(v == null ? '' : v).slice(0, 500);
-    data.audit = (data.audit || []).concat([{
+    const entry = {
       action: str(a.action), participants: req.user.name, start: str(a.start), completed: str(a.completed),
-      result: str(a.result), active: false, comment: str(a.comment),
-    }]);
+      result: str(a.result), active: false, comment: str(a.comment), at: new Date().toISOString(),
+    };
+    const log = (data.audit || []).slice();
+    // Look back through the run of document saves at the end of the log for this person’s entry
+    // from the same session (people editing together interleave), and update it in place.
+    let k = -1;
+    if (entry.action === 'Publication Document Saved') {
+      for (let i = log.length - 1; i >= 0 && log[i].action === entry.action; i -= 1) {
+        if (log[i].participants === entry.participants && log[i].at && Date.now() - Date.parse(log[i].at) < SESSION_MS) { k = i; break; }
+      }
+    }
+    if (k >= 0) log[k] = { ...log[k], comment: entry.comment, completed: entry.completed, at: entry.at };
+    else log.push(entry);
+    data.audit = log;
   }
   db.prepare("UPDATE pp_publications SET data = ?, updated_at = datetime('now') WHERE id = ?").run(JSON.stringify(data), existing.id);
-  res.json({ pubDoc: data.pubDoc, pubDocMarkup: data.pubDocMarkup, pubDocText: data.pubDocText, pubDocTrack: data.pubDocTrack !== false, audit: data.audit || [] });
+  res.json(docOut(data));
 });
 
 router.delete('/:id', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {

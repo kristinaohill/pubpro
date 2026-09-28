@@ -162,6 +162,7 @@ export const INITIAL_STATE = {
   // The document with its tracked changes (trackChanges.js); saved only through /document.
   pubDocMarkup: [],
   pubDocTrack: true,
+  pubDocVersion: 0,
   cancelled: null,
   respondEdit: null,
   // Values the design shows as static defaults; kept here so the inputs stay editable.

@@ -8,7 +8,9 @@
  * The server (server/docMarkup.js) re-checks every save against the editor's permissions.
  */
 
-const tokenize = s => String(s || '').match(/\s+|[^\s]+/g) || [];
+// Words, runs of spaces, and each punctuation mark on its own, so a change next to a full stop or
+// bracket lines up with the text on either side (and saved change boundaries always fall between tokens).
+const tokenize = s => String(s || '').match(/\s+|[\p{L}\p{N}]+|[^\s\p{L}\p{N}]/gu) || [];
 
 const sameMark = (a, b) => (!a && !b) || (a && b && a.uid === b.uid && a.by === b.by && a.at === b.at);
 const isMine = (m, author) => !!m && m.uid != null && String(m.uid) === String(author.uid);
@@ -212,4 +214,63 @@ export function resolveAll(markup, action, pick = () => true) {
     out = resolve(out, todo, action);
   }
   return out;
+}
+
+/**
+ * Rebases my unsaved edits onto a newer saved document (someone else saved first). My edits are
+ * what changed from baseText (the version I started from) to mineText; they are applied straight
+ * onto `latest` (its markup), anchored to the base text, so the other person’s insertions and
+ * deletions are kept exactly as they saved them. Where we both inserted at one spot, mine go first.
+ */
+export function rebase(latest, baseText, mineText, author, track = true) {
+  if (baseText === mineText) return latest;
+  const all = toTokens(latest);
+  const visIdx = [];
+  all.forEach((tok, i) => { if (!tok.del) visIdx.push(i); });
+  const vis = visIdx.map(i => all[i].t);
+  const b = tokenize(baseText);
+  const m = tokenize(mineText);
+  const mineDel = new Set();
+  const mineIns = new Map(); // base index the insertion follows (-1 = start) -> tokens
+  let anchor = -1;
+  diffTokens(b, m).forEach(op => {
+    if (op[0] === "+") {
+      if (!mineIns.has(anchor)) mineIns.set(anchor, []);
+      mineIns.get(anchor).push(m[op[1]]);
+      return;
+    }
+    if (op[0] === "-") mineDel.add(op[1]);
+    anchor = op[1];
+  });
+  const mark = { by: author.by, uid: author.uid, at: author.at };
+  const out = [];
+  let cursor = 0;
+  const copyHiddenUpTo = idx => { for (; cursor < idx; cursor += 1) out.push(all[cursor]); };
+  const insertAfter = k => {
+    if (!mineIns.has(k)) return;
+    mineIns.get(k).forEach(t => out.push(track ? { t, ins: mark } : { t }));
+    mineIns.delete(k);
+  };
+  insertAfter(-1);
+  diffTokens(b, vis).forEach(op => {
+    if (op[0] === "+") { // their insertion: keep as saved
+      const idx = visIdx[op[1]];
+      copyHiddenUpTo(idx);
+      cursor = idx + 1;
+      out.push(all[idx]);
+      return;
+    }
+    if (op[0] === "=") {
+      const idx = visIdx[op[2]];
+      copyHiddenUpTo(idx);
+      cursor = idx + 1;
+      const tok = all[idx];
+      if (!mineDel.has(op[1])) out.push(tok);
+      else if (track && !isMine(tok.ins, author)) out.push({ ...tok, del: mark });
+    }
+    insertAfter(op[1]); // after a kept base token, or where one they deleted used to be
+  });
+  copyHiddenUpTo(all.length);
+  mineIns.forEach(list => list.forEach(t => out.push(track ? { t, ins: mark } : { t })));
+  return toSegments(out);
 }

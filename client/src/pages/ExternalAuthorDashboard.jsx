@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button, DataTable, Icon, InlineMessage, Panel, Pill, Select, StatCard, TextField,
@@ -80,7 +80,6 @@ export default function ExternalAuthorDashboard() {
   const [answer, setAnswer] = useState({}); // review key -> { decision, comment }
   // The publication document open in the panel: { p, st } (st holds pubDocText / Markup / Track).
   const [doc, setDoc] = useState(null);
-  const [docSaving, setDocSaving] = useState(false);
 
   const load = () => Promise.all([
     api.get('/pp-publications?include=data').catch(() => []),
@@ -201,7 +200,8 @@ export default function ExternalAuthorDashboard() {
 
   const openDoc = p => {
     const d = p.data || {};
-    setDoc({ p, saved: markupFromSaved(d), st: { pubDocText: d.pubDocText || '', pubDocMarkup: markupFromSaved(d), pubDocTrack: d.pubDocTrack !== false } });
+    notifiedOwner.current = false;
+    setDoc({ p, saved: markupFromSaved(d), st: { pubDocText: d.pubDocText || '', pubDocMarkup: markupFromSaved(d), pubDocTrack: d.pubDocTrack !== false, pubDocVersion: d.pubDocVersion || 0 } });
   };
   const setDocState = patch => setDoc(cur => {
     if (!cur) return cur;
@@ -209,29 +209,30 @@ export default function ExternalAuthorDashboard() {
     return next ? { ...cur, st: { ...cur.st, ...next } } : cur;
   });
 
-  /** Saves the open document (tracked under the signed-in user) and tells the publication owner. */
-  const saveDoc = async (x, { audit } = {}) => {
+  // The owner hears once per editing session, not on every autosave.
+  const notifiedOwner = useRef(false);
+
+  /** The live panel's autosave (tracked under the signed-in user). Throws; a 409 carries the latest. */
+  const putDocLive = async body => {
     const { p } = doc;
-    setDocSaving(true);
-    try {
-      const res = await api.put('/pp-publications/' + p.id + '/document', { markup: x.pubDocMarkup, track: x.pubDocTrack !== false, audit });
-      setDoc(cur => cur && { ...cur, saved: res.pubDocMarkup, st: { pubDocText: res.pubDocText, pubDocMarkup: res.pubDocMarkup, pubDocTrack: res.pubDocTrack } });
-      if (p.owner && p.owner !== user.name) {
-        await notify([{
-          recipient: p.owner, kind: 'document', pub_id: p.id, record_id: p.record_id, tab: 'materials',
-          title: user.name + ' ' + (audit && /Rejected/.test(audit.action) ? 'undid changes in' : 'suggested changes to') + ' the document',
-          body: p.title + ' (' + p.record_id + ')',
-        }]);
-      }
-      load();
-      return res;
-    } catch (err) {
-      setMessage({ kind: 'error', text: 'Could not save the document: ' + err.message });
-      return null;
-    } finally {
-      setDocSaving(false);
+    const res = await api.put('/pp-publications/' + p.id + '/document', body);
+    if (!notifiedOwner.current && p.owner && p.owner !== user.name) {
+      notifiedOwner.current = true;
+      notify([{
+        recipient: p.owner, kind: 'document', pub_id: p.id, record_id: p.record_id, tab: 'materials',
+        title: user.name + ' is making changes to the document', body: p.title + ' (' + p.record_id + ')',
+      }]);
     }
+    return res;
   };
+  const applyDoc = (res, override = {}) => setDoc(cur => cur && {
+    ...cur,
+    saved: res.pubDocMarkup,
+    st: {
+      pubDocText: override.text != null ? override.text : res.pubDocText, pubDocMarkup: override.markup || res.pubDocMarkup,
+      pubDocTrack: res.pubDocTrack, pubDocVersion: res.pubDocVersion,
+    },
+  });
 
   const openNote = async n => {
     if (!n.read_at) { await api.post(isAuthor ? `/notifications/${n.id}/read` : `/notifications/for/${n.id}/read`).catch(() => {}); loadInbox(person); }
@@ -423,10 +424,10 @@ export default function ExternalAuthorDashboard() {
       )}
       {doc && (
         <DocumentPanel
-          st={doc.st} set={setDocState} saveDocument={saveDoc} savedMarkup={doc.saved} saving={docSaving}
+          st={doc.st} set={setDocState} putDocument={putDocLive} onSynced={applyDoc} pubId={doc.p.id} savedMarkup={doc.saved}
           recordId={doc.p.record_id} me={{ by: user.name, uid: user.id }}
           canEdit={can('doc.edit') && doc.p.status !== 'Cancelled'} canReview={can('doc.review')}
-          onClose={() => setDoc(null)}
+          onClose={() => { setDoc(null); load(); }}
         />
       )}
     </div>

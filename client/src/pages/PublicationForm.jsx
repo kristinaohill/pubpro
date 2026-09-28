@@ -163,7 +163,7 @@ export default function PublicationForm() {
       setSt(withLog);
       lastSaved.current = data;
       // Document edits typed since the last save go with the record's Save.
-      if (!skipDoc && canDoc && !withLog.cancelled && docDirty(withLog)) {
+      if (!skipDoc && !docOpen && canDoc && !withLog.cancelled && docDirty(withLog)) {
         await putDocument(saved.id, withLog, auditEntry('Publication Document Saved', { comment: String(withLog.pubDocText || '').trim().split(/\s+/).filter(Boolean).length + ' words' }));
       }
       if (notices) {
@@ -191,34 +191,41 @@ export default function PublicationForm() {
     || (x.pubDocTrack !== false) !== (savedDoc.current.track !== false);
 
   /** Saves the document (text + tracked changes) of saved record recId. Returns the saved doc or null. */
+  /** Puts a saved (or someone else's newer) document into the form state. */
+  const applyDoc = (res, override = {}) => {
+    const patch = {
+      pubDoc: res.pubDoc, pubDocTrack: res.pubDocTrack, pubDocVersion: res.pubDocVersion, audit: res.audit,
+      pubDocMarkup: override.markup || res.pubDocMarkup,
+      pubDocText: override.text != null ? override.text : res.pubDocText,
+    };
+    setSt(cur => ({ ...cur, ...patch }));
+    savedDoc.current = { markup: res.pubDocMarkup, track: res.pubDocTrack };
+    if (lastSaved.current) lastSaved.current = { ...lastSaved.current, ...patch, pubDocMarkup: res.pubDocMarkup, pubDocText: res.pubDocText };
+  };
+
+  /** The form's Save, when the document panel is closed and the document still has unsaved edits. */
   const putDocument = async (recId, x, audit) => {
     const tracking = x.pubDocTrack !== false || !canReview;
     const markup = fold(x.pubDocMarkup || [], x.pubDocText || '', { ...docAuthor(), at: new Date().toISOString() }, tracking);
-    setSaving(true);
     try {
-      const res = await api.put('/pp-publications/' + recId + '/document', { markup, track: x.pubDocTrack !== false, audit });
-      const patch = { pubDoc: res.pubDoc, pubDocMarkup: res.pubDocMarkup, pubDocText: res.pubDocText, pubDocTrack: res.pubDocTrack, audit: res.audit };
-      setSt(cur => ({ ...cur, ...patch }));
-      savedDoc.current = { markup: res.pubDocMarkup, track: res.pubDocTrack };
-      if (lastSaved.current) lastSaved.current = { ...lastSaved.current, ...patch };
+      const res = await api.put('/pp-publications/' + recId + '/document', { markup, track: x.pubDocTrack !== false, audit, baseVersion: x.pubDocVersion || 0 });
+      applyDoc(res);
       return res;
     } catch (err) {
-      setMessage({ kind: 'error', text: 'Could not save the document: ' + err.message });
+      setMessage({ kind: 'error', text: err.status === 409 ? 'Someone else changed the document meanwhile. Open it to merge your edits.' : 'Could not save the document: ' + err.message });
       return null;
-    } finally {
-      setSaving(false);
     }
   };
 
-  /** The document panel's Save: a new record is saved first (it needs a title). */
-  const saveDocument = async (x, { audit } = {}) => {
+  /** The live document panel's autosave. A new record is saved first (it needs a title). Throws. */
+  const putDocumentLive = async body => {
     let rec = record;
     if (!rec) {
-      if (!canEditPub) return null;
-      rec = await persist(x, { skipDoc: true });
-      if (!rec) return null;
+      if (!canEditPub) throw new Error('Only people who can create publications can start one.');
+      rec = await persist(st, { skipDoc: true });
+      if (!rec) throw new Error('Give the publication a title on the Overview tab first.');
     }
-    return putDocument(rec.id, x, audit);
+    return api.put('/pp-publications/' + rec.id + '/document', body);
   };
 
   /** Applies a change and saves it at once, sending any notifications. Used by actions that notify people. */
@@ -374,7 +381,8 @@ export default function PublicationForm() {
 
       {docOpen && (
         <DocumentPanel
-          st={st} set={set} saveDocument={saveDocument} savedMarkup={savedDoc.current.markup} saving={saving} recordId={recordId}
+          st={st} set={set} putDocument={putDocumentLive} onSynced={applyDoc} pubId={record ? record.id : null}
+          savedMarkup={savedDoc.current.markup} recordId={recordId}
           me={docAuthor()} canEdit={canDoc && !cancelled && (!!record || canEditPub)} canReview={canReview}
           onClose={() => setDocOpen(false)}
         />
