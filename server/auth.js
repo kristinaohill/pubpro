@@ -33,6 +33,10 @@ function requireAuth(req, res, next) {
   // Set when a System Administrator is signed in as this user (System Administrator > Sign In As).
   req.impersonator = claims.imp || null;
   req.perms = permissionsForUser(row);
+  // Library Users (read-only) reach only the Publication Library, their account and the product list.
+  if (row.role === 'library' && !/^\/api\/(library|auth|catalog|notifications\/unread-count)(\/|\?|$)/.test(req.originalUrl)) {
+    return res.status(403).json({ error: 'Library Users can only open the Publication Library.' });
+  }
   // Roles can be limited to some products: permsFor(product) counts only the roles covering it.
   req.permsFor = product => permissionsForUser(row, product || null);
   next();

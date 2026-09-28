@@ -281,4 +281,45 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(DEMO_SEED_KEY)) {
   console.log('Added ' + demo.length + ' demo publications.');
 }
 
+// Two accepted (published) demo publications for the Publication Library, once per database.
+const LIBRARY_SEED_KEY = 'library-demo-2026-09';
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(LIBRARY_SEED_KEY)) {
+  const accepted = { status: 'accepted', sent: '5/4/2026', on: '5/6/2026' };
+  const ext = (id, name, display) => ({ id, selected: true, corr: 'optional', name, display, invite: accepted });
+  const int = (id, name) => ({ id, selected: true, corr: id === 1 ? 'required' : 'optional', name, display: name, invite: accepted });
+  const records = [
+    {
+      title: 'CLARITY-CAD Primary Results', pubType: 'Manuscript', product: 'Biologix (All)',
+      data: {
+        pubType: 'Manuscript', product: 'Biologix (All)', subType: '', outcomeStatus: 'Accepted', selectedStudies: ['100220'],
+        targets: ['Journal of the American College of Cardiology'],
+        fields: { abbrevTitle: 'CLARITY-CAD Primary Results', pubTitle: 'Biologix in Non-Obstructive Coronary Artery Disease: Primary Results of the Phase 3 CLARITY-CAD Trial', therapeuticArea: 'Cardiovascular & Metabolism', dateSubmitted: '3/2/2026', statusDate: '6/15/2026' },
+        internal: [int(1, 'Richa Garg'), int(2, 'Greg Vogel')],
+        external: [ext(1, 'Helen Marsh-Mayo Clinic', 'Helen Marsh'), ext(2, 'Steve Altschuler-UCLA School of Medicine', 'Steve Altschuler')],
+        pubDoc: 'new',
+        pubDocText: 'Background\nPatients with angina and non-obstructive coronary artery disease have few evidence-based treatment options.\n\nMethods\nIn CLARITY-CAD, 1,204 adults were randomized 1:1 to Biologix or placebo for 52 weeks. The primary endpoint was change in Seattle Angina Questionnaire summary score.\n\nResults\nBiologix improved the summary score by 9.4 points versus 3.1 with placebo (difference 6.3; 95% CI 4.1 to 8.5; p<0.001). Serious adverse events were similar between groups.\n\nConclusions\nBiologix improved angina-related quality of life in patients with non-obstructive coronary artery disease.',
+        audit: [],
+      },
+    },
+    {
+      title: 'DXN-301 Interim Motor Function', pubType: 'Abstract', product: 'Daxafont (DMD)',
+      data: {
+        pubType: 'Abstract', product: 'Daxafont (DMD)', subType: 'Poster', outcomeStatus: 'Accepted', selectedStudies: ['100230'],
+        targets: ['World Muscle Society Congress'],
+        fields: { abbrevTitle: 'DXN-301 Interim Motor Function', pubTitle: 'Daxafont and Motor Function in Ambulatory Boys with Duchenne Muscular Dystrophy: DXN-301 Interim Analysis', therapeuticArea: 'Neuroscience', dateSubmitted: '5/20/2026', statusDate: '9/10/2026' },
+        internal: [int(1, 'Christy Risser-Milne')],
+        external: [ext(1, 'Kenji Sato-University of Tokyo', 'Kenji Sato')],
+        pubDoc: 'new',
+        pubDocText: 'Background\nDaxafont is an investigational exon-skipping therapy for Duchenne muscular dystrophy (DMD).\n\nMethods\nDXN-301 randomized 96 ambulatory boys aged 4 to 7 years to Daxafont or placebo. This interim analysis reports 48-week change in North Star Ambulatory Assessment (NSAA).\n\nResults\nNSAA declined by 0.8 points with Daxafont versus 3.2 with placebo (p=0.004). Infusion reactions were mild.\n\nConclusions\nDaxafont slowed motor function decline over 48 weeks.',
+        audit: [],
+      },
+    },
+  ];
+  const insert = db.prepare(`INSERT INTO pp_publications (record_id, title, pub_type, product, status, owner, summary, data, created_by)
+    VALUES (?, ?, ?, ?, 'Active', 'Kristina Hill', '{}', ?, NULL)`);
+  records.forEach(r => insert.run(nextRecordId(r.pubType, r.product), r.title, r.pubType, r.product, JSON.stringify(r.data)));
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(LIBRARY_SEED_KEY);
+  console.log('Added ' + records.length + ' published publications for the library.');
+}
+
 module.exports = router;

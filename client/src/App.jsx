@@ -22,6 +22,7 @@ import Studies from './pages/Studies';
 import StudyProfile from './pages/StudyProfile';
 import UserProfile from './pages/UserProfile';
 import SystemAdmin from './pages/SystemAdmin';
+import PublicationLibrary, { LibraryPublication } from './pages/PublicationLibrary';
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -30,6 +31,8 @@ function RequireAuth({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   // External authors only have their own dashboard.
   if (user.role === 'author' && pathname !== '/author-dashboard') return <Navigate to="/author-dashboard" replace />;
+  // Library Users (read-only) only have the Publication Library.
+  if (user.role === 'library' && !pathname.startsWith('/library')) return <Navigate to="/library" replace />;
   return children;
 }
 
@@ -56,6 +59,8 @@ export default function App() {
             <Route path="external-author/:id" element={<ExternalAuthorProfile />} />
             <Route path="profile" element={<UserProfile />} />
             <Route path="admin" element={<SystemAdmin />} />
+            <Route path="library" element={<PublicationLibrary />} />
+            <Route path="library/:id" element={<LibraryPublication />} />
             <Route path="studies" element={<Studies />} />
             <Route path="study/:id" element={<StudyProfile />} />
             <Route path="vendor" element={<VendorProfile />} />

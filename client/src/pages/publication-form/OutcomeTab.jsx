@@ -167,11 +167,12 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
         )}
 
         <Pair>
-          <FormField id="pfxd-date-submitted" label="Date Submitted"><DateField id="pfxd-date-submitted" width="100%" /></FormField>
-          <FormField id="pfxd-status-date" label="Status Date"><DateField id="pfxd-status-date" width="100%" /></FormField>
+          <FormField id="pfxd-date-submitted" label="Date Submitted"><DateField id="pfxd-date-submitted" {...bind('dateSubmitted')} width="100%" /></FormField>
+          {/* Accepted: the date it was published or presented (the Publication Library shows and filters by it). */}
+          <FormField id="pfxd-status-date" label={st.outcomeStatus === 'Accepted' ? 'Date Published' : 'Status Date'}><DateField id="pfxd-status-date" {...bind('statusDate')} width="100%" /></FormField>
         </Pair>
         <Pair>
-          <FormField id="pfxd-embargo-date" label="Embargo Date"><DateField id="pfxd-embargo-date" width="100%" /></FormField>
+          <FormField id="pfxd-embargo-date" label="Embargo Date" help="Stays out of the Publication Library until this date."><DateField id="pfxd-embargo-date" {...bind('embargoDate')} width="100%" /></FormField>
           <FormField id="pfxd-embargo-time" label="Embargo Time">
             <div className="pfxd-time">
               <DateField id="pfxd-embargo-time" time width="100%" />

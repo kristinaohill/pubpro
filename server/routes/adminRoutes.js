@@ -84,7 +84,7 @@ const activeAdmins = () => db.prepare('SELECT role, extra_roles FROM users WHERE
 /** The roles in a request: { roles: [..] }, or the older single { role }. */
 /** Publication Managers and Reviewers need at least one product, each with a product role. */
 function productRolesError(level, map) {
-  if (P.ALL_PRODUCTS.has(level) || level === 'author') return null;
+  if (P.ALL_PRODUCTS.has(level) || level === 'author' || level === 'library') return null;
   const keys = new Set(catalog.productRoles().map(r => r.key));
   const entries = Object.entries(map || {}).filter(([p]) => P.PRODUCTS.includes(p));
   if (!entries.length) return 'Choose at least one product for them and their role on it.';
@@ -113,7 +113,8 @@ router.post('/users', (req, res) => {
   if (db.prepare('SELECT 1 FROM users WHERE lower(email) = ?').get(email)) return res.status(400).json({ error: 'Someone already uses that email address.' });
   const institution = String(req.body.institution || '').trim();
   if (external && !institution) return res.status(400).json({ error: 'Enter their institution.' });
-  if (!external && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError });
+  const library = roles.length === 1 && roles[0] === 'library';
+  if (!external && !library && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError });
   const prError = productRolesError(P.LEVEL_KEYS.find(k => roles.includes(k)), req.body.productRoles);
   if (prError) return res.status(400).json({ error: prError });
   if (external && db.prepare('SELECT 1 FROM pp_authors WHERE lower(email) = ?').get(email)) {
@@ -125,7 +126,7 @@ router.post('/users', (req, res) => {
     .run(email, bcrypt.hashSync(password, 10), name, role, profileId);
   people.writeProfile(r.lastInsertRowid, cols);
   P.setRoles(r.lastInsertRowid, roles);
-  if (!external) { try { P.setProductRoles(r.lastInsertRowid, req.body.productRoles); } catch (e) { /* admins and executives cover every product */ } }
+  if (!external && !library) { try { P.setProductRoles(r.lastInsertRowid, req.body.productRoles); } catch (e) { /* admins and executives cover every product */ } }
   res.json({ user: userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(r.lastInsertRowid)), tempPassword: password });
 });
 
@@ -142,17 +143,18 @@ router.put('/users/:id', (req, res) => {
   if (!emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
   if (email !== u.email && db.prepare('SELECT 1 FROM users WHERE lower(email) = ? AND id != ?').get(email, u.id)) return res.status(400).json({ error: 'Someone already uses that email address.' });
   // Internal users need a @bplogix.com email to stay (or become) active; deactivating is always allowed.
-  if (u.role !== 'author' && active && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError + (u.active ? '' : ' Change it to reactivate them.') });
+  // Library Users can be anyone (their access is only the public library).
+  if (u.role !== 'author' && u.role !== 'library' && active && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError + (u.active ? '' : ' Change it to reactivate them.') });
   let cols;
   try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
   if (!roles.length) return res.status(400).json({ error: 'Give them at least one role.' });
   if (roles.some(k => !P.roleRow(k))) return res.status(400).json({ error: 'Unknown role.' });
-  if (before.includes('author') !== roles.includes('author')) {
-    return res.status(400).json({ error: 'External author logins keep the External Author role; they come from author profiles.' });
+  if (before.includes('author') !== roles.includes('author') || before.includes('library') !== roles.includes('library')) {
+    return res.status(400).json({ error: roles.includes('library') || before.includes('library') ? 'Library Users stay Library Users. Add them as an internal user instead.' : 'External author logins keep the External Author role; they come from author profiles.' });
   }
   const changedRoles = roles.slice().sort().join() !== before.slice().sort().join();
   // Moving someone to Publication Manager or Reviewer needs their products.
-  if (changedRoles && !P.ALL_PRODUCTS.has(roles[0]) && roles[0] !== 'author') {
+  if (changedRoles && !P.ALL_PRODUCTS.has(roles[0]) && roles[0] !== 'author' && roles[0] !== 'library') {
     const prError = productRolesError(roles[0], req.body.productRoles || P.productRolesOf(u));
     if (prError) return res.status(400).json({ error: prError });
   }
@@ -168,7 +170,7 @@ router.put('/users/:id', (req, res) => {
   }
   people.writeProfile(u.id, cols);
   if (changedRoles) { try { P.setRoles(u.id, roles); } catch (e) { return res.status(400).json({ error: e.message }); } }
-  if (req.body.productRoles && !P.ALL_PRODUCTS.has(roles[0]) && roles[0] !== 'author') {
+  if (req.body.productRoles && !P.ALL_PRODUCTS.has(roles[0]) && roles[0] !== 'author' && roles[0] !== 'library') {
     try { P.setProductRoles(u.id, req.body.productRoles); } catch (e) { return res.status(400).json({ error: e.message }); }
   }
   res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));

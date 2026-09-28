@@ -41,6 +41,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/pp-plans', require('./routes/ppPlanRoutes'));
 app.use('/api/pp-authors', require('./routes/ppAuthorRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/library', require('./routes/libraryRoutes'));
 
 // Every external author profile with an email gets a login.
 require('./authorLogins').backfillAuthorLogins();

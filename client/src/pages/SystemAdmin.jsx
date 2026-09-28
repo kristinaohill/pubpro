@@ -54,10 +54,13 @@ export default function SystemAdmin() {
           Product roles
         </button>
         <button type="button" role="tab" aria-selected={tab === 'internal'} className="sa-tab" onClick={() => setTab('internal')}>
-          Internal users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending && x.role !== 'author').length}</span> : null}
+          Internal users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending && x.role !== 'author' && x.role !== 'library').length}</span> : null}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'external'} className="sa-tab" onClick={() => setTab('external')}>
           External users
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'library'} className="sa-tab" onClick={() => setTab('library')}>
+          Library users{users ? <span className="sa-tab-n">{users.filter(x => x.role === 'library').length}</span> : null}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'roles'} className="sa-tab" onClick={() => setTab('roles')}>
           Access levels
@@ -82,7 +85,7 @@ export default function SystemAdmin() {
           onChanged={msg => { setError(''); if (msg) setNotice(msg); loadUsers(); }}
           onError={setError}
         />
-      ) : tab === 'internal' ? (
+      ) : tab === 'internal' || tab === 'library' ? (
         <UsersTab
           key={tab}
           kind={tab}

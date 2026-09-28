@@ -5,7 +5,7 @@ const HELP = { label: 'Help', icon: 'info' };
 // One product nav on every staff page (menu items without a page yet are placeholders).
 const FULL_NAV = [
   'Home', 'Content List',
-  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'Executive Dashboard', 'External Author Dashboard', 'Reports', 'System Administrator', HELP] },
+  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'Executive Dashboard', 'External Author Dashboard', 'Publication Library', 'Reports', 'System Administrator', HELP] },
   { label: 'Settings', menu: true },
 ];
 
@@ -43,6 +43,11 @@ export const CHROME = {
   '/publication-plans': EXECUTIVE_DASHBOARD,
   '/studies': EXECUTIVE_DASHBOARD,
   '/profile': EXECUTIVE_DASHBOARD,
+  // Publication Library workspace (its publication pages use it too; see Layout).
+  '/library': {
+    nav: FULL_NAV, active: 'Workspaces',
+    workspace: 'Publication Library', tabs: [ALERTS_TAB, CREATE_FULL, SEARCH_FULL],
+  },
   '/vendor': EXECUTIVE_DASHBOARD,
   '/admin': {
     nav: FULL_NAV, active: 'Workspaces',
@@ -51,6 +56,9 @@ export const CHROME = {
   // The Financial Report design has its own navy back bar and no app chrome.
   '/financial-report': null,
 };
+
+/** What a Library User (read-only) sees: the Publication Library and nothing else. */
+export const LIBRARY_CHROME = { nav: [], active: '', workspace: 'Publication Library', tabs: ['Library'], activeTab: 'Library' };
 
 /** What a signed-in external author sees: their dashboard and nothing else. */
 export const AUTHOR_CHROME = { nav: [], active: '', workspace: 'My Author Dashboard', tabs: ['My Tasks'], activeTab: 'My Tasks' };
@@ -62,6 +70,7 @@ export const MENU_ROUTES = {
   'Home': '/dashboard',
   'Reports': '/financial-report',
   'External Author Dashboard': '/author-dashboard',
+  'Publication Library': '/library',
   'System Administrator': '/admin',
 };
 

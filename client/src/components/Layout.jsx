@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { TopNav, WorkspaceTabs, IconButton } from '../ds/pubpro';
-import { ALERTS_TAB, AUTHOR_CHROME, CHROME, MENU_PERMS, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
+import { ALERTS_TAB, AUTHOR_CHROME, CHROME, LIBRARY_CHROME, MENU_PERMS, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
 import Notifications from './Notifications';
 import useCatalog, { refreshCatalog } from './catalog';
 import AccountMenu from './AccountMenu';
@@ -32,6 +32,7 @@ const WORKSPACE_HOME = {
   'Executive Dashboard': '/dashboard',
   'Publication Manager Dashboard': '/publication-manager',
   'External Author Dashboard': '/author-dashboard',
+  'Publication Library': '/library',
   'System Administrator': '/admin',
 };
 
@@ -51,7 +52,10 @@ export default function Layout() {
   const [tabsRef, tabsKey] = useMenuReset();
 
   const isAuthor = !!user && user.role === 'author';
-  const baseChrome = isAuthor ? AUTHOR_CHROME : pathname in CHROME ? CHROME[pathname] : CHROME['/external-author'];
+  // Library Users (read-only) see only the Publication Library.
+  const isLibrary = !!user && user.role === 'library';
+  const chromeKey = pathname.startsWith('/library') ? '/library' : pathname;
+  const baseChrome = isAuthor ? AUTHOR_CHROME : isLibrary ? LIBRARY_CHROME : chromeKey in CHROME ? CHROME[chromeKey] : CHROME['/external-author'];
   // Menu rows the user's role can't use are left out (System Administrator, Create New entries).
   const allowed = row => !MENU_PERMS[typeof row === 'string' ? row : row.label] || can(MENU_PERMS[typeof row === 'string' ? row : row.label]);
   const trim = item => (item && typeof item === 'object' && item.menuItems ? { ...item, menuItems: item.menuItems.filter(allowed) } : item);
@@ -80,7 +84,7 @@ export default function Layout() {
   const tenant = (
     <span className="layout-tenant">
       Approvia DEV
-      {!isAuthor && (
+      {!isAuthor && !isLibrary && (
       <IconButton
         icon="account_tree"
         tone="primary"
@@ -92,7 +96,7 @@ export default function Layout() {
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openWorkflows(); } }}
       />
       )}
-      <Notifications canOpenRecords={!isAuthor} onUnreadChange={setUnread} />
+      {!isLibrary && <Notifications canOpenRecords={!isAuthor} onUnreadChange={setUnread} />}
     </span>
   );
 
@@ -115,7 +119,7 @@ export default function Layout() {
         <div className="layout-chrome">
           <div className="layout-topnav" ref={navRef}>
             <TopNav key={navKey} items={chrome.nav} active={chrome.active} tenant={tenant} onNavigate={go} onMenuSelect={handleMenuSelect} />
-            <AccountMenu userName={user && user.name} onLogout={handleLogout} showProfile={!isAuthor} />
+            <AccountMenu userName={user && user.name} onLogout={handleLogout} showProfile={!isAuthor && !isLibrary} />
           </div>
           <div className="layout-wstabs" ref={tabsRef}>
             <WorkspaceTabs

@@ -100,6 +100,16 @@ function ProductAlignment({ value, onChange, options }) {
 }
 
 /** The fields shared by Add User and Edit: identity, role, work details, out of office. */
+/** Library Users (read-only, the Publication Library only): a name and any email address. */
+function LibraryFields({ d, set }) {
+  return (
+    <div className="sa-add-grid">
+      <Field label="Name" required><TextField value={d.name} onChange={e => set({ name: e.target.value })} /></Field>
+      <Field label="Email (sign-in)" required help="Any email address: Library Users only see the public Publication Library."><TextField type="email" value={d.email} onChange={e => set({ email: e.target.value })} /></Field>
+    </div>
+  );
+}
+
 /** External users: name, email and institution (the rest lives on their author profile). */
 function ExternalFields({ d, set }) {
   return (
@@ -172,13 +182,14 @@ function UserFields({ d, set, roleOptions, options, roleLocked, roleNote, withOo
 
 export function UsersTab({ kind = 'internal', me, users, roles, options, onChanged, onError }) {
   const external = kind === 'external';
+  const library = kind === 'library';
   const navigate = useNavigate();
   const { impersonate, refreshMe, impersonator } = useAuth();
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [showInactive, setShowInactive] = useState(false);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState(() => draftOf(external ? { roles: ['author'] } : {}));
+  const [draft, setDraft] = useState(() => draftOf(external ? { roles: ['author'] } : library ? { roles: ['library'] } : {}));
   const [editing, setEditing] = useState(null); // { id, d }
   const [busy, setBusy] = useState(false);
   const [secret, setSecret] = useState(null); // { name, email, password, reset }
@@ -186,9 +197,9 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
   const [approveRole, setApproveRole] = useState({}); // pending user id -> role
 
   const opts = options || { therapeuticAreas: [], departments: [] };
-  const roleOptions = roles.filter(r => r.key !== 'author').map(r => ({ value: r.key, label: r.name }));
+  const roleOptions = roles.filter(r => r.key !== 'author' && r.key !== 'library').map(r => ({ value: r.key, label: r.name }));
   const q = query.trim().toLowerCase();
-  const inTab = u => (u.role === 'author') === external;
+  const inTab = u => (library ? u.role === 'library' : external ? u.role === 'author' : u.role !== 'author' && u.role !== 'library');
   const pending = (users || []).filter(u => u.pending && inTab(u));
   const list = (users || []).filter(u => inTab(u) && !u.pending && (showInactive || u.active)
     && (!roleFilter || u.role === roleFilter)
@@ -217,7 +228,7 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
     const r = await api.post('/admin/users', bodyOf(draft));
     setSecret({ name: r.user.name, email: r.user.email, password: r.tempPassword });
     setAdding(false);
-    setDraft(draftOf(external ? { roles: ['author'] } : { roles: draft.roles }));
+    setDraft(draftOf(external ? { roles: ['author'] } : library ? { roles: ['library'] } : { roles: draft.roles }));
     return r.user;
   }, u => 'Added ' + u.name + ' (' + u.role_name + ').');
 
@@ -304,8 +315,8 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
 
       <section className="sa-card">
         <div className="sa-toolbar">
-          <TextField iconBefore="search" placeholder={external ? 'Search by name, email, institution or author ID' : 'Search by name, email, title or department'} value={query} onChange={e => setQuery(e.target.value)} width="320px" aria-label="Search users" />
-          {!external && <Select options={[{ value: '', label: 'All access levels' }].concat(roles.filter(r => r.key !== 'author').map(r => ({ value: r.key, label: r.name })))} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} width="220px" aria-label="Filter by access level" />}
+          <TextField iconBefore="search" placeholder={external ? 'Search by name, email, institution or author ID' : library ? 'Search by name or email' : 'Search by name, email, title or department'} value={query} onChange={e => setQuery(e.target.value)} width="320px" aria-label="Search users" />
+          {!external && !library && <Select options={[{ value: '', label: 'All access levels' }].concat(roles.filter(r => r.key !== 'author').map(r => ({ value: r.key, label: r.name })))} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} width="220px" aria-label="Filter by access level" />}
           {inactiveCount > 0 && (
             <label className="sa-check">
               <input type="checkbox" checked={showInactive} onChange={() => setShowInactive(v => !v)} />
@@ -313,32 +324,35 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
             </label>
           )}
           <span className="sa-grow" />
-          {!adding && <Button variant="primary" icon="person_add" onClick={() => { setAdding(true); setEditing(null); }}>{external ? 'Add External User' : 'Add User'}</Button>}
+          {!adding && <Button variant="primary" icon="person_add" onClick={() => { setAdding(true); setEditing(null); }}>{external ? 'Add External User' : library ? 'Add Library User' : 'Add User'}</Button>}
         </div>
 
         {adding && (
           <div className="sa-add">
-            {external
+            {library
+              ? <LibraryFields d={draft} set={p => setDraft(x => ({ ...x, ...p }))} />
+              : external
               ? <ExternalFields d={draft} set={p => setDraft(x => ({ ...x, ...p }))} />
               : <UserFields d={draft} set={p => setDraft(x => ({ ...x, ...p }))} roleOptions={roleOptions} options={opts} />}
             <div className="sa-add-foot">
               <span className="sa-faint">{external
                 ? 'Creates their external author profile too (agreements, COI and debarment checks live there). PubPro makes a temporary password for you to pass on.'
+                : library ? 'Library Users can only open the Publication Library (read-only). PubPro creates a temporary password for you to pass on.'
                 : 'PubPro creates a temporary password for you to pass on.'}</span>
               <span className="sa-grow" />
               <Button variant="secondary" onClick={() => setAdding(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim() || !draft.roles.length || emptyScope(draft) || (external && !draft.institution.trim())}>{busy ? 'Adding…' : external ? 'Add External User' : 'Add User'}</Button>
+              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim() || !draft.roles.length || emptyScope(draft) || (external && !draft.institution.trim())}>{busy ? 'Adding\u2026' : external ? 'Add External User' : library ? 'Add Library User' : 'Add User'}</Button>
             </div>
           </div>
         )}
 
         {users === null ? <div className="empty-state empty-state--inset">Loading&hellip;</div> : list.length === 0 ? (
-          <div className="empty-state empty-state--inset">{(users || []).some(inTab) ? 'No users match. Clear the search or filters to see everyone.' : external ? 'No external users yet. Use Add External User, or add an email on an external author profile.' : 'No internal users yet.'}</div>
+          <div className="empty-state empty-state--inset">{(users || []).some(inTab) ? 'No users match. Clear the search or filters to see everyone.' : external ? 'No external users yet. Use Add External User, or add an email on an external author profile.' : library ? 'No Library Users yet. Use Add Library User to give someone read-only access to the Publication Library.' : 'No internal users yet.'}</div>
         ) : (
           <div className="sa-table" role="table" aria-label="Users">
             <div className="sa-row sa-row--head" role="row">
               <span role="columnheader">User</span>
-              <span role="columnheader">{external ? 'Author profile' : 'Access and products'}</span>
+              <span role="columnheader">{external ? 'Author profile' : library ? 'Access' : 'Access and products'}</span>
               <span role="columnheader">Status</span>
               <span role="columnheader">Last sign-in</span>
               <span role="columnheader"><span className="sa-sr">Actions</span></span>
@@ -361,8 +375,9 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
                       {external && (u.author
                         ? <button type="button" className="sa-link" onClick={() => navigate('/external-author/' + u.author.profileId)}>{u.author.authorId}</button>
                         : <span className="sa-faint">No profile</span>)}
-                      {!external && <span className="sa-rolechip">{u.role_name}{u.allProducts ? <span className="sa-rolechip-scope"> · All products</span> : null}</span>}
-                      {!external && !u.allProducts && (() => {
+                      {library && <span className="sa-rolechip">Publication Library (read-only)</span>}
+                      {!external && !library && <span className="sa-rolechip">{u.role_name}{u.allProducts ? <span className="sa-rolechip-scope"> · All products</span> : null}</span>}
+                      {!external && !library && !u.allProducts && (() => {
                         // Their product roles, e.g. "Medical Reviewer · Daxafort, Triazapam".
                         const byRole = {};
                         Object.entries(u.productRoles || {}).forEach(([p, r]) => { (byRole[r] = byRole[r] || []).push(p); });
@@ -387,7 +402,9 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
                   </div>
                   {open && (
                     <div className="sa-edit" role="region" aria-label={'Edit ' + u.name}>
-                      {external ? (
+                      {library ? (
+                        <LibraryFields d={editing.d} set={p => setEditing(x => ({ ...x, d: { ...x.d, ...p } }))} />
+                      ) : external ? (
                         <ExternalFields d={editing.d} set={p => setEditing(x => ({ ...x, d: { ...x.d, ...p } }))} />
                       ) : (
                       <UserFields

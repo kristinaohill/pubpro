@@ -7,6 +7,7 @@
 //   Publication Manager  - their selected products
 //   Reviewer             - their selected products
 //   External Author      - their own dashboard and the publications that list them
+//   Library User         - read-only: the Publication Library (publications with a final disposition)
 // Publication Managers and Reviewers are aligned to products, with one product role on each
 // (users.product_roles = { product: productRoleKey }; see products.js).
 const db = require('./db');
@@ -25,8 +26,8 @@ const PERM_KEYS = PERMISSIONS.map(p => p.key);
 
 // Fixed levels: admin has everything; executive always has exactly what Publication Manager has
 // (on all products); author is the external-author login.
-const LOCKED = { admin: 'all', executive: 'pm', author: 'fixed' };
-const FIXED = { author: ['doc.edit'] };
+const LOCKED = { admin: 'all', executive: 'pm', author: 'fixed', library: 'fixed' };
+const FIXED = { author: ['doc.edit'], library: [] };
 // Levels that cover every product; the others see only the products they're aligned to.
 const ALL_PRODUCTS = new Set(['admin', 'executive']);
 const LEVELS = [
@@ -34,6 +35,7 @@ const LEVELS = [
   { key: 'executive', name: 'Executive', description: 'A Publication Manager for every product: the same permissions, on all products.', permissions: [] },
   { key: 'pub_manager', name: 'Publication Manager', description: 'Runs publications and plans for their products.', permissions: ['pubs.edit', 'pubs.cancel', 'doc.edit', 'doc.review', 'plans.edit', 'authors.edit'] },
   { key: 'reviewer', name: 'Reviewer', description: 'Reviews publications for their products and suggests tracked changes to the document.', permissions: ['doc.edit'] },
+  { key: 'library', name: 'Library User', description: 'Read-only: the Publication Library, where every publication with a final disposition (Accepted) is public. Nothing else in PubPro.', permissions: [] },
   { key: 'author', name: 'External Author', description: 'External authors sign in to their own dashboard and can suggest tracked changes to the documents of publications they’re an author on. Logins come from external author profiles.', permissions: FIXED.author },
 ];
 const LEVEL_KEYS = LEVELS.map(l => l.key);
@@ -61,6 +63,7 @@ LEVELS.forEach((r, i) => {
   db.prepare('UPDATE roles SET name = ?, description = ?, built_in = 1, sort = ? WHERE key = ?').run(r.name, r.description, i, r.key);
 });
 db.prepare("UPDATE roles SET permissions = ? WHERE key = 'author'").run(JSON.stringify(FIXED.author));
+db.prepare("UPDATE roles SET permissions = '[]' WHERE key = 'library'").run();
 // Staff accounts from before roles existed ('user') had full staff access: they become Publication Managers.
 db.prepare("UPDATE users SET role = 'pub_manager' WHERE role = 'user'").run();
 
@@ -131,14 +134,14 @@ function rolesOf(u) {
 
 /** { product: productRoleKey } for a Publication Manager or Reviewer; {} for the other levels. */
 function productRolesOf(u) {
-  if (ALL_PRODUCTS.has(u.role) || u.role === 'author') return {};
+  if (ALL_PRODUCTS.has(u.role) || u.role === 'author' || u.role === 'library') return {};
   const map = parseMap(u.product_roles);
   return Object.fromEntries(Object.entries(map).filter(([p]) => PRODUCTS.includes(p)));
 }
 
 /** [{ role: level, products }] with products null for all products (admins, executives). */
 function scopesOf(u) {
-  return rolesOf(u).map(role => ({ role, products: ALL_PRODUCTS.has(role) || role === 'author' ? null : Object.keys(productRolesOf(u)) }));
+  return rolesOf(u).map(role => ({ role, products: ALL_PRODUCTS.has(role) || role === 'author' || role === 'library' ? null : Object.keys(productRolesOf(u)) }));
 }
 const covers = (scope, product) => !scope.products || !product || scope.products.includes(product);
 
@@ -177,16 +180,16 @@ const roleNamesOf = u => rolesOf(u).map(roleName).join(', ');
 function setRoles(userId, keys) {
   const valid = LEVEL_KEYS.filter(k => (keys || []).includes(k));
   if (!valid.length) throw new Error('Choose an access level.');
-  if (valid.includes('author') && valid.length > 1) throw new Error('External Author can’t be combined with other levels.');
+  if (valid.includes('author') && valid.length > 1) throw new Error('External Author can\u2019t be combined with other levels.');
   db.prepare("UPDATE users SET role = ?, extra_roles = '[]' WHERE id = ?").run(valid[0], userId);
-  if (ALL_PRODUCTS.has(valid[0])) db.prepare("UPDATE users SET product_roles = '{}' WHERE id = ?").run(userId);
+  if (ALL_PRODUCTS.has(valid[0]) || valid[0] === 'library') db.prepare("UPDATE users SET product_roles = '{}' WHERE id = ?").run(userId);
   return [valid[0]];
 }
 
 /** Sets which products a Publication Manager or Reviewer works on and their role on each: { product: roleKey }. */
 function setProductRoles(userId, map) {
   const u = db.prepare('SELECT role, product_roles FROM users WHERE id = ?').get(userId);
-  if (!u || ALL_PRODUCTS.has(u.role) || u.role === 'author') return;
+  if (!u || ALL_PRODUCTS.has(u.role) || u.role === 'author' || u.role === 'library') return;
   const roles = productRoles();
   const keys = new Set(roles.map(r => r.key));
   const before = parseMap(u.product_roles);
