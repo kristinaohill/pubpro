@@ -40,12 +40,15 @@ function involves(dataText, person) {
     .concat((d.rounds || []).flatMap(r => (r.reviewers || []).map(v => v.name)));
   return names.some(n => norm(n) === who);
 }
+// Anyone on one of the publication's review rounds (so they can open it to do their review).
+const onRound = (dataText, person) => (parse(dataText, {}).rounds || [])
+  .some(r => (r.reviewers || []).some(v => norm(v.name) === norm(person)));
 // If you can see it you can edit it: staff see the publications their roles let them edit (for
-// the record's product), plus, for now, Reviewers see the ones they can review. External authors see
-// the publications that list them.
+// the record's product), plus, for now, Reviewers see the ones they can review, and anyone sees the
+// ones they've been asked to review. External authors see the publications that list them.
 const canSee = (req, row) => (req.user.role === 'author'
   ? involves(row.data, req.user.name)
-  : can(req, 'pubs.edit', row.product || null) || can(req, 'doc.edit', row.product || null));
+  : can(req, 'pubs.edit', row.product || null) || can(req, 'doc.edit', row.product || null) || onRound(row.data, req.user.name));
 
 const LIST_COLUMNS = 'id, record_id, title, pub_type, product, status, owner, summary, created_at, updated_at';
 
@@ -154,6 +157,42 @@ router.put('/:id', requireAuth, (req, res) => {
   db.prepare(`UPDATE pp_publications SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(title, product, status, summary, data, req.params.id);
   res.json(getListRow(req.params.id));
+});
+
+// ---- A reviewer's own response ------------------------------------------------------------
+// Whoever is on the open review round answers for themselves: { decision: approve | changes |
+// reject, comment, on (m/d/yyyy), stamp }. It saves at once (no form Save, whatever their role),
+// is logged on the audit trail and tells the owner in PubPro.
+const DECISIONS = { approve: 'Approved', changes: 'Changes Requested', reject: 'Not Approved' };
+router.post('/:id/review-response', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
+  const decision = String(req.body.decision || '');
+  if (!DECISIONS[decision]) return res.status(400).json({ error: 'Choose Approved, Changes Requested or Not Approved.' });
+  const data = parse(row.data, {});
+  if (data.cancelled || row.status === 'Cancelled') return res.status(400).json({ error: 'This publication is cancelled.' });
+  const round = (data.rounds || []).find(r => r.status === 'open');
+  const me = norm(req.user.name);
+  const mine = round && (round.reviewers || []).find(v => norm(v.name) === me);
+  if (!mine) return res.status(403).json({ error: round ? 'You aren\u2019t a reviewer on the open round.' : 'There\u2019s no review round open. It may have just been closed.' });
+  const d = new Date();
+  const on = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(req.body.on || '') ? req.body.on : (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+  const stamp = /^\d{1,2}\/\d{1,2}\/\d{4} \d{1,2}:\d{2}\s?[AP]M$/i.test(req.body.stamp || '') ? req.body.stamp : on;
+  const comment = String(req.body.comment || '').trim().slice(0, 4000);
+  const changed = !!mine.decision && mine.decision !== 'pending';
+  Object.assign(mine, { decision, comment, on, ooo: '' });
+  data.audit = (data.audit || []).concat([{
+    action: 'Review Response \u2014 ' + round.type + ' (Round ' + round.num + ')', participants: req.user.name,
+    start: stamp, completed: on, result: DECISIONS[decision], active: false,
+    comment: [changed ? 'Changed their response' : '', comment].filter(Boolean).join(' \u00b7 '),
+  }]);
+  db.prepare("UPDATE pp_publications SET data = ?, updated_at = datetime('now') WHERE id = ?").run(JSON.stringify(data), row.id);
+  if (row.owner && norm(row.owner) !== me) {
+    db.prepare(`INSERT INTO pp_notifications (recipient, sender, pub_id, record_id, kind, title, body, tab)
+      VALUES (?, ?, ?, ?, 'response', ?, ?, 'reviewers')`)
+      .run(row.owner, req.user.name, row.id, row.record_id, req.user.name + ' responded: ' + DECISIONS[decision], round.type + ' \u00b7 ' + row.title + ' (' + row.record_id + ')');
+  }
+  res.json({ rounds: data.rounds, audit: data.audit });
 });
 
 // ---- The publication document: live co-editing -------------------------------------------

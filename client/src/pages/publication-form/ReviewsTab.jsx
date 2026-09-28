@@ -52,6 +52,8 @@ const dueRel = due => {
 // Who a review type brings in (System Administrator > Review Types): its required and optional
 // participants, resolved for this record. Authors all take part (unless they declined the
 // invitation); a product role brings in one person who holds it on the publication's product.
+// Custom review types (e.g. MLR Review) have no workflow step of their own.
+const flowOf = type => REVIEW_FLOW[type] || { step: type, returnsTo: "Draft Development", custom: true };
 const FALLBACK_TYPE = { required: [], optional: [{ kind: 'internal_authors' }, { kind: 'external_authors' }] };
 
 /**
@@ -136,7 +138,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   const readiness = deriveReadiness(st);
   const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }), () => set({ searchOpen: true }));
   // Custom review types (added on System Administrator) have no workflow step of their own.
-  const flow = REVIEW_FLOW[st.reviewType] || { step: st.reviewType, returnsTo: 'Draft Development' };
+  const flow = flowOf(st.reviewType);
   const methodLocked = st.reviewType === 'Author Approval';
   const rounds = st.rounds || [];
   const current = openRoundOf(st);
@@ -215,12 +217,6 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     });
   };
 
-  const patchReviewer = (name, patch) => set(s => ({
-    rounds: s.rounds.map(r => (r.status === 'open'
-      ? { ...r, reviewers: r.reviewers.map(v => (v.name === name ? { ...v, ...patch } : v)) }
-      : r)),
-  }));
-
   const remind = names => commit(s => ({
     rounds: s.rounds.map(r => (r.status === 'open'
       ? { ...r, reviewers: r.reviewers.map(v => (names.includes(v.name) ? { ...v, remindedOn: TODAY_STR } : v)) }
@@ -238,20 +234,29 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     },
   });
 
+  // Recording someone's response for them (e.g. they replied by email) saves straight away.
   const saveResponse = () => {
     const e = st.respondEdit;
     if (!e || !e.decision) return;
-    patchReviewer(e.name, { decision: e.decision, comment: e.comment.trim(), on: TODAY_STR, ooo: '' });
-    set({ respondEdit: null });
+    const round = openRoundOf(st);
+    commit(s => ({
+      respondEdit: null,
+      rounds: s.rounds.map(r => (r.status === 'open'
+        ? { ...r, reviewers: r.reviewers.map(v => (v.name === e.name ? { ...v, decision: e.decision, comment: e.comment.trim(), on: TODAY_STR, ooo: '' } : v)) }
+        : r)),
+      audit: (s.audit || []).concat([auditEntry(`Review Response — ${round.type} (Round ${round.num})`, {
+        participants: e.name, result: DEC[e.decision].decision, comment: ['Recorded by ' + userName, e.comment.trim()].filter(Boolean).join(' · '),
+      })]),
+    }), { done: 'Saved ' + e.name + '’s response.' });
   };
 
   const closeRound = () => {
     const round = openRoundOf(st);
     if (!round) return;
     const outcome = roundOutcome(round);
-    const f = REVIEW_FLOW[round.type];
+    const f = flowOf(round.type);
     const closed = { ...round, status: 'closed', closedOn: TODAY_STR, outcome };
-    const note = outcome === 'Approved' ? `${f.step} marked complete on the Planning tab` : `Returns to ${f.returnsTo}`;
+    const note = outcome === 'Approved' ? (f.custom ? '' : `${f.step} marked complete on the Planning tab`) : `Returns to ${f.returnsTo}`;
     commit(s => ({
       rounds: s.rounds.map(r => (r.num === round.num ? closed : r)),
       respondEdit: null,
@@ -511,7 +516,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
             <Pill tone={currentDue.tone}>{currentDue.label}</Pill>
             <span>{people.filter(p => p.done).length} of {people.length} responded</span>
           </div>
-          <WorkflowStepLine step={REVIEW_FLOW[current.type].step} returnsTo={REVIEW_FLOW[current.type].returnsTo} />
+          <WorkflowStepLine step={flowOf(current.type).step} returnsTo={flowOf(current.type).returnsTo} />
           {st.currentRoundOpen && (
             <>
               <ColHead cols={[['Reviewer', ''], ['Response', '220px'], ['Last Reminder', '90px'], ['', '150px']]} />
@@ -617,7 +622,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                       <Icon name={open ? 'expand_less' : 'expand_more'} size={22} color="var(--nav)" />
                     </span>
                   </div>
-                  <WorkflowStepLine step={REVIEW_FLOW[r.type].step} returnsTo={REVIEW_FLOW[r.type].returnsTo} />
+                  <WorkflowStepLine step={flowOf(r.type).step} returnsTo={flowOf(r.type).returnsTo} />
                   {open && (
                     <div className="pfxc-past-body">
                       <ColHead cols={[['Reviewer', ''], ['Decision', '240px'], ['Completed', '84px']]} />

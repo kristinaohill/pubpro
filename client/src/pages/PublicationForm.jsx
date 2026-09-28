@@ -8,7 +8,8 @@ import { useAuth } from '../AuthContext';
 import DocumentPanel from './publication-form/DocumentPanel';
 import { fold, visibleText } from './publication-form/trackChanges';
 import { AtAGlance, RecordSummary, SectionNav } from './publication-form/frame';
-import { PRODUCTS, TODAY_STR } from './publication-form/data';
+import { PRODUCTS, TODAY_STR, nowStamp } from './publication-form/data';
+import YourReview from './publication-form/YourReview';
 import {
   FIELD_DEFAULTS, auditEntry, blankState, changedSections, deriveProgress, fromSavedData, missingFlags,
   openRoundOf, statusOf, summarize, titleOf, toSavedData,
@@ -315,6 +316,14 @@ export default function PublicationForm() {
   const status = statusOf(st);
   const openTab = tid => set({ tab: tid });
 
+  // The signed-in person's own review on the open round. Saved at once, even when the record is view only.
+  const submitReview = async (decision, comment) => {
+    const res = await api.post('/pp-publications/' + record.id + '/review-response', { decision, comment, on: TODAY_STR, stamp: nowStamp() });
+    setSt(cur => ({ ...cur, rounds: res.rounds, audit: res.audit }));
+    if (lastSaved.current) lastSaved.current = { ...lastSaved.current, rounds: res.rounds, audit: res.audit };
+    setMessage({ kind: 'info', text: 'Your review was submitted.' + (record.owner && record.owner !== userName ? ' ' + record.owner + ' was notified in PubPro.' : '') });
+  };
+
   const TabView = TAB_VIEWS[st.tab] || OverviewTab;
   const tabProps = {
     st, set, bind, commit, saving, navigate, recordId, prog, userName, plans, allowedProducts,
@@ -345,10 +354,19 @@ export default function PublicationForm() {
 
         <div className="pfx-body">
           <SectionNav active={st.tab} flags={missing} onSelect={openTab} />
-          <div className={'pfx-main' + (cancelled || viewOnly ? ' pf-panel--readonly' : '')}>
-            <fieldset className="pf-fieldset pfx-main" disabled={!!cancelled || viewOnly}>
-              <TabView {...tabProps} />
-            </fieldset>
+          <div className="pfx-main">
+            {record && !cancelled && (
+              <YourReview
+                st={st} userName={userName} owner={record.owner} full={st.tab === 'reviewers'}
+                onSubmit={submitReview} onTab={openTab}
+                onOpenDocument={st.pubDoc ? () => setDocOpen(true) : null}
+              />
+            )}
+            <div className={'pfx-main-lock' + (cancelled || viewOnly ? ' pf-panel--readonly' : '')}>
+              <fieldset className="pf-fieldset pfx-main" disabled={!!cancelled || viewOnly}>
+                <TabView {...tabProps} />
+              </fieldset>
+            </div>
           </div>
           <AtAGlance st={st} record={record} recordId={recordId} onTab={openTab} />
         </div>

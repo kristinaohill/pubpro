@@ -6,6 +6,8 @@ import PageHeader from '../components/PageHeader';
 import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
 import { api } from '../api';
+import { useAuth } from '../AuthContext';
+import { myReview } from './publication-form/YourReview';
 import { daysUntil } from './Publications';
 import {
   activity as activityOf, finance as financeOf, inBounds, outcomes as outcomesOf, pipeline as pipelineOf,
@@ -314,6 +316,7 @@ function useRowWindow(visible) {
 
 export default function PubProDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   // Save & Close on a publication, plan or author lands here with a confirmation.
   const savedNotice = (useLocation().state || {}).savedNotice;
   const [module, setModule] = useState('publications');
@@ -379,9 +382,29 @@ export default function PubProDashboard() {
       ],
     };
   });
-  const taskCount = savedRows.length;
-
-  const taskRows = savedRows;
+  // Reviews waiting on you come first; they open on the Reviews tab.
+  const isoOf = mdy => { const x = String(mdy || '').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return x ? x[3] + '-' + x[1].padStart(2, '0') + '-' + x[2].padStart(2, '0') : ''; };
+  const reviewRows = saved.filter(p => p.status !== 'Cancelled' && p.data && !p.data.cancelled).map(p => {
+    const r = myReview(p.data, user && user.name);
+    if (!r || r.done) return null;
+    const n = daysUntil(isoOf(r.round.due));
+    return {
+      key: 'review-' + p.id,
+      savedId: p.id,
+      tab: 'reviewers',
+      n,
+      cells: [
+        <span className="pd-id-cell">
+          <Sym name="rate_review" className="pd-id-icon" />
+          <span className="pd-ellipsis">{p.record_id}</span>
+        </span>,
+        <strong>Your review: {r.round.type} (Round {r.round.num})</strong>, p.title, p.pub_type, p.product || '—',
+        <Pill tone={n == null ? 'outline' : n < 0 ? 'cancelled' : n <= 7 ? 'hold' : 'outline'} style={{ fontSize: 12 }}>{r.round.due || '—'}</Pill>,
+      ],
+    };
+  }).filter(Boolean).sort((a, b) => (a.n == null ? 1e9 : a.n) - (b.n == null ? 1e9 : b.n));
+  const taskRows = reviewRows.concat(savedRows);
+  const taskCount = taskRows.length;
 
   // Saved plans (the seeded sample plan among them, once it has been opened).
   const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
@@ -415,7 +438,7 @@ export default function PubProDashboard() {
           <DataTable
             columns={TASK_COLUMNS}
             rows={taskRows}
-            onRowClick={r => navigate('/publication/' + r.savedId)}
+            onRowClick={r => navigate('/publication/' + r.savedId, r.tab ? { state: { tab: r.tab } } : undefined)}
             headerTone="knowledge"
             zebra={false}
             maxHeight={taskMaxHeight}
