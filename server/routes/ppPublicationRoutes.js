@@ -56,6 +56,16 @@ function keepDocument(dataJson, existingData) {
   return JSON.stringify(next);
 }
 
+/** Why a scoped role can't act on this product, e.g. "Your Medical Writer role covers Daxafort only." */
+function outOfScope(req, perm, product) {
+  const P = require('../permissions');
+  const u = db.prepare('SELECT role, extra_roles, role_scopes FROM users WHERE id = ?').get(req.user.id) || {};
+  const holders = P.scopesOf(u).filter(sc => P.permissionsOf(sc.role).includes(perm) && sc.products);
+  const what = product ? String(product).split(' ')[0] : 'this product';
+  if (!holders.length) return 'Your role does not allow this for ' + what + '.';
+  return holders.map(sc => 'Your ' + P.roleName(sc.role) + ' role covers ' + P.scopeLabel(sc.products)).join('; ') + ', not ' + what + '.';
+}
+
 function readBody(body) {
   return {
     title: String(body.title || '').trim(),
@@ -83,6 +93,7 @@ router.get('/:id', requireAuth, (req, res) => {
 
 router.post('/', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
   const { title, pubType, product, status, summary } = readBody(req.body);
+  if (!can(req, 'pubs.edit', product)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', product) });
   const data = keepDocument(readBody(req.body).data, {});
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
   if (!TYPE_CODES[pubType]) return res.status(400).json({ error: 'Choose a publication type.' });
@@ -112,15 +123,21 @@ router.post('/sample', requireAuth, blockAuthors, (req, res) => {
 
 // Publication Type and the record ID are fixed once the record exists.
 router.put('/:id', requireAuth, (req, res) => {
-  const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
+  const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
   // External authors update their own invitation and review responses (their dashboard); staff need pubs.edit.
   if (req.user.role !== 'author' && !can(req, 'pubs.edit')) return res.status(403).json({ error: 'Your role does not allow editing publications.' });
   const { title, product, status, summary } = readBody(req.body);
+  // Roles limited to some products: the record must be in scope before and after the change.
+  if (req.user.role !== 'author') {
+    for (const p of [existing.product, product]) {
+      if (!can(req, 'pubs.edit', p)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', p) });
+    }
+  }
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
   const prevData = parse(existing.data, {});
   const data = keepDocument(readBody(req.body).data, prevData);
-  if (!!prevData.cancelled !== !!parse(data, {}).cancelled && !can(req, 'pubs.cancel')) {
+  if (!!prevData.cancelled !== !!parse(data, {}).cancelled && !can(req, 'pubs.cancel', existing.product)) {
     return res.status(403).json({ error: 'Your role does not allow cancelling or reinstating publications.' });
   }
   db.prepare(`UPDATE pp_publications SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
@@ -185,8 +202,9 @@ const SESSION_MS = 30 * 60 * 1000;
  * External authors (doc.edit is fixed on their role) may only edit publications that list them.
  */
 router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => {
-  const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
+  const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
+  if (!can(req, 'doc.edit', existing.product)) return res.status(403).json({ error: outOfScope(req, 'doc.edit', existing.product) });
   const data = parse(existing.data, {});
   if (data.cancelled) return res.status(400).json({ error: 'This publication is cancelled. Reinstate it to change the document.' });
   const version = data.pubDocVersion || 0;
@@ -196,7 +214,7 @@ router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => 
   const next = doc.clean(req.body.markup);
   if (!next) return res.status(400).json({ error: 'Nothing to save.' });
   if (next.reduce((n, x) => n + x.t.length, 0) > doc.MAX_DOC_CHARS) return res.status(400).json({ error: 'The document is too long to save here.' });
-  const canReview = can(req, 'doc.review');
+  const canReview = can(req, 'doc.review', existing.product);
   const problem = doc.checkEdit(doc.markupOf(data), next, req.user, canReview);
   if (problem) return res.status(403).json({ error: problem });
   data.pubDocMarkup = next;
@@ -229,6 +247,8 @@ router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => 
 });
 
 router.delete('/:id', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
+  const row = db.prepare('SELECT product FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (row && !can(req, 'pubs.edit', row.product)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', row.product) });
   const r = db.prepare('DELETE FROM pp_publications WHERE id = ?').run(req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Publication not found' });
   res.json({ success: true });

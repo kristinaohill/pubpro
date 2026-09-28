@@ -7,23 +7,65 @@ import DateField from '../components/DateField';
 import { refreshPeople } from '../components/usePeople';
 import { ChipCheck } from './publication-form/ui';
 import { fmtSaved } from './Publications';
+import { scopeLabel, shortProduct } from '../components/scope';
 
 // System Administrator > Users (list, add, edit, approve, Sign In As) and > Sign-up.
 
 const mdy = iso => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? +m[2] + '/' + +m[3] + '/' + m[1] : ''; };
 const iso = s => { const m = String(s || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m ? m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0') : ''; };
 const initials = name => String(name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+const emptyScope = d => d.roles.some(r => Array.isArray(d.scopes[r]) && !d.scopes[r].length);
 const copy = text => { try { navigator.clipboard.writeText(text); } catch (e) { /* ignore */ } };
 
 const draftOf = u => ({
-  name: u.name || '', email: u.email || '', roles: u.roles || (u.role ? [u.role] : ['reviewer']),
+  name: u.name || '', email: u.email || '', roles: u.roles || (u.role ? [u.role] : ['reviewer']), scopes: u.scopes || {},
   title: u.title || '', department: u.department || '', phone: u.phone || '', therapeuticAreas: u.therapeuticAreas || [],
   oooOn: !!(u.ooo && (u.ooo.from || u.ooo.to)), oooFrom: mdy(u.ooo && u.ooo.from), oooTo: mdy(u.ooo && u.ooo.to), oooNote: (u.ooo && u.ooo.note) || '',
 });
 const bodyOf = d => ({
-  name: d.name, email: d.email, roles: d.roles, title: d.title, department: d.department, phone: d.phone, therapeuticAreas: d.therapeuticAreas,
+  name: d.name, email: d.email, roles: d.roles,
+  scopes: Object.fromEntries(d.roles.filter(r => r !== 'admin' && r !== 'author').map(r => [r, d.scopes[r] || 'all'])),
+  title: d.title, department: d.department, phone: d.phone, therapeuticAreas: d.therapeuticAreas,
   ooo: d.oooOn ? { from: iso(d.oooFrom), to: iso(d.oooTo), note: d.oooNote } : { from: '', to: '', note: '' },
 });
+
+/**
+ * Which products one of the person's roles covers: all, or chosen products (a therapeutic area
+ * button picks all of its products). E.g. Patent Attorney for Biologix only.
+ */
+function RoleScope({ roleName, value, onChange, options }) {
+  const products = options.products || [];
+  const byTa = {};
+  products.forEach(p => { const ta = (options.productTa || {})[p] || 'Other'; (byTa[ta] = byTa[ta] || []).push(p); });
+  const list = Array.isArray(value) ? value : null;
+  const toggle = p => onChange(list.includes(p) ? list.filter(x => x !== p) : list.concat([p]));
+  const toggleTa = ps => onChange(ps.every(p => list.includes(p)) ? list.filter(p => !ps.includes(p)) : [...new Set(list.concat(ps))]);
+  return (
+    <div className="sa-scope">
+      <div className="sa-scope-head">
+        <span className="sa-scope-role">{roleName}</span>
+        <label className="sa-scope-opt"><input type="radio" checked={!list} onChange={() => onChange('all')} /> All products</label>
+        <label className="sa-scope-opt"><input type="radio" checked={!!list} onChange={() => onChange(list || [])} /> Only some products</label>
+        {list && list.length > 0 && <span className="sa-faint">{scopeLabel(list)}</span>}
+      </div>
+      {list && (
+        <div className="sa-scope-tas">
+          {Object.entries(byTa).map(([ta, ps]) => (
+            <div key={ta} className="sa-scope-ta">
+              <button type="button" className={'sa-scope-tabtn' + (ps.every(p => list.includes(p)) ? ' sa-scope-tabtn--on' : '')} onClick={() => toggleTa(ps)} aria-pressed={ps.every(p => list.includes(p))}>
+                {ta}
+              </button>
+              <div className="pfx-chips">
+                {ps.map(p => <ChipCheck key={p} label={shortProduct(p)} checked={list.includes(p)} onChange={() => toggle(p)} />)}
+              </div>
+            </div>
+          ))}
+          {list.length === 0 && <div className="sa-scope-warn">Pick at least one product, or choose All products.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** The fields shared by Add User and Edit: identity, role, work details, out of office. */
 function UserFields({ d, set, roleOptions, options, roleLocked, roleNote, withOoo }) {
@@ -58,6 +100,21 @@ function UserFields({ d, set, roleOptions, options, roleLocked, roleNote, withOo
         )}
         <div className="sa-faint">{roleNote || (d.roles.length > 1 ? 'They get everything each of these roles allows.' : 'Pick more than one when someone wears several hats.')}</div>
       </fieldset>
+      {!roleLocked && d.roles.some(r => r !== 'admin') && (
+        <fieldset className="sa-fieldset">
+          <legend className="sa-legend">Products each role covers</legend>
+          <div className="sa-faint">A role limited to some products only lets them edit and review those products&rsquo; publications and plans; dashboards open on them.</div>
+          {d.roles.filter(r => r !== 'admin').map(r => (
+            <RoleScope
+              key={r}
+              roleName={(roleOptions.find(o => o.value === r) || {}).label || r}
+              value={d.scopes[r] || 'all'}
+              onChange={v => set({ scopes: { ...d.scopes, [r]: v } })}
+              options={options}
+            />
+          ))}
+        </fieldset>
+      )}
       <fieldset className="sa-fieldset">
         <legend className="sa-legend">Therapeutic areas</legend>
         <div className="pfx-chips">
@@ -238,7 +295,7 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
               <span className="sa-faint">PubPro creates a temporary password for you to pass on. External authors get their login from their author profile instead.</span>
               <span className="sa-grow" />
               <Button variant="secondary" onClick={() => setAdding(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim() || !draft.roles.length}>{busy ? 'Adding…' : 'Add User'}</Button>
+              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim() || !draft.roles.length || emptyScope(draft)}>{busy ? 'Adding…' : 'Add User'}</Button>
             </div>
           </div>
         )}
@@ -269,7 +326,11 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
                       </span>
                     </span>
                     <span role="cell" className="sa-rolecell">
-                      {u.role_name}
+                      {(u.roles || [u.role]).map(r => {
+                        const name = (roles.find(x => x.key === r) || {}).name || r;
+                        const sc = u.scopes && Array.isArray(u.scopes[r]) ? u.scopes[r] : null;
+                        return <span key={r} className="sa-rolechip">{name}{sc ? <span className="sa-rolechip-scope"> · {scopeLabel(sc)}</span> : null}</span>;
+                      })}
                       {u.oooNow && <Pill tone="hold" style={{ marginLeft: 8 }}>Out of office</Pill>}
                     </span>
                     <span role="cell">{u.active ? <Pill tone="active">Active</Pill> : <Pill tone="cancelled">Deactivated</Pill>}</span>
@@ -306,7 +367,7 @@ export function UsersTab({ me, users, roles, options, onChanged, onError }) {
                         <span className="sa-faint">Member since {fmtSaved(u.created_at)}</span>
                         <span className="sa-grow" />
                         <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
-                        <Button variant="primary" onClick={() => saveEdit(u)} disabled={busy || !editing.d.name.trim() || !editing.d.email.trim() || !editing.d.roles.length}>{busy ? 'Saving…' : 'Save Changes'}</Button>
+                        <Button variant="primary" onClick={() => saveEdit(u)} disabled={busy || !editing.d.name.trim() || !editing.d.email.trim() || !editing.d.roles.length || emptyScope(editing.d)}>{busy ? 'Saving…' : 'Save Changes'}</Button>
                       </div>
                     </div>
                   )}

@@ -91,7 +91,7 @@
 }
 
 .sa-rolelist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.sa-rolelist li { display: grid; grid-template-columns: 220px 1fr; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #EEF1F4; }
+.sa-rolelist li { display: grid; grid-template-columns: 220px 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid #EEF1F4; }
 .sa-rolelist li:first-child { border-top: 0; }
 .sa-rolelist-name { display: inline-flex; align-items: center; gap: 8px; }
 .sa-signup { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px solid #EEF1F4; font-size: var(--fs-base); }
@@ -138,3 +138,26 @@
 .sa-inline { display: flex; gap: 8px; align-items: center; }
 .sa-inline > :first-child { flex: 1; }
 @media (max-width: 900px) { .sa-signup-grid, .sa-add-grid--ooo { grid-template-columns: 1fr; } }
+
+/* Role chips in the Users list, with their product scope */
+.sa-rolecell { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sa-rolechip { display: inline-block; padding: 2px 8px; border-radius: var(--radius-pill); background: #EEF1F4; font-size: 11px; font-weight: var(--fw-semibold); color: var(--nav); }
+.sa-rolechip-scope { font-weight: 400; color: var(--fg-3); }
+
+/* Product scope per role (Edit user) */
+.sa-scope { border: 1px solid #DCE1E7; border-radius: 10px; background: var(--white); padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+.sa-scope-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.sa-scope-role { font-weight: var(--fw-bold); color: var(--nav); min-width: 150px; font-size: var(--fs-base); }
+.sa-scope-opt { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-meta); cursor: pointer; white-space: nowrap; }
+.sa-scope-opt input { margin: 0; accent-color: var(--high-emphasis); }
+.sa-scope-tas { display: flex; flex-direction: column; gap: 8px; padding-left: 166px; }
+.sa-scope-ta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sa-scope-tabtn {
+  min-width: 190px; text-align: left; border: 1px dashed #B8C4D0; background: transparent; border-radius: 8px; padding: 5px 10px;
+  font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-semibold); color: var(--fg-3); cursor: pointer;
+}
+.sa-scope-tabtn--on { border-style: solid; border-color: var(--nav); color: var(--nav); background: #EEF3F8; }
+.sa-scope-tabtn:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 1px; }
+.sa-scope-warn { color: #B91F1F; font-size: var(--fs-meta); }
+.sa-autoreview { white-space: nowrap; }
+@media (max-width: 900px) { .sa-scope-tas { padding-left: 0; } }

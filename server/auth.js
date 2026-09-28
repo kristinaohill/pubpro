@@ -25,7 +25,7 @@ function requireAuth(req, res, next) {
   }
   const db = require('./db');
   const { permissionsForUser, rolesOf } = require('./permissions');
-  const row = db.prepare('SELECT id, email, name, role, extra_roles, client_id, author_profile_id, active, pending FROM users WHERE id = ?').get(claims.id);
+  const row = db.prepare('SELECT id, email, name, role, extra_roles, role_scopes, client_id, author_profile_id, active, pending FROM users WHERE id = ?').get(claims.id);
   if (!row) return res.status(401).json({ error: 'Your account no longer exists. Sign in again.' });
   if (!row.active) return res.status(401).json({ error: 'Your account has been deactivated. Contact your system administrator.' });
   if (row.pending) return res.status(401).json({ error: 'Your account is waiting for an administrator to approve it.' });
@@ -33,10 +33,16 @@ function requireAuth(req, res, next) {
   // Set when a System Administrator is signed in as this user (System Administrator > Sign In As).
   req.impersonator = claims.imp || null;
   req.perms = permissionsForUser(row);
+  // Roles can be limited to some products: permsFor(product) counts only the roles covering it.
+  req.permsFor = product => permissionsForUser(row, product || null);
   next();
 }
 
-const can = (req, perm) => !!(req.perms && req.perms.includes(perm));
+/** can(req, perm) = anywhere; can(req, perm, product) = for a record of that product (null = no product yet). */
+const can = (req, perm, product) => {
+  if (product !== undefined && req.permsFor) return req.permsFor(product).includes(perm);
+  return !!(req.perms && req.perms.includes(perm));
+};
 
 /** Staff permission check (see permissions.js). Answers 403 with the reason when it's missing. */
 function requirePerm(perm) {

@@ -155,6 +155,15 @@ function RolesTab({ data, onChanged, onError }) {
     }
   };
 
+  const setAutoReview = async (r, on) => {
+    try {
+      const res = await api.put('/admin/roles', { roles: [{ key: r.key, autoReview: on }] });
+      onChanged(on ? r.name + 's are now added automatically as required reviewers for their products.' : r.name + 's are no longer added automatically.', res);
+    } catch (err) {
+      onError(err.message);
+    }
+  };
+
   const cols = data.roles;
   const grid = { gridTemplateColumns: 'minmax(240px, 1.6fr) repeat(' + cols.length + ', minmax(112px, 1fr))' };
 
@@ -250,6 +259,12 @@ function RolesTab({ data, onChanged, onError }) {
             <li key={r.key}>
               <span className="sa-rolelist-name"><span className="sa-mrole-name">{r.name}</span>{!r.builtIn && <Pill tone="draft">Custom</Pill>}</span>
               <span className="sa-faint">{r.description || 'No description.'}</span>
+              {r.locked ? <span /> : (
+                <label className="sa-check sa-autoreview" title="Everyone with this role is added as a mandatory reviewer on review rounds for the products their role covers.">
+                  <input type="checkbox" checked={r.autoReview} onChange={() => setAutoReview(r, !r.autoReview)} />
+                  Required reviewer
+                </label>
+              )}
             </li>
           ))}
         </ul>

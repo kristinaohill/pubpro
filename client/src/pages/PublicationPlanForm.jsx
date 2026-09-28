@@ -970,13 +970,14 @@ export default function PublicationPlanForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user, can } = useAuth();
-  const canEditPlan = can('plans.edit');
   const userName = (user && user.name) || 'Unknown user';
   const isNew = id === 'new';
   const savedId = isNew ? null : id;
 
   const [plan, setPlan] = useState(blankPlan);
   const [record, setRecord] = useState(null);
+  // Roles can cover only some products: a saved plan counts the roles covering its product.
+  const canEditPlan = can('plans.edit', record ? record.product || null : undefined);
   const [loadState, setLoadState] = useState(savedId ? 'loading' : 'ready');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);

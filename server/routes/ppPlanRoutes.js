@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAuth: authOnly, requirePerm, blockAuthors } = require('../auth');
+const { requireAuth: authOnly, requirePerm, can, blockAuthors } = require('../auth');
 
 const requireAuth = [authOnly, blockAuthors];
 const canEdit = requirePerm('plans.edit');
+// Plans roles limited to some products can only save plans for those products.
+const scopeError = (req, product) => (can(req, 'plans.edit', product) ? null
+  : 'Your role covers publication plans for other products, not ' + String(product).split(' ')[0] + '.');
 const { productCode, yearCode, nextSequence } = require('../recordIds');
 
 // Plan IDs follow PLAN-<yy>-<product>-<seq>, e.g. PLAN-26-DAX-002.
@@ -52,6 +55,8 @@ router.get('/:id', requireAuth, (req, res) => {
 
 router.post('/', requireAuth, canEdit, (req, res) => {
   const { title, product, status, summary, data } = readBody(req.body);
+  const scoped = scopeError(req, product);
+  if (scoped) return res.status(403).json({ error: scoped });
   if (!title) return res.status(400).json({ error: 'A plan title is required to save the plan.' });
   const planId = nextPlanId(product);
   const r = db.prepare(`INSERT INTO pp_plans (plan_id, title, product, status, owner, summary, data, created_by)
@@ -79,9 +84,11 @@ router.post('/sample', requireAuth, (req, res) => {
 
 // The plan ID is fixed once the plan exists.
 router.put('/:id', requireAuth, canEdit, (req, res) => {
-  const existing = db.prepare('SELECT id FROM pp_plans WHERE id = ?').get(req.params.id);
+  const existing = db.prepare('SELECT id, product FROM pp_plans WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Publication plan not found' });
   const { title, product, status, summary, data } = readBody(req.body);
+  const scoped = scopeError(req, existing.product) || scopeError(req, product);
+  if (scoped) return res.status(403).json({ error: scoped });
   if (!title) return res.status(400).json({ error: 'A plan title is required to save the plan.' });
   db.prepare(`UPDATE pp_plans SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(title, product, status, summary, data, req.params.id);
@@ -89,6 +96,9 @@ router.put('/:id', requireAuth, canEdit, (req, res) => {
 });
 
 router.delete('/:id', requireAuth, canEdit, (req, res) => {
+  const row = db.prepare('SELECT product FROM pp_plans WHERE id = ?').get(req.params.id);
+  const scoped = row && scopeError(req, row.product);
+  if (scoped) return res.status(403).json({ error: scoped });
   const r = db.prepare('DELETE FROM pp_plans WHERE id = ?').run(req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Publication plan not found' });
   res.json({ success: true });

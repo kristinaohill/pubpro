@@ -9,7 +9,7 @@ import { stageTemplatePatch } from './state';
 import { Card, ChipCheck, ChipChoice, FormField, Pair, Stack, TabHead } from './ui';
 import './tabs-a.css';
 
-export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans }) {
+export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans, allowedProducts }) {
   const onPubType = e => {
     const v = e.target.value;
     set(s => {
@@ -150,7 +150,8 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
             <Select id="pf-ta" options={REVIEW_THERAPEUTIC_AREA_OPTIONS} placeholder="Please select" value={ta} onChange={onTA} width="100%" />
           </FormField>
           <FormField id="pf-product" label="Product">
-            <Select id="pf-product" options={productsForTA(ta)} placeholder="Please select" value={st.product} onChange={onProduct} width="100%" />
+            {/* Only the products this person's roles let them work on (plus the current one). */}
+            <Select id="pf-product" options={productsForTA(ta).filter(p => !allowedProducts || allowedProducts.includes(p) || p === st.product)} placeholder="Please select" value={st.product} onChange={onProduct} width="100%" />
           </FormField>
         </Pair>
         <fieldset className="pfx-fieldset">

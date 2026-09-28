@@ -4,6 +4,7 @@ import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, P
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
+import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
 import './Publications.css';
 
@@ -48,11 +49,14 @@ export const duePill = iso => {
 /** Saved publication records (Searches › Publications). */
 export default function Publications() {
   // Create and delete need pubs.edit (System Administrator > Roles & permissions).
-  const canEdit = useAuth().can('pubs.edit');
+  const { can } = useAuth();
+  const canEdit = can('pubs.edit');
   const navigate = useNavigate();
   const location = useLocation();
   const savedRecordId = location.state && location.state.savedRecordId;
-  const [pubs, setPubs] = useState(null);
+  const [pubsAll, setPubs] = useState(null);
+  const focus = useScopeFocus();
+  const pubs = pubsAll && focus.filter(pubsAll);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [showCancelled, setShowCancelled] = useState(true);
@@ -89,7 +93,7 @@ export default function Publications() {
         <Pill tone={due.tone} style={{ fontSize: 12 }}>{due.label}</Pill>,
         <Pill tone={STATUS_TONE[p.status] || 'draft'}>{p.status}</Pill>,
         fmtSaved(p.updated_at),
-        canEdit ? <IconButton
+        can('pubs.edit', p.product || null) ? <IconButton
           icon="delete"
           tone="fatal"
           size={26}
@@ -115,6 +119,7 @@ export default function Publications() {
         )}
       />
 
+      <ScopeFocusBar focus={focus} hidden={pubsAll ? pubsAll.length - pubs.length : 0} />
       {savedRecordId && !notice && <Flash>Saved {savedRecordId}.</Flash>}
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}

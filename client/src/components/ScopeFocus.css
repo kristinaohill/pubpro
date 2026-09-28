@@ -1,0 +1,11 @@
+.sf-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 14px; border-radius: 10px;
+  background: #EEF3F8; border: 1px solid #D5E1EC; color: var(--nav); font-family: var(--font-sans); font-size: var(--fs-base);
+}
+.sf-bar .material-symbols-outlined { font-size: 19px; }
+.sf-btn {
+  margin-left: auto; border: 1px solid var(--nav); background: var(--white); color: var(--nav); border-radius: var(--radius-pill);
+  padding: 4px 12px; font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-bold); cursor: pointer;
+}
+.sf-btn:hover { background: #E3ECF5; }
+.sf-btn:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 1px; }

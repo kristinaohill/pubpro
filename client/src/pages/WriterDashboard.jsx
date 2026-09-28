@@ -4,6 +4,7 @@ import { Button, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
+import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
 import { TODAY_STR } from './publication-form/data';
 import { auditEntry, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData } from './publication-form/state';
@@ -141,9 +142,14 @@ export default function WriterDashboard() {
   // Saved records open by id; the design's sample rows open the sample publication.
   const { user, can } = useAuth();
   const openPublication = (p, tab) => navigate('/publication/' + p.savedId, { state: { tab } });
-  const [saved, setSaved] = useState([]);
+  const [savedAll, setSaved] = useState([]);
   // Live (not cancelled) records with their data, for the author, congress and review panels.
-  const [live, setLive] = useState([]);
+  const [liveAll, setLive] = useState([]);
+  // Opens on the products this person's roles cover.
+  const focus = useScopeFocus();
+  const live = focus.filter(liveAll);
+  const inFocus = new Set(live.map(p => p.id));
+  const saved = savedAll.filter(p => inFocus.has(p.savedId));
   const [message, setMessage] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const load = () => api.get('/pp-publications?include=data')
@@ -258,6 +264,7 @@ export default function WriterDashboard() {
         title="Publication Manager Dashboard"
         description={<>Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</>}
       />
+      <ScopeFocusBar focus={focus} hidden={liveAll.length - live.length} />
 
       {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
 

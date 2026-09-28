@@ -8,7 +8,7 @@ import { useAuth } from '../AuthContext';
 import DocumentPanel from './publication-form/DocumentPanel';
 import { fold, visibleText } from './publication-form/trackChanges';
 import { AtAGlance, RecordSummary, SectionNav } from './publication-form/frame';
-import { TODAY_STR } from './publication-form/data';
+import { PRODUCTS, TODAY_STR } from './publication-form/data';
 import {
   FIELD_DEFAULTS, auditEntry, blankState, changedSections, deriveProgress, fromSavedData, missingFlags,
   openRoundOf, statusOf, summarize, titleOf, toSavedData,
@@ -56,16 +56,20 @@ export default function PublicationForm() {
   const { id } = useParams();
   const { user, can } = useAuth();
   const userName = (user && user.name) || 'Unknown user';
-  // What this user's role allows (System Administrator > Roles & permissions; the server checks too).
-  const canEditPub = can('pubs.edit');
-  const canCancel = can('pubs.cancel');
-  const canDoc = can('doc.edit');
-  const canReview = can('doc.review');
   const isNew = id === 'new';
   const savedId = isNew ? null : id;
 
   const [st, setSt] = useState(blankState);
   const [record, setRecord] = useState(null);
+  // What this user's roles allow on this record (System Administrator; the server checks too). Roles
+  // can cover only some products: a saved record counts the roles covering its product; a new one
+  // counts every role, and the Product picker offers only the products they can work on.
+  const scopeProduct = record ? record.product || null : undefined;
+  const canEditPub = can('pubs.edit', scopeProduct);
+  const canCancel = can('pubs.cancel', scopeProduct);
+  const canDoc = can('doc.edit', scopeProduct);
+  const canReview = can('doc.review', scopeProduct);
+  const allowedProducts = PRODUCTS.filter(p => can('pubs.edit', p));
   const [loadState, setLoadState] = useState(savedId ? 'loading' : 'ready');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
@@ -312,7 +316,7 @@ export default function PublicationForm() {
 
   const TabView = TAB_VIEWS[st.tab] || OverviewTab;
   const tabProps = {
-    st, set, bind, commit, saving, navigate, recordId, prog, userName, plans,
+    st, set, bind, commit, saving, navigate, recordId, prog, userName, plans, allowedProducts,
     openDocument: () => setDocOpen(true),
     layout: AUTHORS_LAYOUT,
     simulateApproval: SIMULATE_AUTHOR_APPROVAL,
@@ -333,7 +337,7 @@ export default function PublicationForm() {
         )}
         {viewOnly && (
           <InlineMessage kind="info">
-            View only: {roleName} can&rsquo;t {record ? 'change publication details' : 'create publications'}.
+            View only: {roleName} can&rsquo;t {record ? 'change publication details' : 'create publications'}{record && record.product && can('pubs.edit') ? ' for ' + record.product.split(' ')[0] : ''}.
             {record && canDoc ? ' You can still suggest tracked changes in the publication document.' : ''}
           </InlineMessage>
         )}

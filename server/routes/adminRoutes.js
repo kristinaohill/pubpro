@@ -18,9 +18,10 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_log (
 const logAdmin = (req, action, target) => db.prepare('INSERT INTO admin_log (actor_id, actor_name, action, target_id, target_name) VALUES (?, ?, ?, ?, ?)')
   .run(req.user.id, req.user.name, action, target ? target.id : null, target ? target.name : null);
 
-const USER_COLS = 'id, email, name, role, extra_roles, active, pending, created_at, last_login_at, author_profile_id, title, department, phone, therapeutic_areas, ooo_from, ooo_to, ooo_note';
-const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, ...u }) => ({
+const USER_COLS = 'id, email, name, role, extra_roles, role_scopes, active, pending, created_at, last_login_at, author_profile_id, title, department, phone, therapeutic_areas, ooo_from, ooo_to, ooo_note';
+const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, role_scopes, ...u }) => ({
   ...u, active: !!u.active, pending: !!u.pending,
+  scopes: Object.fromEntries(P.scopesOf({ role: u.role, extra_roles, role_scopes }).map(sc => [sc.role, sc.products || 'all'])),
   roles: P.rolesOf({ role: u.role, extra_roles }), role_name: P.roleNamesOf({ role: u.role, extra_roles }),
   ...people.profileFields({ therapeutic_areas, ooo_from, ooo_to, ooo_note, title: u.title, department: u.department, phone: u.phone }),
 });
@@ -56,6 +57,7 @@ router.post('/users', (req, res) => {
     .run(email, bcrypt.hashSync(password, 10), name, role);
   people.writeProfile(r.lastInsertRowid, cols);
   P.setRoles(r.lastInsertRowid, roles);
+  try { P.setScopes(r.lastInsertRowid, req.body.scopes); } catch (e) { return res.status(400).json({ error: e.message }); }
   res.json({ user: userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(r.lastInsertRowid)), tempPassword: password });
 });
 
@@ -88,6 +90,8 @@ router.put('/users/:id', (req, res) => {
   db.prepare('UPDATE users SET name = ?, email = ?, active = ? WHERE id = ?').run(name, email, active ? 1 : 0, u.id);
   people.writeProfile(u.id, cols);
   if (changedRoles) { try { P.setRoles(u.id, roles); } catch (e) { return res.status(400).json({ error: e.message }); } }
+  // Scopes can change on your own account too (they narrow, they never add roles).
+  if (req.body.scopes) { try { P.setScopes(u.id, req.body.scopes); } catch (e) { return res.status(400).json({ error: e.message }); } }
   res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
 });
 
@@ -127,7 +131,7 @@ router.post('/users/:id/impersonate', (req, res) => {
   logAdmin(req, 'impersonate', u);
   res.json({
     token: signToken(claims, '2h'),
-    user: { ...claims, roles: P.rolesOf(u), role_name: P.roleNamesOf(u), permissions: P.permissionsForUser(u) },
+    user: { ...claims, roles: P.rolesOf(u), role_name: P.roleNamesOf(u), permissions: P.permissionsForUser(u), roleScopes: P.roleScopesOf(u) },
   });
 });
 
@@ -141,7 +145,7 @@ router.post('/users/:id/reset-password', (req, res) => {
 
 const rolesPayload = () => ({
   roles: P.listRoles(), permissions: P.PERMISSIONS, signupRole: P.signupRole(),
-  signup: people.signupRules(), options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS },
+  signup: people.signupRules(), options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS, products: P.PRODUCTS, productTa: P.PRODUCT_TA },
 });
 
 router.get('/roles', (req, res) => res.json(rolesPayload()));
@@ -154,8 +158,8 @@ router.post('/roles', (req, res) => {
   if (db.prepare('SELECT 1 FROM roles WHERE lower(name) = lower(?)').get(name)) return res.status(400).json({ error: 'A role with that name already exists.' });
   let key = slug(name) || 'role';
   for (let n = 2; P.roleRow(key); n += 1) key = slug(name) + '_' + n;
-  db.prepare('INSERT INTO roles (key, name, description, permissions, built_in, sort) VALUES (?, ?, ?, ?, 0, 100)')
-    .run(key, name, String(req.body.description || '').trim(), JSON.stringify(P.normalize(req.body.permissions)));
+  db.prepare('INSERT INTO roles (key, name, description, permissions, built_in, sort, auto_review) VALUES (?, ?, ?, ?, 0, 100, ?)')
+    .run(key, name, String(req.body.description || '').trim(), JSON.stringify(P.normalize(req.body.permissions)), req.body.autoReview ? 1 : 0);
   res.json(rolesPayload());
 });
 
@@ -167,13 +171,14 @@ router.put('/roles', (req, res) => {
     if (!row) return res.status(400).json({ error: 'Unknown role: ' + c.key });
     if (P.LOCKED[c.key]) return res.status(400).json({ error: row.name + '’s permissions are fixed.' });
   }
-  const update = db.prepare('UPDATE roles SET name = ?, description = ?, permissions = ? WHERE key = ?');
+  const update = db.prepare('UPDATE roles SET name = ?, description = ?, permissions = ?, auto_review = ? WHERE key = ?');
   for (const c of changes) {
     const row = P.roleRow(c.key);
     const name = c.name == null ? row.name : String(c.name).trim() || row.name;
     const description = c.description == null ? row.description : String(c.description).trim();
     const perms = c.permissions == null ? JSON.parse(row.permissions || '[]') : P.normalize(c.permissions);
-    update.run(name, description, JSON.stringify(perms), c.key);
+    const auto = c.autoReview == null ? row.auto_review : (c.autoReview ? 1 : 0);
+    update.run(name, description, JSON.stringify(perms), auto, c.key);
   }
   res.json(rolesPayload());
 });

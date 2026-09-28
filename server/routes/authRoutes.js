@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { signToken, requireAuth } = require('../auth');
-const { permissionsForUser, rolesOf, roleNamesOf } = require('../permissions');
+const { permissionsForUser, rolesOf, roleNamesOf, roleScopesOf } = require('../permissions');
 const people = require('../people');
 
 // Per-user settings from the My Profile page, stored as JSON.
@@ -16,11 +16,11 @@ const readPrefs = raw => { try { return { ...DEFAULT_PREFS, ...JSON.parse(raw ||
 const claimsOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, client_id: u.client_id, author_profile_id: u.author_profile_id || null });
 const profileOf = u => ({
   id: u.id, email: u.email, name: u.name, role: u.role, roles: rolesOf(u), role_name: roleNamesOf(u), created_at: u.created_at,
-  prefs: readPrefs(u.prefs), permissions: permissionsForUser(u), ...people.profileFields(u),
+  prefs: readPrefs(u.prefs), permissions: permissionsForUser(u), roleScopes: roleScopesOf(u), ...people.profileFields(u),
   options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS },
 });
 // What the client keeps about the signed-in user: the token claims plus what their role allows.
-const sessionOf = u => ({ ...claimsOf(u), roles: rolesOf(u), role_name: roleNamesOf(u), permissions: permissionsForUser(u) });
+const sessionOf = u => ({ ...claimsOf(u), roles: rolesOf(u), role_name: roleNamesOf(u), permissions: permissionsForUser(u), roleScopes: roleScopesOf(u) });
 
 // What the sign-in page needs to know before someone creates an account (no sign-in required).
 router.get('/signup-options', (req, res) => {

@@ -1,6 +1,7 @@
 // Roles and permissions, managed from the System Administrator page. Every permission listed here
 // is checked on the server (see requirePerm and the routes), not only hidden in the UI.
 const db = require('./db');
+const { PRODUCTS, PRODUCT_TA } = require('./products');
 
 const PERMISSIONS = [
   { key: 'pubs.edit', group: 'Publications', label: 'Create and edit publications', help: 'Details, authors, targets, reviews and planning. Without it, publications open read-only.' },
@@ -36,10 +37,14 @@ db.exec(`CREATE TABLE IF NOT EXISTS roles (
   sort INTEGER NOT NULL DEFAULT 100
 )`);
 db.exec('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)');
+// Roles whose holders are added automatically as required reviewers on publications in their scope.
+try { db.exec('ALTER TABLE roles ADD COLUMN auto_review INTEGER NOT NULL DEFAULT 0'); } catch (e) { /* exists */ }
 try { db.exec('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1'); } catch (e) { /* exists */ }
 try { db.exec('ALTER TABLE users ADD COLUMN last_login_at TEXT'); } catch (e) { /* exists */ }
 // Roles beyond the first (users.role). A user can hold several; their permissions combine.
 try { db.exec('ALTER TABLE users ADD COLUMN extra_roles TEXT'); } catch (e) { /* exists */ }
+// Which products each of a user's roles applies to: { roleKey: [products] }; a role left out covers all.
+try { db.exec('ALTER TABLE users ADD COLUMN role_scopes TEXT'); } catch (e) { /* exists */ }
 
 BUILT_IN.forEach((r, i) => {
   db.prepare('INSERT OR IGNORE INTO roles (key, name, description, permissions, built_in, sort) VALUES (?, ?, ?, ?, 1, ?)')
@@ -75,11 +80,66 @@ function rolesOf(u) {
   const out = [u.role].concat(parseList(u.extra_roles)).filter(k => k && roleRow(k));
   return [...new Set(out)];
 }
-/** The combined permissions of all of a user's roles. */
-function permissionsForUser(u) {
+const parseMap = t => { try { const v = JSON.parse(t || '{}'); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; } catch (e) { return {}; } };
+
+/**
+ * Each of a user's roles with the products it covers: [{ role, products }] where products is null
+ * for all products. System Administrator always covers everything.
+ */
+function scopesOf(u) {
+  const map = parseMap(u.role_scopes);
+  return rolesOf(u).map(role => {
+    const list = role === 'admin' || !Array.isArray(map[role]) ? null : map[role].filter(p => PRODUCTS.includes(p));
+    return { role, products: list && list.length ? list : null };
+  });
+}
+const covers = (scope, product) => !scope.products || !product || scope.products.includes(product);
+
+/**
+ * The combined permissions of a user's roles. With a product, only the roles whose scope includes it
+ * count (a Daxafort-only writer can't edit a Biologix publication). Without one (or for a record that
+ * has no product yet), every role counts.
+ */
+function permissionsForUser(u, product) {
   const set = new Set();
-  rolesOf(u).forEach(k => permissionsOf(k).forEach(p => set.add(p)));
+  scopesOf(u).filter(sc => product === undefined || covers(sc, product))
+    .forEach(sc => permissionsOf(sc.role).forEach(p => set.add(p)));
   return PERM_KEYS.filter(k => set.has(k));
+}
+
+/** The session's view of scopes: each role with its name, products and permissions (for the client). */
+function roleScopesOf(u) {
+  return scopesOf(u).map(sc => ({ role: sc.role, name: roleName(sc.role), products: sc.products, permissions: permissionsOf(sc.role) }));
+}
+
+/** Sets which products each role covers: { roleKey: 'all' | [products] }. Unknown products are dropped. */
+function setScopes(userId, scopes) {
+  const u = db.prepare('SELECT role, extra_roles, role_scopes FROM users WHERE id = ?').get(userId);
+  if (!u) return;
+  const held = rolesOf(u);
+  const map = parseMap(u.role_scopes);
+  Object.entries(scopes || {}).forEach(([role, v]) => {
+    if (v === 'all' || v == null) { delete map[role]; return; }
+    if (!Array.isArray(v)) return;
+    const list = [...new Set(v.filter(p => PRODUCTS.includes(p)))];
+    if (!list.length) throw new Error('Pick at least one product for ' + roleName(role) + ', or choose All products.');
+    map[role] = list;
+  });
+  Object.keys(map).forEach(k => { if (!held.includes(k) || k === 'admin') delete map[k]; });
+  db.prepare('UPDATE users SET role_scopes = ? WHERE id = ?').run(JSON.stringify(map), userId);
+}
+
+/** "Daxafort, Triazapam" or "All products" (therapeutic areas named when a scope covers all of one). */
+function scopeLabel(products) {
+  if (!products) return 'All products';
+  const byTa = {};
+  PRODUCTS.forEach(p => { (byTa[PRODUCT_TA[p]] = byTa[PRODUCT_TA[p]] || []).push(p); });
+  const parts = [];
+  const left = new Set(products);
+  Object.entries(byTa).forEach(([ta, ps]) => {
+    if (ps.length > 1 && ps.every(p => left.has(p))) { parts.push(ta); ps.forEach(p => left.delete(p)); }
+  });
+  return parts.concat([...left].map(p => p.split(' ')[0])).join(', ');
 }
 const roleNamesOf = u => rolesOf(u).map(roleName).join(', ');
 
@@ -105,6 +165,7 @@ function listRoles() {
     name: r.name,
     description: r.description || '',
     builtIn: !!r.built_in,
+    autoReview: !!r.auto_review,
     locked: LOCKED[r.key] || null,
     permissions: permissionsOf(r.key),
     users: counts[r.key] || 0,
@@ -130,4 +191,4 @@ function roleName(key) {
   return row ? row.name : key;
 }
 
-module.exports = { PERMISSIONS, PERM_KEYS, LOCKED, normalize, permissionsOf, permissionsForUser, rolesOf, roleNamesOf, setRoles, listRoles, roleRow, roleName, signupRole, getSetting, setSetting };
+module.exports = { PERMISSIONS, PERM_KEYS, LOCKED, PRODUCTS, PRODUCT_TA, normalize, permissionsOf, permissionsForUser, scopesOf, roleScopesOf, setScopes, scopeLabel, rolesOf, roleNamesOf, setRoles, listRoles, roleRow, roleName, signupRole, getSetting, setSetting };

@@ -64,6 +64,15 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   // Reviewers are PubPro users (System Administrator); titles and out of office come from their profiles.
   const staff = usePeople();
   const directory = staff.map(p => ({ name: p.name, role: jobTitle(p), ooo: oooText(p) }));
+  // Required reviewers from their roles (System Administrator: roles marked "required reviewer",
+  // e.g. the Patent Attorney for Biologix): added for this publication's product automatically.
+  const autoFor = s => (s.product ? staff
+    .map(p => ({ p, r: (p.reviewFor || []).find(x => !x.products || x.products.includes(s.product)) }))
+    .filter(x => x.r && !s.mandatory.some(m => m.name === x.p.name))
+    .map(x => ({ id: 'auto-' + x.p.id, name: x.p.name, role: x.r.roleName, auto: true, scope: x.r.label }))
+    : []);
+  const mandatory = st.mandatory.concat(autoFor(st));
+  const roleReviewersExist = staff.some(p => (p.reviewFor || []).length);
   const readiness = deriveReadiness(st);
   const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }), () => set({ searchOpen: true }));
   const flow = REVIEW_FLOW[st.reviewType];
@@ -72,14 +81,14 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   const current = openRoundOf(st);
   const earlier = rounds.filter(r => r.status === 'closed');
   const newRoundNum = rounds.reduce((m, r) => Math.max(m, r.num), 0) + 1;
-  const recipients = roundRecipients(st);
+  const recipients = roundRecipients({ ...st, mandatory });
 
   const q = st.reviewerQuery.trim().toLowerCase();
   const matches = q
     ? directory.filter(p => (p.name + ' ' + p.role).toLowerCase().includes(q)).slice(0, 8)
     : directory.slice(0, 8);
   const suggestions = matches.map(p => {
-    const added = st.additional.some(x => x.name === p.name) || st.mandatory.some(x => x.name === p.name);
+    const added = st.additional.some(x => x.name === p.name) || mandatory.some(x => x.name === p.name);
     const away = p.ooo ? ' · ' + p.ooo.split(':')[0] : '';
     return { name: p.name, role: p.role, label: p.name, meta: (added ? p.role + ' · already added' : p.role) + away, added };
   });
@@ -99,7 +108,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   const sendRound = () => commit(s => {
     if (openRoundOf(s)) return null;
     // Anyone out of office (their profile) starts the round marked away, so reminders wait for them.
-    const reviewers = roundRecipients(s).map(r => {
+    const reviewers = roundRecipients({ ...s, mandatory: s.mandatory.concat(autoFor(s)) }).map(r => {
       const away = oooText(personNamed(staff, r.name));
       return away && !r.ooo ? { ...r, ooo: away } : r;
     });
@@ -195,7 +204,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     newRoundOpen: true,
     nextReviewerId: s.nextReviewerId + round.reviewers.length,
     additional: round.reviewers
-      .filter(v => v.kind === 'reviewer' && !s.mandatory.some(m => m.name === v.name))
+      .filter(v => v.kind === 'reviewer' && !s.mandatory.concat(autoFor(s)).some(m => m.name === v.name))
       .map((v, i) => ({ id: s.nextReviewerId + i, name: v.name, role: v.role, selected: true })),
   }));
 
@@ -291,16 +300,22 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
           <div className="pfx-field">
             <span className="pfx-label">Reviewers</span>
             <div className="pfxc-rvgroup">
-              <BandHeader tone="reviewer" note="Set by review type — cannot be removed">Mandatory</BandHeader>
-              {st.mandatory.map(v => (
+              <BandHeader tone="reviewer" note="Set by review type and reviewer roles — cannot be removed">Mandatory</BandHeader>
+              {mandatory.map(v => (
                 <div key={v.id} className="pfxc-rv-row">
                   <Checkbox checked locked />
                   <div className="pfxc-rv-name">{v.name}</div>
-                  <div className="pfxc-rv-role">{v.role}</div>
+                  <div className="pfxc-rv-role">
+                    {v.role}
+                    {v.auto && <span className="pfxc-rv-auto" title={'Added automatically: their ' + v.role + ' role covers ' + v.scope + '.'}>From role · {v.scope}</span>}
+                  </div>
                   <div className="pfxc-rv-end" />
                 </div>
               ))}
-              {st.mandatory.length === 0 && <div className="pfxc-rv-empty">No mandatory reviewers for this record.</div>}
+              {mandatory.length === 0 && <div className="pfxc-rv-empty">No mandatory reviewers for this record.</div>}
+              {!st.product && roleReviewersExist && (
+                <div className="pfxc-rv-empty">Pick a product on the Overview tab to add the required reviewers for it (such as its patent attorney).</div>
+              )}
             </div>
             <div className="pfxc-rvgroup">
               <BandHeader tone="reviewer">Additional</BandHeader>

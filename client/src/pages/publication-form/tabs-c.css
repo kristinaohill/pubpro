@@ -102,3 +102,9 @@
   .pfxc-rrow-actions { align-items: flex-start; flex-direction: row; flex-wrap: wrap; width: auto; }
   .pfxc-respond { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Required reviewer added from their role (e.g. Patent Attorney · Biologix). */
+.pfxc-rv-auto {
+  display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: var(--radius-pill);
+  background: #EAF2FA; color: var(--nav); font-size: 11px; font-weight: var(--fw-semibold); white-space: nowrap;
+}

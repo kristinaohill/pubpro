@@ -4,6 +4,7 @@ import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, P
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
+import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
 import './Publications.css';
@@ -27,11 +28,14 @@ const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
 /** Saved publication plans (Searches › Publication Plans). */
 export default function PublicationPlans() {
   // Create and delete need plans.edit (System Administrator > Roles & permissions).
-  const canEdit = useAuth().can('plans.edit');
+  const { can } = useAuth();
+  const canEdit = can('plans.edit');
   const navigate = useNavigate();
   const location = useLocation();
   const savedPlanId = location.state && location.state.savedPlanId;
-  const [plans, setPlans] = useState(null);
+  const [plansAll, setPlans] = useState(null);
+  const focus = useScopeFocus();
+  const plans = plansAll && focus.filter(plansAll);
   const [pubCounts, setPubCounts] = useState({});
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -76,7 +80,7 @@ export default function PublicationPlans() {
         money(sm.budget), money(sm.committed),
         <Pill tone={PLAN_TONE[p.status] || 'draft'}>{p.status}</Pill>,
         fmtSaved(p.updated_at),
-        canEdit ? <IconButton
+        can('plans.edit', p.product || null) ? <IconButton
           icon="delete"
           tone="fatal"
           size={26}
@@ -102,6 +106,7 @@ export default function PublicationPlans() {
         )}
       />
 
+      <ScopeFocusBar focus={focus} hidden={plansAll ? plansAll.length - plans.length : 0} />
       {savedPlanId && !notice && <Flash>Saved {savedPlanId}.</Flash>}
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}

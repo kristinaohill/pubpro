@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
   const refreshMe = () => api.get('/auth/me')
     .then(me => {
       setUser(u => {
-        const next = { ...(u || {}), name: me.name, email: me.email, role: me.role, role_name: me.role_name, permissions: me.permissions, imp: me.impersonator || undefined };
+        const next = { ...(u || {}), name: me.name, email: me.email, role: me.role, role_name: me.role_name, permissions: me.permissions, roleScopes: me.roleScopes, imp: me.impersonator || undefined };
         localStorage.setItem('user', JSON.stringify(next));
         return next;
       });
@@ -102,8 +102,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  /** What the signed-in user's role allows (server/permissions.js), e.g. can('pubs.edit'). */
-  const can = perm => !!(user && Array.isArray(user.permissions) && user.permissions.includes(perm));
+  /**
+   * What the signed-in user's roles allow (server/permissions.js). can('pubs.edit') = anywhere;
+   * can('pubs.edit', product) = on a record of that product, counting only roles whose scope covers
+   * it (null = a record with no product yet). The server checks the same way.
+   */
+  const can = (perm, product) => {
+    if (!user || !Array.isArray(user.permissions)) return false;
+    if (product === undefined || !product || !Array.isArray(user.roleScopes)) return user.permissions.includes(perm);
+    return user.roleScopes.some(r => r.permissions.includes(perm) && (!r.products || r.products.includes(product)));
+  };
 
   return (
     <AuthContext.Provider value={{ user, login, register, updateSession, logout, loading, can, refreshMe, impersonate, stopImpersonating, impersonator: admin && admin.user }}>
