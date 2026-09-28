@@ -125,6 +125,18 @@ function run() {
   db.exec("CREATE TABLE IF NOT EXISTS app_seeds (key TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))");
   runInternal();
   runStaffSwap();
+  runSharedPassword();
+}
+
+// Every account's password set to the shared POC password once (2026-09-28, Kristina's request): the
+// same one external author logins start with. People change it from the account menu.
+function runSharedPassword() {
+  const key = 'shared-password-2026-09';
+  if (db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(key)) return;
+  const { DEFAULT_AUTHOR_PASSWORD } = require('./authorLogins');
+  const n = db.prepare('UPDATE users SET password_hash = ?').run(bcrypt.hashSync(DEFAULT_AUTHOR_PASSWORD, 10)).changes;
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(key);
+  console.log('Set the shared password on ' + n + ' account(s).');
 }
 
 function runInternal() {
