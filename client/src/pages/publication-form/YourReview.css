@@ -21,3 +21,4 @@
 .yr-comment { color: var(--fg-3); }
 .pfx-main-lock { min-width: 0; }
 @media (max-width: 760px) { .yr-choices { grid-template-columns: 1fr; } }
+.yr-criteria { margin: 0 0 12px; padding-left: 22px; display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-base); }

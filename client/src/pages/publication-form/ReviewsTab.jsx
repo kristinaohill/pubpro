@@ -8,9 +8,9 @@ import {
 } from '../../ds/pubpro';
 import DateField from '../../components/DateField';
 import {
-  PRIORITY_OPTIONS, REVIEW_FLOW, REVIEW_METHOD_OPTIONS, REVIEW_TYPE_OPTIONS, TODAY_STR, daysFromToday,
+  PRESENTATION_TYPES, PRIORITY_OPTIONS, REVIEW_FLOW, REVIEW_METHOD_OPTIONS, REVIEW_TYPE_OPTIONS, TODAY_STR, daysFromToday,
 } from './data';
-import { auditEntry, deriveReadiness, dueTone, openRoundOf, reviewer, roundOutcome } from './state';
+import { auditEntry, deriveReadiness, dueTone, openRoundOf, ownApproval, reviewer, roundOutcome } from './state';
 import { ReadinessPanel, WorkflowStepLine } from './shared';
 import { Card, ColHead, FormField, ListBox, ListRow, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
 import './tabs-c.css';
@@ -336,6 +336,11 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
           <div className="pfxc-round-meta">
             Workflow step: <span className="pf-strong-nav">{flow.step}</span> · If changes are requested, returns to: {flow.returnsTo}
           </div>
+          {PRESENTATION_TYPES.includes(st.pubType) && !ownApproval(st).ok && (
+            <InlineMessage kind="info">
+              AB9 (GPP): this {st.pubType === 'Poster' ? 'poster' : 'slide deck'} needs its own Author Approval round, with every author approving it. The abstract&rsquo;s approval doesn&rsquo;t carry over.
+            </InlineMessage>
+          )}
 
           <Pair>
             <FormField id="pf-reviewtype" label="Review Type">

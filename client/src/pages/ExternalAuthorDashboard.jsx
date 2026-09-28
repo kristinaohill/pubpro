@@ -7,7 +7,7 @@ import { api } from '../api';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import { useAuth } from '../AuthContext';
-import { TODAY_STR, nowStamp, toISO } from './publication-form/data';
+import { ICMJE_CRITERIA, TODAY_STR, nowStamp, toISO } from './publication-form/data';
 import {
   auditEntry, deriveSteps, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData,
 } from './publication-form/state';
@@ -54,6 +54,8 @@ function workFor(person, pubs, profile) {
     if (me) {
       const invite = me.e.invite || { status: 'none' };
       if (invite.status === 'sent') invitations.push({ p, entry: me, invite });
+      // Accepted before PubPro recorded agreement to the ICMJE criteria (A1): they confirm it.
+      else if (invite.status === 'accepted' && !(me.e.criteria && me.e.criteria.at)) invitations.push({ p, entry: me, invite, confirmOnly: true });
       mine.push({ p, role: me.group === 'external' ? 'External Author' : 'Internal Author', invite: invite.status });
     }
     const round = openRoundOf(st);
@@ -78,6 +80,7 @@ export default function ExternalAuthorDashboard() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
   const [answer, setAnswer] = useState({}); // review key -> { decision, comment }
+  const [agreed, setAgreed] = useState({}); // publication id -> agreed to the ICMJE criteria
   // The publication document open in the panel: { p, st } (st holds pubDocText / Markup / Track).
   const [doc, setDoc] = useState(null);
 
@@ -137,10 +140,15 @@ export default function ExternalAuthorDashboard() {
   };
 
   const replyInvite = (inv, accept) => run(async () => {
+    // Signed in as the author: the server records the reply and their agreement to the criteria.
+    if (isAuthor) {
+      await api.post('/pp-publications/' + inv.p.id + '/invitation-response', { accept, criteria: accept && !!agreed[inv.p.id] });
+      return;
+    }
     const { group } = inv.entry;
     await savePub(inv.p, st => ({
       ...st,
-      [group]: st[group].map(e => (same(personOf(e, group), person) ? { ...e, invite: { ...(e.invite || {}), status: accept ? 'accepted' : 'declined', on: TODAY_STR } } : e)),
+      [group]: st[group].map(e => (same(personOf(e, group), person) ? { ...e, invite: { ...(e.invite || {}), status: accept ? 'accepted' : 'declined', on: TODAY_STR }, ...(accept ? { criteria: e.criteria || { on: TODAY_STR, by: user && user.name, how: 'recorded' } } : {}) } : e)),
       audit: (st.audit || []).concat([auditEntry(accept ? 'Authorship Invitation Accepted' : 'Authorship Invitation Declined', { participants: person, result: accept ? 'Accepted' : 'Declined', comment: 'Replied in PubPro' })]),
     }));
     await notify(inv.p.owner ? [{
@@ -284,13 +292,21 @@ export default function ExternalAuthorDashboard() {
                   <div key={'inv' + inv.p.id} className="ead-item">
                     <Icon name="person_add" size={22} color="var(--high-emphasis)" />
                     <div className="ead-item-body">
-                      <div className="ead-item-kind">AUTHORSHIP INVITATION</div>
+                      <div className="ead-item-kind">{inv.confirmOnly ? 'CONFIRM ICMJE AUTHORSHIP CRITERIA' : 'AUTHORSHIP INVITATION'}</div>
                       <div className="ead-item-title">{inv.p.title}</div>
                       <div className="ead-meta">{inv.p.record_id} · {inv.p.pub_type} · invited {inv.invite.sent || '—'} by {inv.p.owner || 'the publication team'}</div>
+                      <details className="ead-criteria">
+                        <summary>The four ICMJE authorship criteria</summary>
+                        <ol>{ICMJE_CRITERIA.map(c => <li key={c}>{c}</li>)}</ol>
+                      </details>
+                      <label className="ead-agree">
+                        <input type="checkbox" checked={!!agreed[inv.p.id]} onChange={e => setAgreed(x => ({ ...x, [inv.p.id]: e.target.checked }))} />
+                        I agree to meet all four ICMJE authorship criteria for this publication.
+                      </label>
                     </div>
                     <div className="ead-item-actions">
-                      <Button variant="secondary" icon="check" disabled={busy} onClick={() => replyInvite(inv, true)}>Accept</Button>
-                      <Button variant="tertiary" disabled={busy} onClick={() => replyInvite(inv, false)}>Decline</Button>
+                      <Button variant="secondary" icon="check" disabled={busy || !agreed[inv.p.id]} onClick={() => replyInvite(inv, true)}>{inv.confirmOnly ? 'Confirm' : 'Accept'}</Button>
+                      {!inv.confirmOnly && <Button variant="tertiary" disabled={busy} onClick={() => replyInvite(inv, false)}>Decline</Button>}
                     </div>
                   </div>
                 ))}

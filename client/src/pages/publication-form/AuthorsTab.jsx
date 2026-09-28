@@ -40,6 +40,24 @@ const EXTERNAL_COLS = [
 ];
 
 const FILTER_OPTIONS = ['All', 'Internal', 'External'];
+
+/** A1: how an author's agreement to the ICMJE criteria stands, for the author card. */
+function criteriaLook(a, iv, draftStartedAt) {
+  const c = a.criteria;
+  const late = !!draftStartedAt && !!c && !!c.at && c.at > draftStartedAt;
+  if (c && c.at) {
+    const how = c.carriedFrom ? ' (agreed on ' + c.carriedFrom + ')' : c.how === 'recorded' ? ' (recorded by ' + c.by + ')' : '';
+    return {
+      criteriaText: 'ICMJE criteria agreed ' + c.on + how, criteriaColor: late ? 'var(--warn-text)' : 'var(--ok)', criteriaGlyph: late ? 'history' : 'verified',
+      criteriaNote: late ? 'Joined after drafting started: record why in the audit trail (A3)' : '', needsCriteria: false,
+    };
+  }
+  if (c && !c.at) return { criteriaText: 'ICMJE criteria agreement saves with the record', criteriaColor: 'var(--fg-3)', criteriaGlyph: 'schedule', criteriaNote: '', needsCriteria: false };
+  if (iv.status === 'accepted') {
+    return { criteriaText: 'No ICMJE criteria agreement on record', criteriaColor: 'var(--warn-text)', criteriaGlyph: 'error', criteriaNote: '', needsCriteria: true };
+  }
+  return { criteriaText: 'Agrees to the ICMJE criteria when accepting', criteriaColor: 'var(--fg-3)', criteriaGlyph: 'gavel', criteriaNote: '', needsCriteria: false };
+}
 const INVITED = { status: 'sent', sent: TODAY_STR };
 
 // An internal author's job title from their user profile (older records may name people who aren't users).
@@ -180,6 +198,8 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         canInvite: iv.status === 'none' || iv.status === 'declined',
         inviteRank: { none: 0, declined: 1, sent: 2, accepted: 3 }[iv.status],
         invite: iv,
+        // A1: agreement to the ICMJE criteria (stamped by the server when they accept).
+        ...criteriaLook(a, iv, st.draftStartedAt),
       };
     });
 
@@ -216,6 +236,16 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
       audit: inviteLog(s, people),
     }), { done: people.length + (people.length === 1 ? ' invitation' : ' invitations') + ' sent.', notices: inviteNotices(people) });
   };
+  // Authors who accepted before PubPro recorded criteria agreement confirm it themselves (A1).
+  const askCriteria = person => commit(s => ({
+    audit: (s.audit || []).concat([auditEntry('ICMJE Criteria Confirmation Requested', { participants: person, comment: 'Requested by ' + userName })]),
+  }), {
+    done: 'Asked ' + person + ' to confirm the ICMJE authorship criteria.',
+    notices: rec => [{
+      recipient: person, kind: 'invitation', tab: 'authors', title: 'Confirm the ICMJE authorship criteria',
+      body: `Please confirm you agree to the four ICMJE authorship criteria for ${rec.title} (${rec.record_id}).`,
+    }],
+  });
   const pickAuthor = p => set(s => {
     const base = { id: Date.now(), selected: true, corr: 'optional', invite: { status: 'none' } };
     if (p.group === 'internal') {
@@ -319,22 +349,29 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                       {a.inviteLabel}
                     </span>
                     <span className="pfxb-invite-meta">{a.inviteMeta}</span>
+                    <span className="pfxb-invite-meta pfxb-criteria" style={{ color: a.criteriaColor }}>
+                      <Icon name={a.criteriaGlyph} size={14} />{a.criteriaText}
+                    </span>
+                    {a.criteriaNote && <span className="pfxb-invite-meta" style={{ color: 'var(--warn-text)' }}>{a.criteriaNote}</span>}
                   </div>
                   <div className="pfxb-remove">
                     <IconButton icon="close" tone="fatal" size={26} title="Remove author" onClick={() => removeAuthor(a.group, a.id)} />
                   </div>
                 </div>
 
-                {(a.canInvite || a.inviteRank === 2) && (
+                {(a.canInvite || a.inviteRank === 2 || a.needsCriteria) && (
                   <div className="pfxb-author-actions">
                     {a.canInvite && (
                       <Button variant="tertiary" onClick={() => invite(a.group, a.id, a.person)} disabled={saving}>Send Invitation</Button>
                     )}
                     {a.inviteRank === 2 && (
                       <>
-                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'accepted', on: TODAY_STR } })}>Mark Accepted</Button>
+                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'accepted', on: TODAY_STR }, criteria: { on: TODAY_STR, by: userName, how: 'recorded' } })}>Mark Accepted</Button>
                         <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'declined', on: TODAY_STR } })}>Mark Declined</Button>
                       </>
+                    )}
+                    {a.needsCriteria && (
+                      <Button variant="tertiary" onClick={() => askCriteria(a.person)} disabled={saving}>Ask to Confirm ICMJE Criteria</Button>
                     )}
                   </div>
                 )}

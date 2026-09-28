@@ -64,3 +64,4 @@ a.pfxb-author-name:hover { color: var(--nav); text-decoration: underline; }
 .pfxb-target-meta { font-size: 12px; color: var(--pfx-meta); }
 .pfxb-primary-name { font-size: 14px; font-weight: 600; color: var(--pfx-text); }
 .pfxb-moved { font-size: 12px; color: var(--warn-text); margin-top: 2px; }
+.pfxb-criteria { display: inline-flex; align-items: center; gap: 4px; }

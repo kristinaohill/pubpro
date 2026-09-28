@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  Button, Checkbox, CommentComposer, DropZone, Icon, MoneyField, Pill, Select,
+  Button, Checkbox, CommentComposer, DropZone, Icon, InlineMessage, MoneyField, Pill, Select,
 } from '../../ds/pubpro';
+import { api } from '../../api';
+import { ownApproval } from './state';
 import DateField from '../../components/DateField';
 import { Card, Empty, FormField, ListBox, ListRow, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
 import './tabs-d.css';
-import { CONFERENCE_DIRECTORY, OUTCOME_STATUS_OPTIONS, PROOF_STEPS, RESPONSE_CYCLE, TIMEZONE_OPTIONS, TODAY_STR } from './data';
+import { CONFERENCE_DIRECTORY, OUTCOME_STATUS_OPTIONS, PRESENTATION_TYPES, PROOF_STEPS, RESPONSE_CYCLE, TIMEZONE_OPTIONS, TODAY_STR } from './data';
 
-export default function OutcomeTab({ st, set, bind, navigate, userName }) {
+export default function OutcomeTab({ st, set, bind, navigate, userName, record }) {
   const tg = st.targets || [];
   const nextAlt = tg[1];
   const nameOf = n => (CONFERENCE_DIRECTORY.find(c => c.name === n) || { abbr: n }).abbr || n;
@@ -16,14 +18,35 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
   const proofAll = PROOF_STEPS.every(s => st.proofDone[s]);
   const proofLocked = i => st.dispositionRecorded || (i > 0 && !st.proofDone[PROOF_STEPS[i - 1]]);
 
-  const createChild = () => set(s => ({
-    nextChildId: s.nextChildId + 1,
-    childPubs: s.childPubs.concat([{
-      id: `26-CHILD-${String(s.nextChildId).padStart(3, '0')}-V01`,
-      title: 'Daxafort in Moderate-to-Severe Atopic Dermatitis: CLARIFY (copy)',
-      type: 'Abstract-Poster',
-    }]),
-  }));
+  // AB9 (GPP): a poster or slide deck is its own record with its own author review and approval.
+  const isAbstract = st.pubType === 'Abstract';
+  const isPresentation = PRESENTATION_TYPES.includes(st.pubType);
+  const approval = ownApproval(st);
+  const [related, setRelated] = useState(() => (record && record.related) || []);
+  const [making, setMaking] = useState('');
+  const [gateMsg, setGateMsg] = useState('');
+  const what = st.pubType === 'Poster' ? 'poster' : 'slide deck';
+  const needsOwnApproval = isPresentation && !approval.ok;
+  const ab9Text = 'AB9 (GPP): this ' + what + ' needs its own Author Approval before it can be marked Accepted. The abstract\u2019s approval doesn\u2019t carry over.'
+    + (approval.waiting.length ? ' Waiting on ' + approval.waiting.join(', ') + '.' : '');
+  const derive = async pubType => {
+    setMaking(pubType);
+    setGateMsg('');
+    try {
+      const made = await api.post('/pp-publications/' + record.id + '/derive', { pubType });
+      setRelated(list => list.concat([{ ...made, approved: false }]));
+    } catch (err) {
+      setGateMsg(err.message);
+    } finally {
+      setMaking('');
+    }
+  };
+  const onStatus = v => {
+    if (v === 'Accepted' && needsOwnApproval) { setGateMsg(ab9Text); return; }
+    setGateMsg('');
+    set({ outcomeStatus: v, returnedToSubmission: false });
+  };
+  const openPub = p => navigate('/publication/' + p.id);
   const retarget = () => set(s => {
     const list = s.targets || [];
     if (list.length < 2) return null;
@@ -40,26 +63,52 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
       <TabHead
         title="Outcome"
         sub="What happened to this publication after submission."
-        actions={<Button variant="secondary" style={ON_GREY} icon="difference" onClick={createChild}>Create Child Publication</Button>}
+        actions={isAbstract && record && (
+          <>
+            <Button variant="secondary" style={ON_GREY} icon="dashboard" onClick={() => derive('Poster')} disabled={!!making}>{making === 'Poster' ? 'Creating…' : 'Create Poster'}</Button>
+            <Button variant="secondary" style={ON_GREY} icon="slideshow" onClick={() => derive('Congress Presentation')} disabled={!!making}>{making === 'Congress Presentation' ? 'Creating…' : 'Create Slide Deck'}</Button>
+          </>
+        )}
       />
 
-      <Card title="Related publications">
-        <div className="pfx-help">A child publication duplicates this record's document and metadata — change the title and type, then manage it (including its own vendor and financials) independently.</div>
-        {st.childPubs.length > 0 ? (
-          <ListBox>
-            {st.childPubs.map(c => (
-              <ListRow key={c.id} className="pfxd-child-row">
-                <Icon name="menu_book" size={18} color="var(--high-emphasis)" />
-                <a href="/publication" onClick={e => { e.preventDefault(); navigate('/publication'); }}>{c.id}</a>
-                <span className="pfxd-text pfxd-ellipsis pfxd-grow">{c.title}</span>
-                <Tag tone="outline">{c.type}</Tag>
-              </ListRow>
-            ))}
-          </ListBox>
-        ) : (
-          <Empty>No child publications yet.</Empty>
-        )}
-      </Card>
+      {isAbstract && (
+        <Card title="Posters and slide decks">
+          <div className="pfx-help">
+            A poster or slide deck is its own record, with the same authors, product, studies and congress. It gets its own author review and approval, separate from the abstract&rsquo;s (AB9, GPP).
+          </div>
+          {related.length > 0 ? (
+            <ListBox>
+              {related.map(c => (
+                <ListRow key={c.id} className="pfxd-child-row">
+                  <Icon name={c.pub_type === 'Poster' ? 'dashboard' : 'slideshow'} size={18} color="var(--high-emphasis)" />
+                  <a href={'/publication/' + c.id} onClick={e => { e.preventDefault(); openPub(c); }}>{c.record_id}</a>
+                  <span className="pfxd-text pfxd-ellipsis pfxd-grow">{c.title}</span>
+                  <Tag tone={c.approved ? 'green' : 'outline'}>{c.approved ? 'Authors approved' : 'Needs author approval'}</Tag>
+                </ListRow>
+              ))}
+            </ListBox>
+          ) : (
+            <Empty>{['Poster', 'Oral', 'Late Breaker'].includes(st.subType) ? 'This abstract is a ' + st.subType.toLowerCase() + '. Create its ' + (st.subType === 'Poster' ? 'poster' : 'slide deck') + ' once it\u2019s accepted.' : 'No posters or slide decks yet.'}</Empty>
+          )}
+        </Card>
+      )}
+
+      {isPresentation && (
+        <Card title={'This ' + what}>
+          {st.sourcePub && (
+            <div className="pfx-help">
+              Made from abstract{' '}
+              <a href={'/publication/' + st.sourcePub.id} onClick={e => { e.preventDefault(); openPub(st.sourcePub); }}>{st.sourcePub.recordId}</a>{' '}
+              ({st.sourcePub.title}).
+            </div>
+          )}
+          {approval.ok ? (
+            <div className="pfxd-iconline pfxd-iconline--ok"><Icon name="check_circle" size={16} />Every author approved this {what} in its own Author Approval round (AB9).</div>
+          ) : (
+            <InlineMessage kind="warning">{ab9Text} Send an Author Approval round on the Reviews tab.</InlineMessage>
+          )}
+        </Card>
+      )}
 
       <Card title="Status and dates">
         <Pair>
@@ -69,7 +118,7 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
               options={OUTCOME_STATUS_OPTIONS}
               placeholder="Please select"
               value={st.outcomeStatus}
-              onChange={e => set({ outcomeStatus: e.target.value, returnedToSubmission: false })}
+              onChange={e => onStatus(e.target.value)}
               width="100%"
             />
             {st.returnedToSubmission && (
@@ -80,6 +129,7 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
           </FormField>
           <div />
         </Pair>
+        {gateMsg && <InlineMessage kind="error">{gateMsg}</InlineMessage>}
 
         {st.outcomeStatus === 'Changes Requested' && (
           <div className="pfxd-sub">
@@ -125,7 +175,7 @@ export default function OutcomeTab({ st, set, bind, navigate, userName }) {
                 <h4 className="pfxd-sub-title">Proof Review</h4>
                 <span className="pfxd-text">Both proof reviews must be complete before the final disposition is recorded.</span>
               </div>
-              {proofAll && !st.dispositionRecorded && (
+              {proofAll && !st.dispositionRecorded && !needsOwnApproval && (
                 <Button variant="secondary" onClick={() => set({ dispositionRecorded: true, dispositionOn: TODAY_STR, dispositionBy: userName })}>Record Final Disposition</Button>
               )}
             </div>

@@ -1,11 +1,18 @@
 import React from 'react';
-import { Button, CommentComposer, DropZone, Icon, IconButton } from '../../ds/pubpro';
+import { Button, CommentComposer, DropZone, Icon, IconButton, InlineMessage } from '../../ds/pubpro';
 import { nowStamp } from './data';
+import { criteriaMissing, bylineAuthors } from './state';
 import { Card, Stack, TabHead } from './ui';
 import './tabs-a.css';
 
-export default function PublicationTab({ st, set, recordId, userName, openDocument }) {
+export default function PublicationTab({ st, set, recordId, userName, openDocument, record }) {
   const hasDoc = !!st.pubDoc;
+  // A1 (ICMJE, GPP): drafting can't start until every author has agreed to the ICMJE criteria.
+  // Records that already had a document before this rule are left as they are.
+  const authors = bylineAuthors(st);
+  const waiting = criteriaMissing(st);
+  const blocked = !hasDoc && !st.draftStartedAt && (!record || !authors.length || waiting.length > 0);
+  const startedText = st.draftStartedAt ? new Date(st.draftStartedAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : '';
   // pubDocOn is set when the document is started or imported here; the sample record predates it.
   const docName = st.pubDoc === 'new'
     ? recordId + '_Draft.docx'
@@ -31,11 +38,19 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
           <div className="pfxa-docstart">
             <Icon name="note_add" size={46} color="var(--high-emphasis)" />
             <div className="pfxa-docstart-title">Start the publication document in PubPro</div>
+            {blocked && (
+              <InlineMessage kind="warning">
+                <strong>A1 (ICMJE, GPP):</strong> every author agrees to the four ICMJE authorship criteria before drafting starts. They agree when they accept their invitation (Authors tab).{' '}
+                {!record ? 'Save the publication and invite its authors first.'
+                  : !authors.length ? 'Add the authors first.'
+                    : 'Still waiting on ' + waiting.join(', ') + '.'}
+              </InlineMessage>
+            )}
             <div className="pfxa-docstart-actions">
-              <Button variant="primary" icon="note_add" onClick={openEditor}>Start New Document</Button>
+              <Button variant="primary" icon="note_add" onClick={openEditor} disabled={blocked}>Start New Document</Button>
               <span className="pfxa-docstart-alt">
                 <span className="pfx-meta">Already have a draft?</span>
-                <Button variant="secondary" icon="backup" onClick={() => startDoc('import')}>Import existing draft</Button>
+                <Button variant="secondary" icon="backup" onClick={() => startDoc('import')} disabled={blocked}>Import existing draft</Button>
               </span>
             </div>
             <div className="pfxa-docstart-hint">Imports accept .docx, .pptx, .pdf — or drag and drop a file into this box</div>
@@ -47,6 +62,7 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
             <div className="pfxa-file-text">
               <div className="pfxa-file-name">{docName}</div>
               <div className="pfxa-file-meta">{docMeta}{st.pubDoc === 'new' ? ' · ' + words + (words === 1 ? ' word' : ' words') : ''}</div>
+              {startedText && <div className="pfxa-file-meta"><Icon name="verified" size={14} color="var(--ok)" /> Drafting started {startedText}, after every author agreed to the ICMJE criteria (A1)</div>}
             </div>
             <div className="pfxa-file-actions">
               {st.pubDoc === 'new' && <Button variant="secondary" icon="edit_document" onClick={openEditor}>Open Document</Button>}

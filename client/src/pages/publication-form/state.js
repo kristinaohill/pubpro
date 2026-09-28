@@ -245,8 +245,10 @@ export function toSavedData(st) {
 /** Rebuilds form state from a saved record, filling any keys added since it was saved. */
 export function fromSavedData(data) {
   const base = blankState();
+  // A record made on the server (e.g. a poster from an abstract) names its stage template but has no rows yet.
+  const rows = data && !data.rows && data.stageTemplate ? { vendor: base.vendor, ...stageTemplatePatch(base, data.stageTemplate) } : {};
   return {
-    ...base, ...data, fields: { ...base.fields, ...(data && data.fields) }, tab: 'overview',
+    ...base, ...rows, ...data, fields: { ...base.fields, ...(data && data.fields) }, tab: 'overview',
     pubDocMarkup: markupFromSaved(data), pubDocTrack: !data || data.pubDocTrack !== false,
   };
 }
@@ -453,4 +455,24 @@ export function deriveReadiness(st) {
     readinessMore: out.length > 12 ? '+ ' + (out.length - 12) + ' more on the Compliance tab' : '',
     readinessSummary: st.readinessChecked ? 'Checked ' + TODAY_STR + ' · results are advisory — confirm each item before submission.' : '',
   };
+}
+
+// ---- Compliance gates (the server enforces these too; see server/gates.js) -----------------
+
+/** Authors on the byline: listed, not removed from it, and not declined. */
+export const bylineAuthors = st => ['internal', 'external'].flatMap(group => (st[group] || [])
+  .filter(a => a.selected !== false && !(a.invite && a.invite.status === 'declined'))
+  .map(a => ({ group, a, person: group === 'external' ? String(a.name).split('-')[0].trim() : a.name })));
+
+/** A1: who on the byline hasn't agreed to the ICMJE criteria yet. */
+export const criteriaMissing = st => bylineAuthors(st).filter(x => !(x.a.criteria && x.a.criteria.at)).map(x => x.person);
+
+/** AB9: whether every author approved this record's own content in a closed Author Approval round. */
+export function ownApproval(st) {
+  const low = s => String(s || '').trim().toLowerCase();
+  const approved = new Set((st.rounds || []).filter(r => r.type === 'Author Approval' && r.status === 'closed')
+    .flatMap(r => r.reviewers.filter(v => v.decision === 'approve').map(v => low(v.name))));
+  const authors = bylineAuthors(st);
+  const waiting = authors.filter(x => !approved.has(low(x.person))).map(x => x.person);
+  return { ok: authors.length > 0 && waiting.length === 0, waiting };
 }

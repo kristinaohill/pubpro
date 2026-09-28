@@ -167,7 +167,8 @@ export const PROGRESS_STEPS = {
     { name: "Presentation Logistics", d: "10/14/2026" },
   ],
 };
-PROGRESS_STEPS.Poster = PROGRESS_STEPS.Abstract;
+// A poster follows the presentation workflow, with its own author approval (AB9).
+PROGRESS_STEPS.Poster = PROGRESS_STEPS["Congress Presentation"];
 
 export const PROGRESS = {
   oldSteps: [
@@ -202,7 +203,7 @@ export const REVIEW_SUBTYPE_OPTIONS = [{ value: "", label: "Please select" }, { 
 export const REVIEW_THERAPEUTIC_AREA_OPTIONS = ["Cardiovascular & Metabolism", "Immunology", "Neuroscience"];
 export const REVIEW_DEPT_OPTIONS = ["Medical Affairs", "Clinical Development"];
 export const REVIEW_SPONSOR_OPTIONS = ["Company Sponsored", "Investigator Sponsored"];
-export const STAGE_TEMPLATE_OPTIONS = ["Abstract", "Manuscript", "Congress Presentation"];
+export const STAGE_TEMPLATE_OPTIONS = ["Abstract", "Manuscript", "Poster", "Congress Presentation"];
 export const NO_VENDOR = "No Vendor (In-house)";
 export const VENDOR_OPTIONS = [NO_VENDOR, "Caudex Health", "Oxford Medical Communications", "Meridian Scientific"];
 export const RATE_CARD_OPTIONS = ["FY26 Standard Rate Card", "FY26 Preferred Partner Rate Card", "FY25 Standard Rate Card", "Custom / Statement of Work"];
@@ -225,12 +226,27 @@ export const STAGE_TEMPLATES = {
   "Abstract": [ST("Author Invitations", 5), MS("Kick-off Complete", CORE)].concat(DRAFT_ROUNDS, [MS("Submission", CORE)]),
   "Manuscript": [ST("Author Invitations", 5), MS("Kick-off Complete", CORE), ST("Data and Proposal Input", 10), ST("Outline Development", 10), ST("Outline Review", 7)].concat(DRAFT_ROUNDS, [MS("Submission", CORE)]),
   "Congress Presentation": [MS("Congress Decision to Authors"), ST("PWG Updates Source Docs", 7)].concat(DRAFT_ROUNDS, [ST("Presentation Logistics (printing, upload)", 7)]),
+  // A poster is its own piece of work with its own author review and approval (AB9, GPP).
+  "Poster": [MS("Congress Decision to Authors"), ST("Poster Development", 10), MS("Draft Development Complete", CORE),
+    ST("Internal Draft Review", 5), ST("Author Draft Review", 7), ST("Final Draft Development", 3),
+    ST("Compliance and IP Review", 3, OPT), MS("Author Approval", CORE), ST("Internal Release Approval", 2),
+    ST("Presentation Logistics (printing, upload)", 5)],
 };
 export const TRACK_TARGETS = {
   Abstract: ["American Academy of Dermatology (AAD) Annual Meeting", "European Academy of Dermatology and Venereology (EADV) Congress", "European Pain Federation - Congress"],
   Manuscript: ["Journal of the American Academy of Dermatology", "British Journal of Dermatology", "Journal of Cardiometabolic Medicine"],
 };
-export const TEMPLATE_FOR_TYPE = { Abstract: "Abstract", Poster: "Abstract", Manuscript: "Manuscript", "Congress Presentation": "Congress Presentation" };
+export const TEMPLATE_FOR_TYPE = { Abstract: "Abstract", Poster: "Poster", Manuscript: "Manuscript", "Congress Presentation": "Congress Presentation" };
+
+// The four ICMJE authorship criteria. Every author agrees to them before drafting starts (A1).
+export const ICMJE_CRITERIA = [
+  "Substantial contributions to the conception or design of the work, or to acquiring, analyzing or interpreting its data",
+  "Drafting the work or revising it critically for important intellectual content",
+  "Final approval of the version to be published",
+  "Agreement to be accountable for all aspects of the work, including questions of accuracy and integrity",
+];
+// Publication types that present an abstract: each needs its own author approval (AB9).
+export const PRESENTATION_TYPES = ["Poster", "Congress Presentation"];
 
 export const fmtDate = d => (d.getMonth() + 1) + "/" + d.getDate() + "/" + d.getFullYear();
 export const parseDate = s => {

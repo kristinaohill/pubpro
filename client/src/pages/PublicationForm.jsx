@@ -10,6 +10,7 @@ import { fold, visibleText } from './publication-form/trackChanges';
 import { AtAGlance, RecordSummary, SectionNav } from './publication-form/frame';
 import { PRODUCTS, TODAY_STR, nowStamp } from './publication-form/data';
 import YourReview from './publication-form/YourReview';
+import YourInvitation from './publication-form/YourInvitation';
 import {
   FIELD_DEFAULTS, auditEntry, blankState, changedSections, deriveProgress, fromSavedData, missingFlags,
   openRoundOf, statusOf, summarize, titleOf, toSavedData,
@@ -165,9 +166,12 @@ export default function PublicationForm() {
       const saved = record
         ? await api.put('/pp-publications/' + record.id, body)
         : await api.post('/pp-publications', body);
-      setRecord(saved);
-      setSt(withLog);
-      lastSaved.current = data;
+      // The server stamps criteria agreements and when drafting started (A1); take what it decided.
+      const { gated, ...meta } = saved;
+      const merged = gated ? { ...withLog, ...gated } : withLog;
+      setRecord(cur => ({ ...meta, related: cur && String(cur.id) === String(meta.id) ? cur.related : [] }));
+      setSt(merged);
+      lastSaved.current = toSavedData(merged);
       // Document edits typed since the last save go with the record's Save.
       if (!skipDoc && !docOpen && canDoc && !withLog.cancelled && docDirty(withLog)) {
         await putDocument(saved.id, withLog, auditEntry('Publication Document Saved', { comment: String(withLog.pubDocText || '').trim().split(/\s+/).filter(Boolean).length + ' words' }));
@@ -201,6 +205,7 @@ export default function PublicationForm() {
   const applyDoc = (res, override = {}) => {
     const patch = {
       pubDoc: res.pubDoc, pubDocTrack: res.pubDocTrack, pubDocVersion: res.pubDocVersion, audit: res.audit,
+      draftStartedAt: res.draftStartedAt || null,
       pubDocMarkup: override.markup || res.pubDocMarkup,
       pubDocText: override.text != null ? override.text : res.pubDocText,
     };
@@ -324,9 +329,18 @@ export default function PublicationForm() {
     setMessage({ kind: 'info', text: 'Your review was submitted.' + (record.owner && record.owner !== userName ? ' ' + record.owner + ' was notified in PubPro.' : '') });
   };
 
+  // The signed-in internal author's reply to their invitation; accepting records their agreement to the ICMJE criteria.
+  const replyInvitation = async (accept, criteria) => {
+    const res = await api.post('/pp-publications/' + record.id + '/invitation-response', { accept, criteria });
+    const patch = { internal: res.internal, external: res.external, audit: res.audit };
+    setSt(cur => ({ ...cur, ...patch }));
+    if (lastSaved.current) lastSaved.current = { ...lastSaved.current, ...patch };
+    setMessage({ kind: 'info', text: accept ? 'You accepted the invitation and agreed to the ICMJE authorship criteria.' : 'You declined the invitation.' });
+  };
+
   const TabView = TAB_VIEWS[st.tab] || OverviewTab;
   const tabProps = {
-    st, set, bind, commit, saving, navigate, recordId, prog, userName, plans, allowedProducts,
+    st, set, bind, commit, saving, navigate, recordId, prog, userName, plans, allowedProducts, record,
     openDocument: () => setDocOpen(true),
     layout: AUTHORS_LAYOUT,
     simulateApproval: SIMULATE_AUTHOR_APPROVAL,
@@ -355,6 +369,9 @@ export default function PublicationForm() {
         <div className="pfx-body">
           <SectionNav active={st.tab} flags={missing} onSelect={openTab} />
           <div className="pfx-main">
+            {record && !cancelled && (
+              <YourInvitation st={st} userName={userName} owner={record.owner} full={st.tab === 'authors'} onReply={replyInvitation} onTab={openTab} />
+            )}
             {record && !cancelled && (
               <YourReview
                 st={st} userName={userName} owner={record.owner} full={st.tab === 'reviewers'}

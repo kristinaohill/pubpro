@@ -8,6 +8,7 @@ const { ACTIVE_PRODUCTS } = require('../products');
 const retired = (product, current) => product && product !== current && !ACTIVE_PRODUCTS.includes(product)
   ? product + ' is inactive, so it can\u2019t be picked for a publication.' : null;
 const { productCode, yearCode, nextSequence } = require('../recordIds');
+const gates = require('../gates');
 
 // Record IDs follow the PubPro pattern: <yy>-<type>-<product>-<seq>-V01, e.g. 26-M-DAX-015-V01.
 const TYPE_CODES = { Abstract: 'A', Poster: 'AP', Manuscript: 'M', 'Congress Presentation': 'CP' };
@@ -100,14 +101,29 @@ router.get('/', requireAuth, (req, res) => {
 router.get('/:id', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
-  res.json({ ...listRow(row), data: parse(row.data, {}) });
+  res.json({ ...listRow(row), data: parse(row.data, {}), related: relatedTo(row.id) });
 });
+
+/** Posters and slide decks made from publication id (AB9), with whether their own approval is done. */
+function relatedTo(id) {
+  return db.prepare('SELECT id, record_id, title, pub_type, data FROM pp_publications').all()
+    .map(r => ({ r, d: parse(r.data, {}) }))
+    .filter(x => x.d.sourcePub && String(x.d.sourcePub.id) === String(id))
+    .map(({ r, d }) => ({ id: r.id, record_id: r.record_id, title: r.title, pub_type: r.pub_type, approved: gates.ownApproval(d).ok, cancelled: !!d.cancelled }));
+}
 
 router.post('/', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
   const { title, pubType, product, status, summary } = readBody(req.body);
   if (!can(req, 'pubs.edit', product)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', product) });
   if (retired(product)) return res.status(400).json({ error: retired(product) });
-  const data = keepDocument(readBody(req.body).data, {});
+  // Agreement to the criteria only comes from invitation replies (or an abstract), never a new record.
+  const d = parse(keepDocument(readBody(req.body).data, {}), {});
+  ["internal", "external"].forEach(g => { d[g] = (d[g] || []).map(({ criteria, ...a }) => a); });
+  delete d.sourcePub;
+  delete d.draftStartedAt;
+  const blocked = gates.draftingGate({}, d) || gates.presentationGate(pubType, {}, d);
+  if (blocked) return res.status(400).json({ error: blocked });
+  const data = JSON.stringify(d);
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
   if (!TYPE_CODES[pubType]) return res.status(400).json({ error: 'Choose a publication type.' });
   const recordId = nextRecordId(pubType, product);
@@ -136,7 +152,7 @@ router.post('/sample', requireAuth, blockAuthors, (req, res) => {
 
 // Publication Type and the record ID are fixed once the record exists.
 router.put('/:id', requireAuth, (req, res) => {
-  const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
+  const existing = db.prepare('SELECT id, data, product, pub_type FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!existing || !canSee(req, existing)) return res.status(404).json({ error: 'Publication not found' });
   // External authors update their own invitation and review responses (their dashboard); staff need pubs.edit.
   if (req.user.role !== 'author' && !can(req, 'pubs.edit')) return res.status(403).json({ error: 'Your role does not allow editing publications.' });
@@ -150,13 +166,98 @@ router.put('/:id', requireAuth, (req, res) => {
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
   if (retired(product, existing.product)) return res.status(400).json({ error: retired(product, existing.product) });
   const prevData = parse(existing.data, {});
-  const data = keepDocument(readBody(req.body).data, prevData);
-  if (!!prevData.cancelled !== !!parse(data, {}).cancelled && !can(req, 'pubs.cancel', existing.product)) {
+  const d = gates.stampCriteria(prevData, parse(keepDocument(readBody(req.body).data, prevData), {}));
+  if (!!prevData.cancelled !== !!d.cancelled && !can(req, 'pubs.cancel', existing.product)) {
     return res.status(403).json({ error: 'Your role does not allow cancelling or reinstating publications.' });
   }
+  if (prevData.sourcePub) d.sourcePub = prevData.sourcePub;
+  const blocked = gates.draftingGate(prevData, d) || gates.presentationGate(existing.pub_type, prevData, d);
+  if (blocked) return res.status(400).json({ error: blocked });
   db.prepare(`UPDATE pp_publications SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
-    .run(title, product, status, summary, data, req.params.id);
-  res.json(getListRow(req.params.id));
+    .run(title, product, status, summary, JSON.stringify(d), req.params.id);
+  // What the server decided (criteria times, when drafting started, its audit entry) goes back to the form.
+  res.json({ ...getListRow(req.params.id), gated: { internal: d.internal || [], external: d.external || [], draftStartedAt: d.draftStartedAt || null, audit: d.audit || [] } });
+});
+
+// ---- An author's own reply to their invitation ----------------------------------------------
+// { accept, criteria }: accepting means agreeing to the four ICMJE authorship criteria (A1), which is
+// recorded with the server's time. Internal authors reply here from the publication; external
+// authors from their dashboard. Tells the owner in PubPro.
+router.post('/:id/invitation-response', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
+  const data = parse(row.data, {});
+  if (data.cancelled || row.status === 'Cancelled') return res.status(400).json({ error: 'This publication is cancelled.' });
+  const accept = !!req.body.accept;
+  if (accept && req.body.criteria !== true) return res.status(400).json({ error: 'Confirm you agree to the four ICMJE authorship criteria to accept.' });
+  const me = norm(req.user.name);
+  const group = req.user.role === 'author' ? 'external' : 'internal';
+  const list = data[group] || [];
+  const i = list.findIndex(a => norm(gates.personOf(a, group)) === me);
+  if (i < 0) return res.status(403).json({ error: 'You aren\u2019t an author on this publication.' });
+  const now = new Date();
+  const on = gates.usDate(now);
+  list[i] = {
+    ...list[i],
+    invite: { ...(list[i].invite || {}), status: accept ? 'accepted' : 'declined', on },
+    ...(accept && !(list[i].criteria && list[i].criteria.at) ? { criteria: { at: now.toISOString(), on, by: req.user.name, how: 'self' } } : {}),
+  };
+  data[group] = list;
+  data.audit = (data.audit || []).concat([{
+    action: accept ? 'Authorship Invitation Accepted' : 'Authorship Invitation Declined', participants: req.user.name,
+    start: on, completed: on, result: accept ? 'Accepted' : 'Declined', active: false,
+    comment: accept ? 'Agreed to the four ICMJE authorship criteria (A1) · replied in PubPro' : 'Replied in PubPro',
+  }]);
+  const anySent = (data.internal || []).concat(data.external || []).some(a => a.invite && a.invite.status && a.invite.status !== 'none');
+  db.prepare("UPDATE pp_publications SET data = ?, status = CASE WHEN status = 'Draft' AND ? THEN 'Active' ELSE status END, updated_at = datetime('now') WHERE id = ?")
+    .run(JSON.stringify(data), anySent ? 1 : 0, row.id);
+  if (row.owner && norm(row.owner) !== me) {
+    db.prepare(`INSERT INTO pp_notifications (recipient, sender, pub_id, record_id, kind, title, body, tab)
+      VALUES (?, ?, ?, ?, 'response', ?, ?, 'authors')`)
+      .run(row.owner, req.user.name, row.id, row.record_id, req.user.name + (accept ? ' accepted' : ' declined') + ' the authorship invitation', row.title + ' (' + row.record_id + ')');
+  }
+  res.json({ internal: data.internal || [], external: data.external || [], audit: data.audit });
+});
+
+// ---- A poster or slide deck from an abstract (AB9) ------------------------------------------
+// { pubType: 'Poster' | 'Congress Presentation' }: a separate record with the abstract's authors,
+// product, studies and congress, and its own review and approval. The authors' agreement to the
+// criteria carries over (it's the same work); the abstract's approval doesn't.
+router.post('/:id/derive', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
+  const src = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!src || !canSee(req, src)) return res.status(404).json({ error: 'Publication not found' });
+  if (!can(req, 'pubs.edit', src.product)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', src.product) });
+  if (src.pub_type !== 'Abstract') return res.status(400).json({ error: 'Posters and slide decks are made from an abstract.' });
+  const pubType = String(req.body.pubType || '');
+  if (!gates.PRESENTATION_TYPES.includes(pubType)) return res.status(400).json({ error: 'Choose a poster or a slide deck.' });
+  const s = parse(src.data, {});
+  if (s.cancelled) return res.status(400).json({ error: 'This abstract is cancelled.' });
+  const label = pubType === 'Poster' ? 'Poster' : 'Slides';
+  const f = s.fields || {};
+  const base = (f.abbrevTitle || src.title || '').trim();
+  const now = new Date();
+  const on = gates.usDate(now);
+  const carry = a => ({ ...a, criteria: a.criteria ? { ...a.criteria, carriedFrom: src.record_id } : undefined });
+  const title = (base + ' \u2014 ' + label).slice(0, 200);
+  const data = {
+    pubType, product: s.product || src.product, subType: '', parentPlan: s.parentPlan,
+    fields: { abbrevTitle: title, pubTitle: f.pubTitle || '', therapeuticArea: f.therapeuticArea, department: f.department, sponsorType: f.sponsorType },
+    internal: (s.internal || []).map(carry), external: (s.external || []).map(carry),
+    correspondingAuthor: s.correspondingAuthor, presentingAuthor: s.presentingAuthor,
+    selectedStudies: s.selectedStudies || [], targets: s.targets || [],
+    stageTemplate: pubType === 'Poster' ? 'Poster' : 'Congress Presentation',
+    sourcePub: { id: src.id, recordId: src.record_id, title: src.title },
+    audit: [{
+      action: 'Record Created', participants: req.user.name, start: on, completed: on, result: 'Draft', active: false,
+      comment: label + ' for ' + src.record_id + '. Needs its own author review and approval (AB9); the abstract\u2019s approval doesn\u2019t carry over.',
+    }],
+  };
+  const recordId = nextRecordId(pubType, data.product);
+  const r = db.prepare(`INSERT INTO pp_publications (record_id, title, pub_type, product, status, owner, summary, data, created_by)
+    VALUES (?, ?, ?, ?, 'Active', ?, '{}', ?, ?)`).run(recordId, title, pubType, data.product, req.user.name || null, JSON.stringify(data), req.user.id || null);
+  s.audit = (s.audit || []).concat([{ action: label + ' Record Created', participants: req.user.name, start: on, completed: on, result: recordId, active: false, comment: title }]);
+  db.prepare("UPDATE pp_publications SET data = ?, updated_at = datetime('now') WHERE id = ?").run(JSON.stringify(s), src.id);
+  res.json(getListRow(r.lastInsertRowid));
 });
 
 // ---- A reviewer's own response ------------------------------------------------------------
@@ -204,6 +305,7 @@ router.post('/:id/review-response', requireAuth, (req, res) => {
 const docOut = d => ({
   pubDoc: d.pubDoc, pubDocMarkup: doc.markupOf(d), pubDocText: d.pubDocText || '',
   pubDocTrack: d.pubDocTrack !== false, pubDocVersion: d.pubDocVersion || 0, audit: d.audit || [],
+  draftStartedAt: d.draftStartedAt || null,
 });
 
 // Who has each document open: pubId -> Map(userId -> { name, uid, section, editing, at }).
@@ -271,7 +373,12 @@ router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => 
   data.pubDocText = doc.visibleText(next);
   data.pubDocVersion = version + 1;
   if (canReview && typeof req.body.track === 'boolean') data.pubDocTrack = req.body.track;
-  if (!data.pubDoc) data.pubDoc = 'new';
+  if (!data.pubDoc) {
+    const started = { ...data, pubDoc: 'new' };
+    const blocked = gates.draftingGate(data, started);
+    if (blocked) return res.status(400).json({ error: blocked });
+    Object.assign(data, started);
+  }
   const a = req.body.audit;
   if (a && typeof a === 'object' && a.action) {
     const str = v => String(v == null ? '' : v).slice(0, 500);
