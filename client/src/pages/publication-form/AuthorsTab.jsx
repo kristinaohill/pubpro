@@ -3,7 +3,7 @@ import useDismiss from '../../components/useDismiss';
 import usePeople, { jobTitle, oooText, personNamed, useExternalAuthors } from '../../components/usePeople';
 import { api } from '../../api';
 import {
-  Button, CheckboxGroup, DataTable, Icon, IconButton, SearchSelect,
+  Button, CheckboxGroup, DataTable, Icon, IconButton, InlineMessage, SearchSelect,
   SegmentedToggle, Select, TextField,
 } from '../../ds/pubpro';
 import {
@@ -11,6 +11,7 @@ import {
   REVIEWER_DIRECTORY, TODAY, TODAY_STR,
 } from './data';
 import { auditEntry } from './state';
+import { ProofField, ProofLink, uploadProof } from './proof';
 import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
 import './tabs-b.css';
 
@@ -46,8 +47,9 @@ function criteriaLook(a, iv, draftStartedAt) {
   const c = a.criteria;
   const late = !!draftStartedAt && !!c && !!c.at && c.at > draftStartedAt;
   if (c && c.at) {
-    const how = c.carriedFrom ? ' (agreed on ' + c.carriedFrom + ')' : c.how === 'recorded' ? ' (recorded by ' + c.by + ')' : '';
+    const how = c.carriedFrom ? ' (agreed on ' + c.carriedFrom + ')' : '';
     return {
+      criteriaProxy: c.proof ? { by: c.by, proof: c.proof } : null,
       criteriaText: 'ICMJE criteria agreed ' + c.on + how, criteriaColor: late ? 'var(--warn-text)' : 'var(--ok)', criteriaGlyph: late ? 'history' : 'verified',
       criteriaNote: late ? 'Joined after drafting started: record why in the audit trail (A3)' : '', needsCriteria: false,
     };
@@ -123,7 +125,9 @@ function useProfileOpener(navigate) {
   };
 }
 
-function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval }) {
+function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval, record }) {
+  // Recording an author's acceptance for them: { key, file, note, busy, error } (needs proof).
+  const [proxy, setProxy] = useState(null);
   const staff = usePeople();
   const externals = useExternalDirectory();
   const openProfile = useProfileOpener(navigate);
@@ -235,6 +239,28 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
       external: s.external.map(a => (uninvited(a) ? { ...a, invite: INVITED } : a)),
       audit: inviteLog(s, people),
     }), { done: people.length + (people.length === 1 ? ' invitation' : ' invitations') + ' sent.', notices: inviteNotices(people) });
+  };
+  // Recording an author's acceptance and criteria agreement for them needs their written confirmation.
+  const recordAcceptance = async a => {
+    setProxy(p => ({ ...p, busy: true, error: '' }));
+    try {
+      const proof = await uploadProof(record.id, proxy.file, 'criteria', a.person);
+      const note = proxy.note.trim();
+      const saved = await commit(s => ({
+        [a.group]: s[a.group].map(x => (x.id === a.id ? {
+          ...x,
+          invite: { ...(x.invite || {}), status: 'accepted', on: x.invite && x.invite.status === 'accepted' ? x.invite.on : TODAY_STR },
+          criteria: { on: TODAY_STR, by: userName, how: 'recorded', proof: { id: proof.id, name: proof.name }, note },
+        } : x)),
+        audit: (s.audit || []).concat([auditEntry('Authorship Accepted (recorded)', {
+          participants: a.person, result: 'Accepted',
+          comment: ['Agreed to the four ICMJE criteria · recorded by ' + userName, 'proof: ' + proof.name, note].filter(Boolean).join(' · '),
+        })]),
+      }), { done: 'Recorded ' + a.person + '\u2019s acceptance, with proof.' });
+      setProxy(saved ? null : p => ({ ...p, busy: false }));
+    } catch (err) {
+      setProxy(p => ({ ...p, busy: false, error: err.message }));
+    }
   };
   // Authors who accepted before PubPro recorded criteria agreement confirm it themselves (A1).
   const askCriteria = person => commit(s => ({
@@ -353,6 +379,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                       <Icon name={a.criteriaGlyph} size={14} />{a.criteriaText}
                     </span>
                     {a.criteriaNote && <span className="pfxb-invite-meta" style={{ color: 'var(--warn-text)' }}>{a.criteriaNote}</span>}
+                    {a.criteriaProxy && record && <ProofLink pubId={record.id} proxy={a.criteriaProxy} />}
                   </div>
                   <div className="pfxb-remove">
                     <IconButton icon="close" tone="fatal" size={26} title="Remove author" onClick={() => removeAuthor(a.group, a.id)} />
@@ -366,13 +393,33 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                     )}
                     {a.inviteRank === 2 && (
                       <>
-                        <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'accepted', on: TODAY_STR }, criteria: { on: TODAY_STR, by: userName, how: 'recorded' } })}>Mark Accepted</Button>
+                        <Button variant="tertiary" onClick={() => setProxy({ key: a.key, file: null, note: '' })} disabled={!record}>Mark Accepted</Button>
                         <Button variant="tertiary" onClick={() => patchAuthor(a.group, a.id, { invite: { ...a.invite, status: 'declined', on: TODAY_STR } })}>Mark Declined</Button>
                       </>
                     )}
                     {a.needsCriteria && (
-                      <Button variant="tertiary" onClick={() => askCriteria(a.person)} disabled={saving}>Ask to Confirm ICMJE Criteria</Button>
+                      <>
+                        <Button variant="tertiary" onClick={() => askCriteria(a.person)} disabled={saving}>Ask to Confirm ICMJE Criteria</Button>
+                        <Button variant="tertiary" onClick={() => setProxy({ key: a.key, file: null, note: '' })} disabled={!record}>Record With Proof</Button>
+                      </>
                     )}
+                  </div>
+                )}
+                {proxy && proxy.key === a.key && (
+                  <div className="pf-proxy-panel">
+                    <div className="pfx-help">
+                      Recording {a.person}&rsquo;s acceptance for them. Upload their written confirmation that they accept authorship
+                      and agree to the four ICMJE authorship criteria, such as their reply by email.
+                    </div>
+                    <ProofField id={'pf-proof-' + a.key} file={proxy.file} onFile={f => setProxy(p => ({ ...p, file: f, error: '' }))} />
+                    <FormField id={'pf-proof-note-' + a.key} label="Note">
+                      <TextField id={'pf-proof-note-' + a.key} value={proxy.note} onChange={e => setProxy(p => ({ ...p, note: e.target.value }))} placeholder="e.g. The invitation link didn’t work; confirmed by email" width="100%" />
+                    </FormField>
+                    {proxy.error && <InlineMessage kind="error">{proxy.error}</InlineMessage>}
+                    <div className="pf-proxy-actions">
+                      <Button variant="tertiary" onClick={() => setProxy(null)} disabled={proxy.busy}>Cancel</Button>
+                      <Button variant="primary" icon="check" onClick={() => recordAcceptance(a)} disabled={!proxy.file || proxy.busy}>{proxy.busy ? 'Saving…' : 'Record Acceptance'}</Button>
+                    </div>
                   </div>
                 )}
 

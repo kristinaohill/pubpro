@@ -41,6 +41,9 @@ const ago = s => {
 };
 const isoToUS = iso => { if (!iso) return '—'; const [y, m, d] = iso.split('-').map(Number); return `${m}/${d}/${y}`; };
 
+// Staff looking at someone else's dashboard record replies for them on the publication, with proof.
+const PROXY_NOTE = 'Replying for them? Record it on the publication (Authors or Reviews tab) and upload their written confirmation as proof.';
+
 /** Everything waiting on `person` across saved publications and their author profile. */
 function workFor(person, pubs, profile) {
   const invitations = [];
@@ -305,8 +308,12 @@ export default function ExternalAuthorDashboard() {
                       </label>
                     </div>
                     <div className="ead-item-actions">
-                      <Button variant="secondary" icon="check" disabled={busy || !agreed[inv.p.id]} onClick={() => replyInvite(inv, true)}>{inv.confirmOnly ? 'Confirm' : 'Accept'}</Button>
-                      {!inv.confirmOnly && <Button variant="tertiary" disabled={busy} onClick={() => replyInvite(inv, false)}>Decline</Button>}
+                      {isAuthor ? (
+                        <>
+                          <Button variant="secondary" icon="check" disabled={busy || !agreed[inv.p.id]} onClick={() => replyInvite(inv, true)}>{inv.confirmOnly ? 'Confirm' : 'Accept'}</Button>
+                          {!inv.confirmOnly && <Button variant="tertiary" disabled={busy} onClick={() => replyInvite(inv, false)}>Decline</Button>}
+                        </>
+                      ) : <span className="ead-meta">{PROXY_NOTE}</span>}
                     </div>
                   </div>
                 ))}
@@ -328,7 +335,9 @@ export default function ExternalAuthorDashboard() {
                       <div className="ead-respond">
                         <Select options={DECISIONS} placeholder="Your decision" value={a.decision || ''} onChange={e => setAnswer(s => ({ ...s, [key]: { ...a, decision: e.target.value } }))} width="200px" />
                         <TextField value={a.comment || ''} onChange={e => setAnswer(s => ({ ...s, [key]: { ...a, comment: e.target.value } }))} placeholder="Comment for the team (optional)" />
-                        <Button variant="secondary" icon="send" disabled={busy || !a.decision} onClick={() => respond(rv)}>Send Response</Button>
+                        {isAuthor
+                          ? <Button variant="secondary" icon="send" disabled={busy || !a.decision} onClick={() => respond(rv)}>Send Response</Button>
+                          : <span className="ead-meta">{PROXY_NOTE}</span>}
                       </div>
                     </div>
                   );

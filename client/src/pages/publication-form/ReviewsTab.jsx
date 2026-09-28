@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useDismiss from '../../components/useDismiss';
 import usePeople, { jobTitle, oooText, personNamed, refreshReviewTypes, useReviewTypes } from '../../components/usePeople';
 import { api } from '../../api';
@@ -10,6 +10,7 @@ import DateField from '../../components/DateField';
 import {
   PRESENTATION_TYPES, PRIORITY_OPTIONS, REVIEW_FLOW, REVIEW_METHOD_OPTIONS, REVIEW_TYPE_OPTIONS, TODAY_STR, daysFromToday,
 } from './data';
+import { ProofField, ProofLink, uploadProof } from './proof';
 import { auditEntry, deriveReadiness, dueTone, openRoundOf, ownApproval, reviewer, roundOutcome } from './state';
 import { ReadinessPanel, WorkflowStepLine } from './shared';
 import { Card, ColHead, FormField, ListBox, ListRow, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
@@ -119,7 +120,9 @@ function roundRecipients(st, parts) {
   return dedupe(people).map(x => reviewer(x.name, x.role, x.kind, x.roleKey ? { roleKey: x.roleKey } : undefined));
 }
 
-export default function ReviewsTab({ st, set, bind, commit, saving, userName }) {
+export default function ReviewsTab({ st, set, bind, commit, saving, userName, record }) {
+  // Recording someone's response for them needs their written response as proof.
+  const [proof, setProof] = useState({ file: null, busy: false, error: '' });
   // Reviewers are PubPro users (System Administrator); titles and out of office come from their profiles.
   const staff = usePeople();
   const directory = staff.map(p => ({ name: p.name, role: jobTitle(p), ooo: oooText(p) }));
@@ -234,20 +237,31 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     },
   });
 
-  // Recording someone's response for them (e.g. they replied by email) saves straight away.
-  const saveResponse = () => {
+  // Recording someone's response for them (e.g. they replied by email) needs their written response
+  // as proof, and saves straight away. Your own response goes through "Your review" instead.
+  const saveResponse = async () => {
     const e = st.respondEdit;
     if (!e || !e.decision) return;
     const round = openRoundOf(st);
-    commit(s => ({
-      respondEdit: null,
-      rounds: s.rounds.map(r => (r.status === 'open'
-        ? { ...r, reviewers: r.reviewers.map(v => (v.name === e.name ? { ...v, decision: e.decision, comment: e.comment.trim(), on: TODAY_STR, ooo: '' } : v)) }
-        : r)),
-      audit: (s.audit || []).concat([auditEntry(`Review Response — ${round.type} (Round ${round.num})`, {
-        participants: e.name, result: DEC[e.decision].decision, comment: ['Recorded by ' + userName, e.comment.trim()].filter(Boolean).join(' · '),
-      })]),
-    }), { done: 'Saved ' + e.name + '’s response.' });
+    const self = e.name.trim().toLowerCase() === String(userName).trim().toLowerCase();
+    setProof(p => ({ ...p, busy: true, error: '' }));
+    try {
+      const up = self ? null : await uploadProof(record.id, proof.file, 'review', e.name);
+      const proxy = up ? { by: userName, on: TODAY_STR, proof: { id: up.id, name: up.name } } : undefined;
+      const saved = await commit(s => ({
+        respondEdit: null,
+        rounds: s.rounds.map(r => (r.status === 'open'
+          ? { ...r, reviewers: r.reviewers.map(v => (v.name === e.name ? { ...v, decision: e.decision, comment: e.comment.trim(), on: TODAY_STR, ooo: '', proxy } : v)) }
+          : r)),
+        audit: (s.audit || []).concat([auditEntry(`Review Response — ${round.type} (Round ${round.num})`, {
+          participants: e.name, result: DEC[e.decision].decision,
+          comment: [up ? 'Recorded by ' + userName : '', up ? 'proof: ' + up.name : '', e.comment.trim()].filter(Boolean).join(' · '),
+        })]),
+      }), { done: 'Saved ' + e.name + '’s response' + (up ? ', with proof.' : '.') });
+      setProof(p => (saved ? { file: null, busy: false, error: '' } : { ...p, busy: false }));
+    } catch (err) {
+      setProof(p => ({ ...p, busy: false, error: err.message }));
+    }
   };
 
   const closeRound = () => {
@@ -539,6 +553,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                           <Icon name={m.statusGlyph} size={16} />{m.statusLabel}
                         </div>
                         {m.done && m.comment && <div className="pfxc-rrow-comment">{m.comment}</div>}
+                        {m.done && m.proxy && record && <ProofLink pubId={record.id} proxy={m.proxy} />}
                       </div>
                       <div className="pfxc-rrow-remind">{m.remindedOn || '—'}</div>
                       <div className="pfxc-rrow-actions">
@@ -575,9 +590,24 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                             width="100%"
                           />
                         </FormField>
+                        {editing.name.trim().toLowerCase() !== String(userName).trim().toLowerCase() && (
+                          <ProofField
+                            id={'pf-proof-' + m.name}
+                            file={proof.file}
+                            onFile={f => setProof(p => ({ ...p, file: f, error: '' }))}
+                            help={'Upload ' + m.name + '\u2019s written response, such as their reply by email.'}
+                          />
+                        )}
+                        {proof.error && <InlineMessage kind="error">{proof.error}</InlineMessage>}
                         <div className="pfxc-respond-actions">
-                          <Button variant="tertiary" onClick={() => set({ respondEdit: null })}>Cancel</Button>
-                          <Button variant="secondary" onClick={saveResponse} disabled={!editing.decision}>Save Response</Button>
+                          <Button variant="tertiary" onClick={() => { set({ respondEdit: null }); setProof({ file: null, busy: false, error: '' }); }}>Cancel</Button>
+                          <Button
+                            variant="secondary"
+                            onClick={saveResponse}
+                            disabled={!editing.decision || proof.busy || (!proof.file && editing.name.trim().toLowerCase() !== String(userName).trim().toLowerCase())}
+                          >
+                            {proof.busy ? 'Saving…' : 'Save Response'}
+                          </Button>
                         </div>
                       </div>
                     )}

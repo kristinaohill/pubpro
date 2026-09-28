@@ -10,6 +10,23 @@ const retired = (product, current) => product && product !== current && !ACTIVE_
 const { productCode, yearCode, nextSequence } = require('../recordIds');
 const gates = require('../gates');
 
+// Proof files for things recorded on someone's behalf (e.g. an author's emailed confirmation).
+db.exec(`CREATE TABLE IF NOT EXISTS pp_proofs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  pub_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  mime TEXT,
+  size INTEGER,
+  data BLOB NOT NULL,
+  purpose TEXT,
+  subject TEXT,
+  uploaded_by TEXT,
+  uploaded_at TEXT DEFAULT (datetime('now'))
+)`);
+const PROOF_MAX = 5 * 1024 * 1024;
+const PROOF_TYPES = /\.(pdf|eml|msg|txt|png|jpe?g|docx?|html?)$/i;
+const isProofFor = pubId => proofId => !!db.prepare('SELECT 1 FROM pp_proofs WHERE id = ? AND pub_id = ?').get(Number(proofId), Number(pubId));
+
 // Record IDs follow the PubPro pattern: <yy>-<type>-<product>-<seq>-V01, e.g. 26-M-DAX-015-V01.
 const TYPE_CODES = { Abstract: 'A', Poster: 'AP', Manuscript: 'M', 'Congress Presentation': 'CP' };
 const STATUSES = ['Draft', 'Active', 'In Review', 'Cancelled'];
@@ -171,12 +188,40 @@ router.put('/:id', requireAuth, (req, res) => {
     return res.status(403).json({ error: 'Your role does not allow cancelling or reinstating publications.' });
   }
   if (prevData.sourcePub) d.sourcePub = prevData.sourcePub;
+  const proxy = gates.proxyGate(prevData, d, req.user.name, isProofFor(existing.id));
+  if (proxy) return res.status(400).json({ error: proxy });
   const blocked = gates.draftingGate(prevData, d) || gates.presentationGate(existing.pub_type, prevData, d);
   if (blocked) return res.status(400).json({ error: blocked });
   db.prepare(`UPDATE pp_publications SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(title, product, status, summary, JSON.stringify(d), req.params.id);
   // What the server decided (criteria times, when drafting started, its audit entry) goes back to the form.
   res.json({ ...getListRow(req.params.id), gated: { internal: d.internal || [], external: d.external || [], draftStartedAt: d.draftStartedAt || null, audit: d.audit || [] } });
+});
+
+// ---- Proof files -------------------------------------------------------------------------
+// { name, mime, data (base64), purpose: 'criteria' | 'review', subject (the person) }. Up to 5 MB.
+router.post('/:id/proofs', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
+  const row = db.prepare('SELECT id, product FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
+  if (!can(req, 'pubs.edit', row.product)) return res.status(403).json({ error: outOfScope(req, 'pubs.edit', row.product) });
+  const name = String(req.body.name || '').trim().slice(0, 200);
+  if (!name || !PROOF_TYPES.test(name)) return res.status(400).json({ error: 'Upload an email (.eml, .msg), PDF, image, Word or text file.' });
+  let buf;
+  try { buf = Buffer.from(String(req.body.data || ''), 'base64'); } catch (e) { buf = null; }
+  if (!buf || !buf.length) return res.status(400).json({ error: 'That file is empty.' });
+  if (buf.length > PROOF_MAX) return res.status(400).json({ error: 'Keep proof files under 5 MB.' });
+  const r = db.prepare('INSERT INTO pp_proofs (pub_id, name, mime, size, data, purpose, subject, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(row.id, name, String(req.body.mime || '').slice(0, 100), buf.length, buf, String(req.body.purpose || '').slice(0, 20), String(req.body.subject || '').slice(0, 200), req.user.name);
+  res.json({ id: r.lastInsertRowid, name, size: buf.length, uploadedBy: req.user.name, uploadedAt: new Date().toISOString() });
+});
+router.get('/:id/proofs/:proofId', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
+  const p = db.prepare('SELECT name, mime, data FROM pp_proofs WHERE id = ? AND pub_id = ?').get(Number(req.params.proofId), row.id);
+  if (!p) return res.status(404).json({ error: 'Proof not found' });
+  res.setHeader('Content-Type', p.mime || 'application/octet-stream');
+  res.setHeader('Content-Disposition', 'attachment; filename="' + p.name.replace(/[^\w.\- ]/g, '_') + '"');
+  res.send(Buffer.from(p.data));
 });
 
 // ---- An author's own reply to their invitation ----------------------------------------------

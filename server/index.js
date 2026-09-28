@@ -3,6 +3,8 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors());
+// Proof uploads (an author's emailed confirmation, for example) are larger than other requests.
+app.use('/api/pp-publications/:id/proofs', express.json({ limit: '8mb' }));
 app.use(express.json());
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 

@@ -6,6 +6,9 @@
 //                     is stamped once and never changes, so the order can be shown to an auditor.
 //   AB9 (GPP)         A poster or slide deck gets its own author review and approval. The
 //                     abstract's approval never carries over.
+//   Proxy records     Someone recording an author's acceptance and criteria agreement, or a
+//                     reviewer's response, for them (say the link didn't work and they replied by
+//                     email) must attach proof: the author's written confirmation, uploaded to PubPro.
 
 // Publication types that are a presentation of an abstract.
 const PRESENTATION_TYPES = ['Poster', 'Congress Presentation'];
@@ -95,4 +98,35 @@ function presentationGate(pubType, prev, next) {
     + (waiting.length ? 'Waiting on ' + waiting.join(', ') + '.' : 'Add the authors first.');
 }
 
-module.exports = { PRESENTATION_TYPES, authorsOf, criteriaMissing, stampCriteria, draftingGate, ownApproval, presentationGate, personOf, usDate };
+/**
+ * Recording for someone else needs proof (see above). Compares the saved record with the incoming
+ * one: every new criteria agreement and every changed review decision must be the signed-in
+ * person's own, or carry proof uploaded to this publication. Returns an error message or null.
+ */
+function proxyGate(prev, next, userName, isProof) {
+  const me = norm(userName);
+  const proven = x => !!(x && x.proof && x.proof.id && isProof(x.proof.id));
+  const had = new Set();
+  ['internal', 'external'].forEach(group => (prev[group] || []).forEach(a => { if (a.criteria && a.criteria.at) had.add(keyOf(a, group)); }));
+  for (const group of ['internal', 'external']) {
+    for (const a of next[group] || []) {
+      if (!a.criteria || had.has(keyOf(a, group))) continue;
+      if (norm(personOf(a, group)) === me || proven(a.criteria)) continue;
+      return 'To record ' + personOf(a, group) + '\u2019s acceptance and agreement to the ICMJE criteria for them, upload their written confirmation (for example, their email) as proof.';
+    }
+  }
+  const before = new Map((prev.rounds || []).map(r => [r.num, new Map((r.reviewers || []).map(v => [norm(v.name), v]))]));
+  for (const r of next.rounds || []) {
+    const old = before.get(r.num) || new Map();
+    for (const v of r.reviewers || []) {
+      const was = old.get(norm(v.name));
+      const decided = v.decision && v.decision !== 'pending';
+      if (!decided || (was && was.decision === v.decision)) continue;
+      if (norm(v.name) === me || proven(v.proxy)) continue;
+      return 'To record ' + v.name + '\u2019s review response for them, upload their written response (for example, their email) as proof.';
+    }
+  }
+  return null;
+}
+
+module.exports = { proxyGate, PRESENTATION_TYPES, authorsOf, criteriaMissing, stampCriteria, draftingGate, ownApproval, presentationGate, personOf, usDate };

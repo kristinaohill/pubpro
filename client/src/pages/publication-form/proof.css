@@ -1,0 +1,16 @@
+.pf-proof { display: flex; flex-direction: column; gap: 6px; }
+.pf-proof-label { font-size: var(--fs-meta); font-weight: var(--fw-bold); color: var(--fg-1); }
+.pf-proof-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pf-proof-pick {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--nav); border-radius: 8px;
+  color: var(--nav); font-weight: var(--fw-semibold); cursor: pointer; background: var(--white, #fff);
+}
+.pf-proof-pick:hover { background: #F3F7FC; }
+.pf-proof-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.pf-proof-input:focus-visible + .pf-proof-name { outline: 2px solid var(--nav); }
+.pf-proof-name { font-size: var(--fs-meta); color: var(--fg-3); }
+.pf-proof-help { font-size: var(--fs-meta); color: var(--fg-3); }
+.pf-proof-link { font-size: 12px; color: var(--fg-3); }
+.pf-proof-link button { background: none; border: 0; padding: 0; color: var(--nav); font: inherit; text-decoration: underline; cursor: pointer; }
+.pf-proxy-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; margin-top: 8px; border: 1px solid #DCE1E7; border-radius: 10px; background: #FAFBFC; }
+.pf-proxy-actions { display: flex; justify-content: flex-end; gap: 8px; }
