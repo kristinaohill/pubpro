@@ -6,6 +6,7 @@ const router = express.Router();
 const db = require('../db');
 const { requireAuth, requirePerm, signToken } = require('../auth');
 const P = require('../permissions');
+const catalog = require('../products');
 const people = require('../people');
 const { isInternalEmail, DOMAIN } = require('../bplogixPeople');
 const internalEmailError = 'Internal users need a @' + DOMAIN + ' email address.';
@@ -62,10 +63,12 @@ db.exec(`CREATE TABLE IF NOT EXISTS admin_log (
 const logAdmin = (req, action, target) => db.prepare('INSERT INTO admin_log (actor_id, actor_name, action, target_id, target_name) VALUES (?, ?, ?, ?, ?)')
   .run(req.user.id, req.user.name, action, target ? target.id : null, target ? target.name : null);
 
-const USER_COLS = 'id, email, name, role, extra_roles, role_scopes, active, pending, created_at, last_login_at, author_profile_id, title, department, phone, therapeutic_areas, ooo_from, ooo_to, ooo_note';
-const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, role_scopes, ...u }) => ({
+const USER_COLS = 'id, email, name, role, extra_roles, role_scopes, product_roles, active, pending, created_at, last_login_at, author_profile_id, title, department, phone, therapeutic_areas, ooo_from, ooo_to, ooo_note';
+const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, role_scopes, product_roles, ...u }) => ({
   ...u, active: !!u.active, pending: !!u.pending, author: u.role === 'author' ? authorInfo(u.author_profile_id) : null,
-  scopes: Object.fromEntries(P.scopesOf({ role: u.role, extra_roles, role_scopes }).map(sc => [sc.role, sc.products || 'all'])),
+  // Publication Managers and Reviewers: their role on each of their products.
+  productRoles: P.productRolesOf({ role: u.role, product_roles }),
+  allProducts: P.ALL_PRODUCTS.has(u.role),
   roles: P.rolesOf({ role: u.role, extra_roles }), role_name: P.roleNamesOf({ role: u.role, extra_roles }),
   ...people.profileFields({ therapeutic_areas, ooo_from, ooo_to, ooo_note, title: u.title, department: u.department, phone: u.phone }),
 });
@@ -79,6 +82,15 @@ const tempPassword = () => {
 
 const activeAdmins = () => db.prepare('SELECT role, extra_roles FROM users WHERE active = 1 AND pending = 0').all().filter(u => P.rolesOf(u).includes('admin')).length;
 /** The roles in a request: { roles: [..] }, or the older single { role }. */
+/** Publication Managers and Reviewers need at least one product, each with a product role. */
+function productRolesError(level, map) {
+  if (P.ALL_PRODUCTS.has(level) || level === 'author') return null;
+  const keys = new Set(catalog.productRoles().map(r => r.key));
+  const entries = Object.entries(map || {}).filter(([p]) => P.PRODUCTS.includes(p));
+  if (!entries.length) return 'Choose at least one product for them and their role on it.';
+  const missing = entries.find(([, r]) => !keys.has(r));
+  return missing ? 'Choose their role on ' + missing[0].split(' ')[0] + '.' : null;
+}
 const rolesIn = body => (Array.isArray(body.roles) ? body.roles.map(String) : body.role != null ? [String(body.role)] : null);
 
 router.get('/users', (req, res) => {
@@ -96,12 +108,14 @@ router.post('/users', (req, res) => {
   try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
   const external = roles.length === 1 && roles[0] === 'author';
   if (!roles.length || roles.some(k => !P.roleRow(k)) || (!external && roles.includes('author'))) {
-    return res.status(400).json({ error: 'Choose one or more staff roles, or External Author on its own.' });
+    return res.status(400).json({ error: 'Choose an access level.' });
   }
   if (db.prepare('SELECT 1 FROM users WHERE lower(email) = ?').get(email)) return res.status(400).json({ error: 'Someone already uses that email address.' });
   const institution = String(req.body.institution || '').trim();
   if (external && !institution) return res.status(400).json({ error: 'Enter their institution.' });
   if (!external && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError });
+  const prError = productRolesError(P.LEVEL_KEYS.find(k => roles.includes(k)), req.body.productRoles);
+  if (prError) return res.status(400).json({ error: prError });
   if (external && db.prepare('SELECT 1 FROM pp_authors WHERE lower(email) = ?').get(email)) {
     return res.status(400).json({ error: 'An external author profile already uses that email. Add the email on that profile to give them a login.' });
   }
@@ -111,7 +125,7 @@ router.post('/users', (req, res) => {
     .run(email, bcrypt.hashSync(password, 10), name, role, profileId);
   people.writeProfile(r.lastInsertRowid, cols);
   P.setRoles(r.lastInsertRowid, roles);
-  try { P.setScopes(r.lastInsertRowid, req.body.scopes); } catch (e) { return res.status(400).json({ error: e.message }); }
+  if (!external) { try { P.setProductRoles(r.lastInsertRowid, req.body.productRoles); } catch (e) { /* admins and executives cover every product */ } }
   res.json({ user: userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(r.lastInsertRowid)), tempPassword: password });
 });
 
@@ -137,6 +151,11 @@ router.put('/users/:id', (req, res) => {
     return res.status(400).json({ error: 'External author logins keep the External Author role; they come from author profiles.' });
   }
   const changedRoles = roles.slice().sort().join() !== before.slice().sort().join();
+  // Moving someone to Publication Manager or Reviewer needs their products.
+  if (changedRoles && !P.ALL_PRODUCTS.has(roles[0]) && roles[0] !== 'author') {
+    const prError = productRolesError(roles[0], req.body.productRoles || P.productRolesOf(u));
+    if (prError) return res.status(400).json({ error: prError });
+  }
   if (self && (changedRoles || !active)) {
     return res.status(400).json({ error: 'You can’t change your own role or deactivate yourself. Ask another administrator.' });
   }
@@ -149,8 +168,9 @@ router.put('/users/:id', (req, res) => {
   }
   people.writeProfile(u.id, cols);
   if (changedRoles) { try { P.setRoles(u.id, roles); } catch (e) { return res.status(400).json({ error: e.message }); } }
-  // Scopes can change on your own account too (they narrow, they never add roles).
-  if (req.body.scopes) { try { P.setScopes(u.id, req.body.scopes); } catch (e) { return res.status(400).json({ error: e.message }); } }
+  if (req.body.productRoles && !P.ALL_PRODUCTS.has(roles[0]) && roles[0] !== 'author') {
+    try { P.setProductRoles(u.id, req.body.productRoles); } catch (e) { return res.status(400).json({ error: e.message }); }
+  }
   res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
 });
 
@@ -160,8 +180,9 @@ router.post('/users/:id/approve', (req, res) => {
   if (!u) return res.status(404).json({ error: 'User not found.' });
   const roles = rolesIn(req.body);
   if (roles) {
-    if (!roles.length || roles.some(k => !P.roleRow(k) || k === 'author')) return res.status(400).json({ error: 'Choose a staff role.' });
+    if (!roles.length || roles.some(k => !P.roleRow(k) || k === 'author')) return res.status(400).json({ error: 'Choose an access level.' });
     P.setRoles(u.id, roles);
+    if (req.body.productRoles) { try { P.setProductRoles(u.id, req.body.productRoles); } catch (e) { return res.status(400).json({ error: e.message }); } }
   }
   db.prepare('UPDATE users SET pending = 0, active = 1 WHERE id = ?').run(u.id);
   res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
@@ -257,23 +278,15 @@ router.post('/users/:id/reset-password', (req, res) => {
 
 const rolesPayload = () => ({
   roles: P.listRoles(), permissions: P.PERMISSIONS, signupRole: P.signupRole(),
-  signup: people.signupRules(), options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS, products: P.PRODUCTS, productTa: P.PRODUCT_TA },
+  signup: people.signupRules(),
+  options: { therapeuticAreas: people.therapeuticAreas(), departments: people.DEPARTMENTS, products: P.PRODUCTS, productTa: P.PRODUCT_TA, productRoles: catalog.productRoles() },
 });
 
 router.get('/roles', (req, res) => res.json(rolesPayload()));
 
-const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
 
-router.post('/roles', (req, res) => {
-  const name = String(req.body.name || '').trim();
-  if (!name) return res.status(400).json({ error: 'Name the role.' });
-  if (db.prepare('SELECT 1 FROM roles WHERE lower(name) = lower(?)').get(name)) return res.status(400).json({ error: 'A role with that name already exists.' });
-  let key = slug(name) || 'role';
-  for (let n = 2; P.roleRow(key); n += 1) key = slug(name) + '_' + n;
-  db.prepare('INSERT INTO roles (key, name, description, permissions, built_in, sort, auto_review) VALUES (?, ?, ?, ?, 0, 100, ?)')
-    .run(key, name, String(req.body.description || '').trim(), JSON.stringify(P.normalize(req.body.permissions)), req.body.autoReview ? 1 : 0);
-  res.json(rolesPayload());
-});
+// Access levels are fixed; job roles are product roles (PUT /product-roles).
+router.post('/roles', (req, res) => res.status(400).json({ error: 'Access levels are fixed. Add job roles on the Product roles tab.' }));
 
 // Saves several roles' permission sets at once (the matrix's Save button).
 router.put('/roles', (req, res) => {
@@ -295,15 +308,14 @@ router.put('/roles', (req, res) => {
   res.json(rolesPayload());
 });
 
-router.delete('/roles/:key', (req, res) => {
-  const row = P.roleRow(req.params.key);
-  if (!row) return res.status(404).json({ error: 'Role not found.' });
-  if (row.built_in) return res.status(400).json({ error: 'Built-in roles can’t be deleted.' });
-  const n = db.prepare('SELECT role, extra_roles FROM users').all().filter(x => P.rolesOf(x).includes(row.key)).length;
-  if (n) return res.status(400).json({ error: 'Move the ' + n + ' user' + (n === 1 ? '' : 's') + ' with this role to another role first.' });
-  if (P.signupRole() === row.key) P.setSetting('signup_role', 'pub_manager');
-  db.prepare('DELETE FROM roles WHERE key = ?').run(row.key);
-  res.json(rolesPayload());
+router.delete('/roles/:key', (req, res) => res.status(400).json({ error: 'Access levels are fixed.' }));
+
+// ---- Catalog: products and product roles (set these up before aligning users) ----------------
+router.put('/products', (req, res) => {
+  try { res.json(catalog.saveProducts(req.body.products)); } catch (e) { res.status(400).json({ error: e.message }); }
+});
+router.put('/product-roles', (req, res) => {
+  try { res.json(catalog.saveProductRoles(req.body.productRoles)); } catch (e) { res.status(400).json({ error: e.message }); }
 });
 
 // Self sign-up: { signupRole, mode: open | approval | closed, domains: [..] } (any subset).

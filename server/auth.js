@@ -25,7 +25,7 @@ function requireAuth(req, res, next) {
   }
   const db = require('./db');
   const { permissionsForUser, rolesOf } = require('./permissions');
-  const row = db.prepare('SELECT id, email, name, role, extra_roles, role_scopes, client_id, author_profile_id, active, pending FROM users WHERE id = ?').get(claims.id);
+  const row = db.prepare('SELECT id, email, name, role, extra_roles, role_scopes, product_roles, client_id, author_profile_id, active, pending FROM users WHERE id = ?').get(claims.id);
   if (!row) return res.status(401).json({ error: 'Your account no longer exists. Sign in again.' });
   if (!row.active) return res.status(401).json({ error: 'Your account has been deactivated. Contact your system administrator.' });
   if (row.pending) return res.status(401).json({ error: 'Your account is waiting for an administrator to approve it.' });

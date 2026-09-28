@@ -4,16 +4,18 @@ import { PRODUCTS, PRODUCT_TA } from '../pages/publication-form/data';
 // lists and the scope editor.
 
 export { PRODUCTS, PRODUCT_TA };
-export const THERAPEUTIC_AREAS = [...new Set(Object.values(PRODUCT_TA))];
+/** The therapeutic areas of the current products (System Administrator > Products). */
+export const therapeuticAreas = () => [...new Set(Object.values(PRODUCT_TA))];
 export const productsOfTa = ta => PRODUCTS.filter(p => PRODUCT_TA[p] === ta);
 export const shortProduct = p => String(p || '').split(' ')[0];
 
 /** "Immunology, Biologix" or "All products": therapeutic areas named when a scope covers all of one. */
 export function scopeLabel(products) {
   if (!products) return 'All products';
+  if (!products.length) return 'no products yet';
   const left = new Set(products);
   const parts = [];
-  THERAPEUTIC_AREAS.forEach(ta => {
+  therapeuticAreas().forEach(ta => {
     const ps = productsOfTa(ta);
     if (ps.length > 1 && ps.every(p => left.has(p))) { parts.push(ta); ps.forEach(p => left.delete(p)); }
   });
@@ -30,5 +32,6 @@ export function focusProducts(user) {
     ? user.roleScopes.filter(r => r.role !== 'author' && (r.permissions.includes('pubs.edit') || r.permissions.includes('doc.edit')))
     : [];
   if (!scopes.length || scopes.some(r => !r.products)) return null;
+  // A Publication Manager or Reviewer not yet aligned to any product sees none.
   return [...new Set(scopes.flatMap(r => r.products))];
 }

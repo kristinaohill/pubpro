@@ -12,7 +12,8 @@ for (const col of [
   try { db.exec('ALTER TABLE users ADD COLUMN ' + col); } catch (e) { /* column already exists */ }
 }
 
-const THERAPEUTIC_AREAS = ['Cardiovascular & Metabolism', 'Immunology', 'Neuroscience'];
+// Therapeutic areas are the products' areas (System Administrator > Products).
+const therapeuticAreas = () => [...new Set(Object.values(P.PRODUCT_TA))];
 const DEPARTMENTS = ['Medical Affairs', 'Clinical Development', 'Regulatory Affairs', 'Biostatistics', 'Health Economics & Outcomes Research', 'Legal', 'Pharmacovigilance', 'Publications'];
 
 const parseList = t => { try { const v = JSON.parse(t || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
@@ -48,7 +49,7 @@ function readProfile(body) {
   str('title', 80);
   str('department', 80);
   str('phone', 40);
-  if (Array.isArray(body.therapeuticAreas)) out.therapeutic_areas = JSON.stringify(body.therapeuticAreas.filter(t => THERAPEUTIC_AREAS.includes(t)));
+  if (Array.isArray(body.therapeuticAreas)) out.therapeutic_areas = JSON.stringify(body.therapeuticAreas.filter(t => therapeuticAreas().includes(t)));
   if (body.ooo && typeof body.ooo === 'object') {
     out.ooo_from = isoDate(body.ooo.from);
     out.ooo_to = isoDate(body.ooo.to);
@@ -70,8 +71,9 @@ function directory() {
   return db.prepare("SELECT * FROM users WHERE active = 1 AND pending = 0 AND role != 'author' ORDER BY lower(name)").all()
     .map(u => ({
       id: u.id, name: u.name, email: u.email, role: u.role, roles: P.rolesOf(u), roleName: P.roleNamesOf(u), ...profileFields(u),
-      // Each role with the products it covers (null = all): review types add role holders per product.
-      scopes: P.scopesOf(u),
+      // Their role on each of their products ({ product: productRoleKey }): review types bring in
+      // whoever holds a product role on the publication's product.
+      productRoles: P.productRolesOf(u),
       // Roles marked "required reviewer" and the products they cover: added to rounds automatically.
       reviewFor: P.scopesOf(u).filter(sc => autoRoles.has(sc.role))
         .map(sc => ({ role: sc.role, roleName: P.roleName(sc.role), products: sc.products, label: P.scopeLabel(sc.products) })),
@@ -206,4 +208,4 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(EMAIL_SEED_KEY)) {
   if (filled) console.log('Gave ' + filled + ' external author(s) an @bpl.com email.');
 }
 
-module.exports = { placeholderEmail, THERAPEUTIC_AREAS, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow, signupRules, setSignupRules };
+module.exports = { placeholderEmail, therapeuticAreas, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow, signupRules, setSignupRules };

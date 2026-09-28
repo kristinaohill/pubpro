@@ -49,8 +49,8 @@ const dueRel = due => {
 };
 
 // Who a review type brings in (System Administrator > Review Types): its required and optional
-// participants, resolved for this record. Authors who declined the invitation are left out; role
-// holders count when their role's product scope covers the publication's product.
+// participants, resolved for this record. Authors who declined the invitation are left out; a
+// product role brings in whoever holds it on the publication's product.
 const FALLBACK_TYPE = { required: [], optional: [{ kind: 'internal_authors' }, { kind: 'external_authors' }] };
 
 function resolveSources(st, sources, staff, roleName) {
@@ -65,7 +65,8 @@ function resolveSources(st, sources, staff, roleName) {
         out.push({ name: person, role: 'External Author · ' + aff.join('-'), kind: 'external', from: 'External authors' });
       });
     } else if (src.kind === 'role') {
-      staff.filter(p => (p.scopes || []).some(sc => sc.role === src.role && (!sc.products || (st.product && sc.products.includes(st.product)))))
+      // Whoever holds this product role on the publication's product.
+      staff.filter(p => st.product && (p.productRoles || {})[st.product] === src.role)
         .forEach(p => out.push({ name: p.name, role: roleName(src.role), kind: 'reviewer', from: 'By role' }));
     } else if (src.kind === 'user') {
       const p = staff.find(x => String(x.id) === String(src.userId));

@@ -64,11 +64,11 @@ function keepDocument(dataJson, existingData) {
 /** Why a scoped role can't act on this product, e.g. "Your Medical Writer role covers Daxafort only." */
 function outOfScope(req, perm, product) {
   const P = require('../permissions');
-  const u = db.prepare('SELECT role, extra_roles, role_scopes FROM users WHERE id = ?').get(req.user.id) || {};
+  const u = db.prepare('SELECT role, extra_roles, role_scopes, product_roles FROM users WHERE id = ?').get(req.user.id) || {};
   const holders = P.scopesOf(u).filter(sc => P.permissionsOf(sc.role).includes(perm) && sc.products);
   const what = product ? String(product).split(' ')[0] : 'this product';
   if (!holders.length) return 'Your role does not allow this for ' + what + '.';
-  return holders.map(sc => 'Your ' + P.roleName(sc.role) + ' role covers ' + P.scopeLabel(sc.products)).join('; ') + ', not ' + what + '.';
+  return holders.map(sc => 'As a ' + P.roleName(sc.role) + ' you work on ' + P.scopeLabel(sc.products)).join('; ') + ', not ' + what + '.';
 }
 
 function readBody(body) {

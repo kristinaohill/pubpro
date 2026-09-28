@@ -194,3 +194,21 @@
 .sa-rt-add { padding-top: 2px; }
 @media (max-width: 1000px) { .sa-rt { grid-template-columns: 1fr; } .sa-rt-list { border-right: 0; padding-right: 0; } .sa-rt-row { grid-template-columns: 1fr; } }
 .sa-seg-btn--none[aria-pressed='true'] { background: #E3E7EC; color: var(--fg-1); }
+
+/* Products and product roles */
+.sa-cat { border: 1px solid #E3E7EC; border-radius: 10px; overflow: hidden; }
+.sa-cat-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 120px 40px; gap: 12px; align-items: center; padding: 8px 12px; border-top: 1px solid #EEF1F4; }
+.sa-cat-row:first-child { border-top: 0; }
+.sa-cat--roles .sa-cat-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) 40px; }
+.sa-cat-row--head { background: #F3F5F8; font-size: 11px; font-weight: var(--fw-bold); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); padding-top: 8px; padding-bottom: 8px; }
+
+/* A Publication Manager's or Reviewer's products and role on each */
+.sa-align { display: flex; flex-direction: column; gap: 10px; border: 1px solid #DCE1E7; border-radius: 10px; background: var(--white); padding: 10px 12px; }
+.sa-align-bulk { padding-bottom: 8px; border-bottom: 1px solid #EEF1F4; }
+.sa-align-ta { display: flex; flex-direction: column; gap: 2px; }
+.sa-align-tahead { display: flex; align-items: center; gap: 10px; font-size: 11px; font-weight: var(--fw-bold); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); padding: 4px 0; }
+.sa-align-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 5px 8px; border-radius: 8px; min-height: 36px; }
+.sa-align-row--on { background: #F2F7FC; }
+.sa-align-product { min-width: 300px; }
+.sa-rolechip--product { background: #EAF2FA; }
+@media (max-width: 800px) { .sa-cat-row { grid-template-columns: 1fr; } .sa-align-product { min-width: 0; } }

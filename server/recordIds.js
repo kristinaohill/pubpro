@@ -7,6 +7,9 @@ const PRODUCT_CODES = {
 };
 
 function productCode(product) {
+  // Codes are set on System Administrator > Products (the map above is the original set).
+  const fromCatalog = require('./products').codeOf(product);
+  if (fromCatalog) return fromCatalog;
   if (PRODUCT_CODES[product]) return PRODUCT_CODES[product];
   const letters = String(product || '').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
   return letters || 'GEN';

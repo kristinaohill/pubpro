@@ -4,6 +4,7 @@
 // covers the publication) or { kind: 'user', userId }. The Reviews tab resolves them per record.
 const db = require('./db');
 const P = require('./permissions');
+const catalog = require('./products');
 
 const KEY = 'review_types';
 // The review types the publication workflow has steps for: they can't be renamed or deleted.
@@ -40,7 +41,7 @@ function clean(list) {
   const part = x => {
     if (!x || typeof x !== 'object') return null;
     if (x.kind === 'internal_authors' || x.kind === 'external_authors') return { kind: x.kind };
-    if (x.kind === 'role' && P.roleRow(String(x.role)) && x.role !== 'author') return { kind: 'role', role: String(x.role) };
+    if (x.kind === 'role' && catalog.productRoles().some(r => r.key === String(x.role))) return { kind: 'role', role: String(x.role) };
     if (x.kind === 'user' && db.prepare("SELECT 1 FROM users WHERE id = ? AND role != 'author'").get(x.userId)) return { kind: 'user', userId: Number(x.userId) };
     return null;
   };
@@ -75,12 +76,6 @@ function save(next) {
 // "Required reviewer" (the old per-role switch) becomes required on every review type.
 db.exec("CREATE TABLE IF NOT EXISTS app_seeds (key TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))");
 if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('review-types-2026-09')) {
-  MLR_ROLES.forEach(([key, name, description], i) => {
-    if (!P.roleRow(key) && !db.prepare('SELECT 1 FROM roles WHERE lower(name) = lower(?)').get(name)) {
-      db.prepare('INSERT INTO roles (key, name, description, permissions, built_in, sort) VALUES (?, ?, ?, ?, 0, ?)')
-        .run(key, name, description, JSON.stringify(['doc.edit']), 50 + i);
-    }
-  });
   const types = defaults();
   let flagged = [];
   try { flagged = db.prepare('SELECT key FROM roles WHERE auto_review = 1').all().map(r => r.key); } catch (e) { /* no column */ }
@@ -88,6 +83,16 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('review-types-2026-
   P.setSetting(KEY, JSON.stringify(types));
   try { db.exec('UPDATE roles SET auto_review = 0'); } catch (e) { /* no column */ }
   db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run('review-types-2026-09');
+}
+
+// Once: participants that were access levels (earlier model) become the matching product role.
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('review-types-product-roles-2026-09')) {
+  const MAP = { writer: 'medical_writer', pub_manager: 'publication_lead', executive: 'publication_lead', reviewer: 'reviewer_general' };
+  const keys = new Set(catalog.productRoles().map(r => r.key));
+  const fix = parts => parts.map(x => (x.kind === 'role' && !keys.has(x.role) ? (MAP[x.role] ? { kind: 'role', role: MAP[x.role] } : null) : x)).filter(Boolean);
+  const types = list().map(t => ({ ...t, required: fix(t.required || []), optional: fix(t.optional || []) }));
+  P.setSetting(KEY, JSON.stringify(types));
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run('review-types-product-roles-2026-09');
 }
 
 module.exports = { list, save, BUILT_IN };

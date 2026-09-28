@@ -53,6 +53,11 @@ function ensurePeople() {
     const roles = [...new Set(P.rolesOf(u).concat(p.roles))];
     P.setRoles(u.id, roles);
     db.prepare('UPDATE users SET active = 1, pending = 0 WHERE id = ?').run(u.id);
+    // A Publication Manager covers every product as Publication Lead until an admin narrows it.
+    const now = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);
+    if (!P.ALL_PRODUCTS.has(now.role) && !Object.keys(P.productRolesOf(now)).length) {
+      P.setProductRoles(u.id, Object.fromEntries(P.PRODUCTS.map(pr => [pr, 'publication_lead'])));
+    }
   }
 }
 

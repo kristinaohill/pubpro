@@ -4,6 +4,7 @@ import { useAuth } from '../AuthContext';
 import { TopNav, WorkspaceTabs, IconButton } from '../ds/pubpro';
 import { ALERTS_TAB, AUTHOR_CHROME, CHROME, MENU_PERMS, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
 import Notifications from './Notifications';
+import useCatalog, { refreshCatalog } from './catalog';
 import AccountMenu from './AccountMenu';
 import './Layout.css';
 
@@ -36,6 +37,9 @@ const WORKSPACE_HOME = {
 
 export default function Layout() {
   const { user, logout, can, impersonator, stopImpersonating } = useAuth();
+  // Products, product roles and levels from System Administrator; pages re-render when they load.
+  useCatalog();
+  useEffect(() => { refreshCatalog(); }, [user && user.id]);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 

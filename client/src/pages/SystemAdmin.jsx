@@ -7,6 +7,7 @@ import Flash from '../components/Flash';
 import { SignupTab, UsersTab } from './SystemAdminUsers';
 import ExternalUsersTab from './SystemAdminExternal';
 import ReviewTypesTab from './SystemAdminReviewTypes';
+import { ProductRolesTab, ProductsTab } from './SystemAdminCatalog';
 import './SystemAdmin.css';
 
 const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many || one + 's');
@@ -43,9 +44,15 @@ export default function SystemAdmin() {
     <div className="sa-page">
       <PageHeader
         title="System Administrator"
-        description="Who can sign in, their roles, and what each role can do. Changes apply as soon as they're saved."
+        description="Set up products and product roles first, then add people and align them to products. Changes apply as soon as they're saved."
       />
       <div className="sa-tabs" role="tablist" aria-label="System Administrator sections">
+        <button type="button" role="tab" aria-selected={tab === 'products'} className="sa-tab" onClick={() => setTab('products')}>
+          Products
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'productRoles'} className="sa-tab" onClick={() => setTab('productRoles')}>
+          Product roles
+        </button>
         <button type="button" role="tab" aria-selected={tab === 'internal'} className="sa-tab" onClick={() => setTab('internal')}>
           Internal users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending && x.role !== 'author').length}</span> : null}
         </button>
@@ -53,7 +60,7 @@ export default function SystemAdmin() {
           External users
         </button>
         <button type="button" role="tab" aria-selected={tab === 'roles'} className="sa-tab" onClick={() => setTab('roles')}>
-          Roles &amp; permissions{roleData ? <span className="sa-tab-n">{roleData.roles.length}</span> : null}
+          Access levels
         </button>
         <button type="button" role="tab" aria-selected={tab === 'reviews'} className="sa-tab" onClick={() => setTab('reviews')}>
           Review types
@@ -66,7 +73,11 @@ export default function SystemAdmin() {
       {notice && <Flash watch={notice}>{notice}</Flash>}
       {error && <InlineMessage kind="error">{error}</InlineMessage>}
 
-      {tab === 'external' ? (
+      {tab === 'products' ? (
+        <ProductsTab onChanged={msg => { setError(''); if (msg) setNotice(msg); loadRoles(); }} onError={setError} />
+      ) : tab === 'productRoles' ? (
+        <ProductRolesTab onChanged={msg => { setError(''); if (msg) setNotice(msg); loadRoles(); }} onError={setError} />
+      ) : tab === 'external' ? (
         <ExternalUsersTab
           onChanged={msg => { setError(''); if (msg) setNotice(msg); loadUsers(); }}
           onError={setError}
@@ -103,9 +114,6 @@ export default function SystemAdmin() {
 function RolesTab({ data, onChanged, onError }) {
   const [edits, setEdits] = useState({}); // roleKey -> Set of permissions
   const [saving, setSaving] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ name: '', description: '', copyFrom: 'reviewer' });
-  const [toDelete, setToDelete] = useState(null);
 
   const groups = useMemo(() => {
     if (!data) return [];
@@ -149,29 +157,6 @@ function RolesTab({ data, onChanged, onError }) {
     }
   };
 
-  const createRole = async () => {
-    const from = data.roles.find(r => r.key === draft.copyFrom);
-    try {
-      const res = await api.post('/admin/roles', { name: draft.name, description: draft.description, permissions: from ? from.permissions : [] });
-      setAdding(false);
-      setDraft({ name: '', description: '', copyFrom: 'reviewer' });
-      onChanged('Added the ' + draft.name.trim() + ' role. Adjust its permissions below.', res);
-    } catch (err) {
-      onError(err.message);
-    }
-  };
-
-  const deleteRole = async () => {
-    const r = toDelete;
-    setToDelete(null);
-    try {
-      const res = await api.delete('/admin/roles/' + r.key);
-      onChanged('Deleted the ' + r.name + ' role.', res);
-    } catch (err) {
-      onError(err.message);
-    }
-  };
-
   const cols = data.roles;
   const grid = { gridTemplateColumns: 'minmax(240px, 1.6fr) repeat(' + cols.length + ', minmax(112px, 1fr))' };
 
@@ -180,26 +165,13 @@ function RolesTab({ data, onChanged, onError }) {
       <section className="sa-card">
         <div className="sa-card-head">
           <div>
-            <h2 className="sa-card-title">What each role can do</h2>
-            <p className="sa-faint">Everyone signed in can view publications, plans, studies and dashboards. The server checks each of these too, not only the screens.</p>
+            <h2 className="sa-card-title">What each access level can do</h2>
+            <p className="sa-faint">
+              System Administrators and Executives cover every product; Publication Managers and Reviewers only the products they&rsquo;re aligned to.
+              Executives always have exactly what Publication Managers have. The server checks each of these, not only the screens.
+            </p>
           </div>
-          {!adding && <Button variant="secondary" icon="add" onClick={() => setAdding(true)}>New Role</Button>}
         </div>
-
-        {adding && (
-          <div className="sa-add">
-            <div className="sa-add-grid">
-              <Field label="Role name"><TextField value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} autoFocus placeholder="e.g. Compliance Reviewer" /></Field>
-              <Field label="Description"><TextField value={draft.description} onChange={e => setDraft({ ...draft, description: e.target.value })} placeholder="Who has it and why" /></Field>
-              <Field label="Start from"><Select options={cols.filter(r => !r.locked).map(r => ({ value: r.key, label: r.name + '’s permissions' })).concat([{ value: '', label: 'No permissions (view only)' }])} value={draft.copyFrom} onChange={e => setDraft({ ...draft, copyFrom: e.target.value })} width="100%" /></Field>
-            </div>
-            <div className="sa-add-foot">
-              <span className="sa-grow" />
-              <Button variant="secondary" onClick={() => setAdding(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createRole} disabled={!draft.name.trim()}>Add Role</Button>
-            </div>
-          </div>
-        )}
 
         <div className="sa-matrix-wrap">
           <div className="sa-matrix" role="table" aria-label="Permissions by role" style={{ minWidth: 260 + cols.length * 112 }}>
@@ -209,11 +181,6 @@ function RolesTab({ data, onChanged, onError }) {
                 <span key={r.key} role="columnheader" className="sa-mrole" title={r.description}>
                   <span className="sa-mrole-name">{r.name}</span>
                   <span className="sa-faint">{plural(r.users, 'user')}</span>
-                  {!r.builtIn && r.users === 0 && (
-                    <button type="button" className="sa-mdel" onClick={() => setToDelete(r)} aria-label={'Delete the ' + r.name + ' role'} title="Delete role">
-                      <Icon name="delete" size={16} />
-                    </button>
-                  )}
                 </span>
               ))}
             </div>
@@ -233,6 +200,10 @@ function RolesTab({ data, onChanged, onError }) {
                         <span key={r.key} role="cell" className={'sa-mcell' + (changed ? ' sa-mcell--changed' : '')}>
                           {r.locked === 'all' ? (
                             <span role="img" aria-label="Always allowed" title="System Administrators always have every permission."><Icon name="lock" size={16} color="var(--fg-3)" /></span>
+                          ) : r.locked === 'pm' ? (
+                            on
+                              ? <span role="img" aria-label="Same as Publication Manager" title="Executives always have what Publication Managers have, on every product."><Icon name="lock" size={16} color="var(--fg-3)" /></span>
+                              : <span className="sa-faint" title="Publication Managers don\u2019t have this either.">&mdash;</span>
                           ) : r.locked === 'fixed' ? (
                             on
                               ? <span role="img" aria-label="Always allowed" title="On publications they\u2019re listed on as an author; always tracked."><Icon name="lock" size={16} color="var(--fg-3)" /></span>
@@ -261,28 +232,20 @@ function RolesTab({ data, onChanged, onError }) {
       </section>
 
       <section className="sa-card">
-        <h2 className="sa-card-title">Roles</h2>
+        <h2 className="sa-card-title">Access levels</h2>
         <ul className="sa-rolelist">
           {cols.map(r => (
             <li key={r.key}>
-              <span className="sa-rolelist-name"><span className="sa-mrole-name">{r.name}</span>{!r.builtIn && <Pill tone="draft">Custom</Pill>}</span>
+              <span className="sa-rolelist-name">
+                <span className="sa-mrole-name">{r.name}</span>
+                {r.key !== 'author' && <Pill tone={r.allProducts ? 'active' : 'draft'}>{r.allProducts ? 'All products' : 'Chosen products'}</Pill>}
+              </span>
               <span className="sa-faint">{r.description || 'No description.'}</span>
             </li>
           ))}
         </ul>
       </section>
 
-      {toDelete && (
-        <ConfirmModal
-          title={'Delete the ' + toDelete.name + ' role?'}
-          confirmLabel="Delete Role"
-          cancelLabel="Keep"
-          onConfirm={deleteRole}
-          onCancel={() => setToDelete(null)}
-        >
-          Nobody has this role, so no one loses access.
-        </ConfirmModal>
-      )}
     </>
   );
 }

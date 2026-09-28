@@ -17,7 +17,7 @@ const claimsOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, c
 const profileOf = u => ({
   id: u.id, email: u.email, name: u.name, role: u.role, roles: rolesOf(u), role_name: roleNamesOf(u), created_at: u.created_at,
   prefs: readPrefs(u.prefs), permissions: permissionsForUser(u), roleScopes: roleScopesOf(u), ...people.profileFields(u),
-  options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS },
+  options: { therapeuticAreas: people.therapeuticAreas(), departments: people.DEPARTMENTS },
 });
 // What the client keeps about the signed-in user: the token claims plus what their role allows.
 const sessionOf = u => ({ ...claimsOf(u), roles: rolesOf(u), role_name: roleNamesOf(u), permissions: permissionsForUser(u), roleScopes: roleScopesOf(u) });

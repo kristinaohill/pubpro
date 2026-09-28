@@ -14,8 +14,18 @@ require('./reviewTypes');
 // Review types: who is required and optional on each kind of review round (System Administrator).
 app.get('/api/review-types', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => res.json({
   types: require('./reviewTypes').list(),
-  roles: require('./permissions').listRoles().map(r => ({ key: r.key, name: r.name })),
+  roles: require('./products').productRoles().map(r => ({ key: r.key, name: r.name })),
 }));
+
+// The catalog set up on System Administrator: products, product roles and access levels.
+app.get('/api/catalog', require('./auth').requireAuth, (req, res) => {
+  const c = require('./products');
+  res.json({
+    products: c.products(),
+    productRoles: c.productRoles(),
+    levels: require('./permissions').listRoles().map(r => ({ key: r.key, name: r.name, allProducts: r.allProducts })),
+  });
+});
 
 // Staff directory for the author, reviewer and task pickers.
 app.get('/api/people', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => res.json(require('./people').directory()));
