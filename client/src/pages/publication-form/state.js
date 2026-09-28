@@ -31,7 +31,7 @@ const SAMPLE_ROUNDS = [
     summary: 'Round 1 closed with edits required. Kristina Hill revised the abstract before Round 2.',
     reviewers: [
       reviewer('Pat Pending', 'Patent Attorney - Daxafort', 'reviewer', { decision: 'approve', on: '9/3/2026', comment: 'No IP concerns.' }),
-      reviewer('Ina Ternal', 'Internal Author', 'internal', { decision: 'approve', on: '9/4/2026' }),
+      reviewer('Christy Risser-Milne', 'Internal Author', 'internal', { decision: 'approve', on: '9/4/2026' }),
       reviewer('Dana Ruiz', 'Medical Director - Immunology', 'reviewer', { decision: 'changes', on: '9/7/2026', comment: 'Tighten the Week 52 durability claim.' }),
     ],
   },
@@ -41,14 +41,14 @@ const SAMPLE_ROUNDS = [
     summary: 'Round 2 approved. Data verified against source tables before the author draft review.',
     reviewers: [
       reviewer('Ben Cho', 'Biostatistics', 'reviewer', { decision: 'approve', on: '9/8/2026', comment: 'Week 52 figures match the source tables.' }),
-      reviewer('Ina Ternal', 'Internal Author', 'internal', { decision: 'approve', on: '9/8/2026' }),
+      reviewer('Christy Risser-Milne', 'Internal Author', 'internal', { decision: 'approve', on: '9/8/2026' }),
     ],
   },
   {
     num: 3, type: 'Author Draft Review', method: 'Collaborative Edit', priority: 'Standard Review',
     due: '9/22/2026', sentOn: '9/8/2026', closedOn: '', status: 'open', outcome: '',
     reviewers: [
-      reviewer('Ina Ternal', 'Internal Author', 'internal', { decision: 'approve', on: '9/12/2026' }),
+      reviewer('Christy Risser-Milne', 'Internal Author', 'internal', { decision: 'approve', on: '9/12/2026' }),
       reviewer('Steve Altschuler', 'External Author · UCLA School of Medicine', 'external', { decision: 'approve', on: '9/15/2026' }),
       reviewer('Priya Raman', 'External Author · Karolinska Institutet', 'external', { decision: 'approve', on: '9/17/2026' }),
       reviewer('Marie Dubois', 'External Author · Hôpital Saint-Louis', 'external', {
@@ -66,8 +66,8 @@ const SAMPLE_AUDIT = [
   ['Author Invitations', 'Kristina Hill → 7 authors', '8/5/2026 10:15 AM', '8/11/2026', '6 accepted'],
   ['Kick-off Complete', 'Kristina Hill', '8/19/2026 2:00 PM', '8/19/2026', 'Complete'],
   ['Draft Development Complete', 'Kristina Hill', '8/31/2026 4:40 PM', '8/31/2026', 'Complete'],
-  ['Internal Draft Review (Round 1)', 'Pat Pending [Patent Attorney - Daxafort]\nIna Ternal [Internal Author]\nDana Ruiz [Medical Director - Immunology]', '9/1/2026 9:30 AM', '9/7/2026', 'Changes Requested'],
-  ['Stats / Data QC (Round 2)', 'Ben Cho [Biostatistics]\nIna Ternal [Internal Author]', '9/7/2026 3:10 PM', '9/8/2026', 'Approved'],
+  ['Internal Draft Review (Round 1)', 'Pat Pending [Patent Attorney - Daxafort]\nChristy Risser-Milne [Internal Author]\nDana Ruiz [Medical Director - Immunology]', '9/1/2026 9:30 AM', '9/7/2026', 'Changes Requested'],
+  ['Stats / Data QC (Round 2)', 'Ben Cho [Biostatistics]\nChristy Risser-Milne [Internal Author]', '9/7/2026 3:10 PM', '9/8/2026', 'Approved'],
 ].map(([action, participants, start, completed, result]) => ({ action, participants, start, completed, result, active: false, comment: '' }))
   .concat([{ action: 'Author Draft Review (Round 3)', participants: '6 authors · secure link with one-time code for external authors', start: '9/8/2026 11:00 AM', completed: '-', result: '', active: true, comment: '', roundNum: 3 }]);
 
@@ -80,7 +80,7 @@ export const INITIAL_STATE = {
   reassignType: 'current',
   childPubs: [],
   nextChildId: 1,
-  correspondingAuthor: 'Ina Ternal',
+  correspondingAuthor: 'Christy Risser-Milne',
   presentingAuthor: 'Steve Altschuler',
   authorMetaEdits: {},
   creditOpen: null,
@@ -110,7 +110,7 @@ export const INITIAL_STATE = {
   reviewType: 'Internal Draft Review',
   reviewMethod: 'Collaborative Edit',
   internal: [
-    { invite: { status: 'accepted', sent: '8/5/2026', on: '8/6/2026' }, id: 1, name: 'Ina Ternal', display: 'Demo Internal Author', agreement: 'Authorship_Agreement_Ternal_Signed.pdf', agreementDate: '4/2/2025', selected: true, corr: 'required' },
+    { invite: { status: 'accepted', sent: '8/5/2026', on: '8/6/2026' }, id: 1, name: 'Christy Risser-Milne', display: 'Christy Risser-Milne', agreement: 'Authorship_Agreement_Risser-Milne_Signed.pdf', agreementDate: '4/2/2025', selected: true, corr: 'required' },
   ],
   external: [
     { invite: { status: 'accepted', sent: '8/5/2026', on: '8/5/2026' }, id: 1, name: 'Steve Altschuler-UCLA School of Medicine', display: 'Steve Altschuler', agreement: 'Authorship_Agreement_Altschuler_Signed.pdf', agreementDate: '3/14/2025', selected: true, corr: 'required' },

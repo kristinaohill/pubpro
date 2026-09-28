@@ -36,7 +36,7 @@ router.post('/register', (req, res) => {
   const rules = people.signupRules();
   if (rules.mode === 'closed') return res.status(403).json({ error: 'New accounts are created by your system administrator. Ask them for access.' });
   const domain = email.split('@')[1] || '';
-  if (rules.domains.length && !rules.domains.includes(domain)) {
+  if (!rules.domains.includes(domain)) {
     return res.status(403).json({ error: 'Use your work email (' + rules.domains.map(d => '@' + d).join(' or ') + ').' });
   }
   if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });

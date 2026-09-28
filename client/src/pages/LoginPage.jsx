@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState('signin'); // 'signin' | 'signup'
   const [name, setName] = useState('');
   // The default admin login is only prefilled when running locally.
-  const [email, setEmail] = useState(import.meta.env.DEV ? 'admin@example.com' : '');
+  const [email, setEmail] = useState(import.meta.env.DEV ? 'admin@bplogix.com' : '');
   const [password, setPassword] = useState(import.meta.env.DEV ? 'admin123' : '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,7 +98,7 @@ export default function LoginPage() {
             </button>
           </div>
         )}
-        {import.meta.env.DEV && !signup && <div className="login-hint">Local default: admin@example.com / admin123</div>}
+        {import.meta.env.DEV && !signup && <div className="login-hint">Local default: admin@bplogix.com / admin123</div>}
       </div>
     </div>
   );

@@ -78,11 +78,12 @@ function directory() {
 
 // ---- Self sign-up rules (System Administrator > Sign-up) --------------------------------------
 const SIGNUP_MODES = ['open', 'approval', 'closed'];
+// Internal users all have @bplogix.com emails (2026-09-28), so self sign-up is limited to it.
 function signupRules() {
   const mode = P.getSetting('signup_mode', 'open');
   return {
     mode: SIGNUP_MODES.includes(mode) ? mode : 'open',
-    domains: P.getSetting('signup_domains', '').split(',').map(d => d.trim().toLowerCase().replace(/^@/, '')).filter(Boolean),
+    domains: ['bplogix.com'],
     role: P.signupRole(),
   };
 }
@@ -105,17 +106,8 @@ function setSignupRules({ mode, domains }) {
 // records to the pickers. They get an unguessable password: an administrator uses Reset Password
 // to give someone access.
 const SEED_KEY = 'directory-people-2026-09';
-const SEED_PEOPLE = [
-  ['Kristina Hill', 'pub_manager', 'Publication Manager', 'Publications', THERAPEUTIC_AREAS],
-  ['Ina Ternal', 'writer', 'Senior Medical Writer', 'Publications', ['Immunology']],
-  ['Priya Raman', 'writer', 'Medical Affairs - Publications', 'Medical Affairs', ['Immunology', 'Neuroscience']],
-  ['Dana Ruiz', 'reviewer', 'Medical Director - Immunology', 'Medical Affairs', ['Immunology']],
-  ['Lena Ortiz', 'reviewer', 'Regulatory Affairs', 'Regulatory Affairs', THERAPEUTIC_AREAS],
-  ['Ben Cho', 'reviewer', 'Biostatistics', 'Biostatistics', THERAPEUTIC_AREAS],
-  ['Tom Nakamura', 'reviewer', 'Health Economics & Outcomes Research', 'Health Economics & Outcomes Research', ['Cardiovascular & Metabolism', 'Immunology']],
-  ['Marcus Webb', 'reviewer', 'Legal - Promotional Review', 'Legal', THERAPEUTIC_AREAS],
-  ['Sofia Almeida', 'reviewer', 'Pharmacovigilance', 'Pharmacovigilance', THERAPEUTIC_AREAS],
-];
+// Superseded (2026-09-28): internal users are the BP Logix people set up in bplogixPeople.js.
+const SEED_PEOPLE = [];
 db.exec("CREATE TABLE IF NOT EXISTS app_seeds (key TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))");
 if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(SEED_KEY)) {
   let added = 0;

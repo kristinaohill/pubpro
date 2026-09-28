@@ -27,6 +27,8 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Every external author profile with an email gets a login.
 require('./authorLogins').backfillAuthorLogins();
+// BP Logix internal users and the internal authors on publications (once per database).
+require('./bplogixPeople').run();
 
 // Dashboard: upcoming milestones
 app.get('/api/dashboard', require('./auth').requireAuth, (req, res) => {

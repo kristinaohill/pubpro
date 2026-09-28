@@ -87,7 +87,7 @@ function UserFields({ d, set, roleOptions, options, roleLocked, roleNote, withOo
     <div className="sa-form">
       <div className="sa-add-grid">
         <Field label="Name" required><TextField value={d.name} onChange={e => set({ name: e.target.value })} /></Field>
-        <Field label="Email (sign-in)" required><TextField type="email" value={d.email} onChange={e => set({ email: e.target.value })} /></Field>
+        <Field label="Email (sign-in)" required help="Their @bplogix.com address."><TextField type="email" value={d.email} onChange={e => set({ email: e.target.value })} placeholder="name@bplogix.com" /></Field>
 
         <Field label="Job title"><TextField value={d.title} onChange={e => set({ title: e.target.value })} placeholder="e.g. Medical Director - Immunology" /></Field>
         <Field label="Department">
@@ -464,13 +464,8 @@ export function SignupTab({ data, onChanged, onError }) {
 
       {signup.mode !== 'closed' && (
         <div className="sa-signup-grid">
-          <Field label="Allowed email domains" help="Only these work emails can sign up. Leave empty to allow any email.">
-            <div className="sa-inline">
-              <TextField value={domainText} onChange={e => setDomains(e.target.value)} placeholder="e.g. acme-pharma.com, acme.com" />
-              {domains != null && domains !== signup.domains.join(', ') && (
-                <Button variant="primary" onClick={async () => { if (await put({ domains }, domains.trim() ? 'Sign-up limited to ' + domains.trim() + '.' : 'Any email can sign up.')) setDomains(null); }}>Save</Button>
-              )}
-            </div>
+          <Field label="Email domain" help="Internal users always sign in with their BP Logix email.">
+            <div className="sa-fixed sa-fixed--field">@bplogix.com only</div>
           </Field>
           <Field label={signup.mode === 'approval' ? 'Suggested role when approving' : 'Role new accounts get'}>
             <Select

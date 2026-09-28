@@ -7,6 +7,8 @@ const db = require('../db');
 const { requireAuth, requirePerm, signToken } = require('../auth');
 const P = require('../permissions');
 const people = require('../people');
+const { isInternalEmail, DOMAIN } = require('../bplogixPeople');
+const internalEmailError = 'Internal users need a @' + DOMAIN + ' email address.';
 const { yearCode, nextSequence } = require('../recordIds');
 
 // ---- External users: an External Author login and its author profile, kept in step -----------
@@ -99,6 +101,7 @@ router.post('/users', (req, res) => {
   if (db.prepare('SELECT 1 FROM users WHERE lower(email) = ?').get(email)) return res.status(400).json({ error: 'Someone already uses that email address.' });
   const institution = String(req.body.institution || '').trim();
   if (external && !institution) return res.status(400).json({ error: 'Enter their institution.' });
+  if (!external && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError });
   if (external && db.prepare('SELECT 1 FROM pp_authors WHERE lower(email) = ?').get(email)) {
     return res.status(400).json({ error: 'An external author profile already uses that email. Add the email on that profile to give them a login.' });
   }
@@ -124,6 +127,8 @@ router.put('/users/:id', (req, res) => {
   if (!name) return res.status(400).json({ error: 'Enter a name.' });
   if (!emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
   if (email !== u.email && db.prepare('SELECT 1 FROM users WHERE lower(email) = ? AND id != ?').get(email, u.id)) return res.status(400).json({ error: 'Someone already uses that email address.' });
+  // Internal users need a @bplogix.com email to stay (or become) active; deactivating is always allowed.
+  if (u.role !== 'author' && active && !isInternalEmail(email)) return res.status(400).json({ error: internalEmailError + (u.active ? '' : ' Change it to reactivate them.') });
   let cols;
   try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
   if (!roles.length) return res.status(400).json({ error: 'Give them at least one role.' });
