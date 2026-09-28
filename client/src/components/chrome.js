@@ -5,8 +5,9 @@ const HELP = { label: 'Help', icon: 'info' };
 // One product nav on every staff page (menu items without a page yet are placeholders).
 const FULL_NAV = [
   'Home', 'Content List',
-  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'Executive Dashboard', 'External Author Dashboard', 'Publication Library', 'Reports', 'System Administrator', HELP] },
-  { label: 'Settings', menu: true },
+  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'Executive Dashboard', 'External Author Dashboard', 'Publication Library', 'Reports', HELP] },
+  // System Administrator lives under Settings (only people who can manage users see it).
+  { label: 'Settings', menuItems: ['System Administrator'] },
 ];
 
 const CREATE_FULL = { label: 'Create New', menuItems: ['Publication', 'Publication Planning', 'External Author', 'IIS Request', 'Grants Management', 'Medical Information Request', 'Review Process Form', 'Standard Medical Response'] };
@@ -50,7 +51,7 @@ export const CHROME = {
   },
   '/vendor': EXECUTIVE_DASHBOARD,
   '/admin': {
-    nav: FULL_NAV, active: 'Workspaces',
+    nav: FULL_NAV, active: 'Settings',
     workspace: 'System Administrator', tabs: [ALERTS_TAB, CREATE_FULL, SEARCH_FULL],
   },
   // The Financial Report design has its own navy back bar and no app chrome.

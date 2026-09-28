@@ -239,3 +239,11 @@ label {
   text-wrap: pretty;
 }
 .empty-state--inset { margin: 14px 16px; }
+
+/* Softer "due soon" deadline colour (the DS default #F9E447 is loud next to the rest of the page).
+   :root:root outranks the DS token in ds/styles.css, which loads after this file. The darker text
+   keeps it readable (about 6:1 on the lighter yellow). */
+:root:root {
+  --deadline-duesoon-bg: #FFF3C4;
+  --deadline-duesoon-text: #8A5A00;
+}
