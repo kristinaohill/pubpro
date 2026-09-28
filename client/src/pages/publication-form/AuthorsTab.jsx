@@ -50,7 +50,7 @@ function criteriaLook(a, iv, draftStartedAt) {
     const how = c.carriedFrom ? ' (agreed on ' + c.carriedFrom + ')' : '';
     return {
       criteriaProxy: c.proof ? { by: c.by, proof: c.proof } : null,
-      criteriaText: (c.how === 'recorded' ? 'Agreement recorded ' : c.signedName ? 'Signed agreement + ICMJE criteria ' : 'ICMJE criteria agreed ') + c.on + how, criteriaColor: late ? 'var(--warn-text)' : 'var(--ok)', criteriaGlyph: late ? 'history' : 'verified',
+      criteriaText: (c.how === 'recorded' ? 'Agreement recorded ' : c.how === 'backfill' ? 'Signed agreement (sample data) ' : c.signedName ? 'Signed agreement + ICMJE criteria ' : 'ICMJE criteria agreed ') + c.on + how, criteriaColor: late ? 'var(--warn-text)' : 'var(--ok)', criteriaGlyph: late ? 'history' : 'verified',
       criteriaNote: late ? 'Joined after drafting started: record why in the audit trail (A3)' : '', needsCriteria: false,
     };
   }
@@ -91,7 +91,9 @@ const nextSort = (cur, i) => ({ by: i, dir: cur.by === i && cur.dir === 'asc' ? 
 function mapAuthor(a, i) {
   const signed = a.agreementDate ? new Date(a.agreementDate) : null;
   const ageDays = signed ? Math.round((TODAY - signed) / 86400000) : 0;
-  const expired = !!signed && ageDays > 365;
+  // An agreement signed for this publication (from the invitation) doesn't expire; only an older,
+  // general agreement on file does.
+  const expired = !!signed && !(a.criteria && a.criteria.at) && ageDays > 365;
   return {
     id: a.id,
     order: i + 1,

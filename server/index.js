@@ -54,6 +54,8 @@ app.use('/api/library', require('./routes/libraryRoutes'));
 require('./authorLogins').backfillAuthorLogins();
 // BP Logix internal users and the internal authors on publications (once per database).
 require('./bplogixPeople').run();
+// After the people changes: records from before the signing rule follow it (see the file).
+require('./signingBackfill').run();
 
 // Dashboard: upcoming milestones
 app.get('/api/dashboard', require('./auth').requireAuth, (req, res) => {

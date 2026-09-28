@@ -54,15 +54,19 @@ export function authorBlockers(pubs) {
       const add = (issue, detail, severity) => out.push({ key: p.id + person + issue, p, person: shown, issue, detail, severity });
       const iv = a.invite;
       if (iv.status === 'declined') add('Declined authorship', 'Replace or remove them on the Authors tab.', 2);
+      // Accepting the invitation is signing the authorship agreement (A1, A4), so an accepted
+      // author always has one. Drafting waits for every author, except someone added once drafting
+      // was under way: they sign when they accept, and the late addition is noted (A3).
+      const drafting = !!(d.draftStartedAt || d.pubDoc);
+      const signedAt = a.criteria && a.criteria.at;
       if (iv.status === 'sent') {
         const n = daysSince(iv.sent);
-        add('No reply to invitation', 'Invited ' + (iv.sent || '—') + (n != null ? ' (' + rel(-n) + ')' : ''), n != null && n > 7 ? 2 : 1);
+        add('No reply to invitation', 'Invited ' + (iv.sent || '—') + (n != null ? ' (' + rel(-n) + ')' : '') + (drafting ? ' · added after drafting started; signs the agreement when accepting' : ' · signs the agreement when accepting'), n != null && n > 7 ? 2 : 1);
+      } else if (iv.status === 'accepted' && !signedAt) {
+        add('Authorship agreement not signed', drafting ? 'Joined after drafting started; they need to sign now (A3, A4).' : 'Needed before drafting starts (A4).', drafting ? 2 : 1);
+      } else if (signedAt && d.draftStartedAt && signedAt > d.draftStartedAt) {
+        add('Joined after drafting started', 'Signed ' + a.criteria.on + '. Record why they were added (A3).', 1);
       }
-      const signedAge = a.agreementDate ? daysSince(a.agreementDate) : null;
-      // A4: the authorship agreement is signed before drafting starts, not just before submission.
-      const drafting = !!(d.draftStartedAt || d.pubDoc);
-      if (!a.agreementDate) add('No signed author agreement', drafting ? 'Drafting has started without it (A4).' : 'Needed before drafting starts (A4).', drafting ? 2 : 1);
-      else if (signedAge > 365) add('Author agreement expired', 'Signed ' + a.agreementDate + ' (over 365 days ago).', 2);
       const meta = { ...(AUTHOR_META[person] || {}), ...((d.authorMetaEdits || {})[person] || {}) };
       const coiAge = meta.coi ? daysSince(meta.coi) : null;
       if (!meta.coi) add('No COI disclosure on file', 'Needed before submission.', 1);
