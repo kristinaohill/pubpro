@@ -3,6 +3,8 @@
 /* ---- Authors: add-author bar ---- */
 .pfxb-addbar { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
 .pfxb-addbar-search { flex: 1 1 300px; min-width: 0; }
+.pfxb-sortbar { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.pfxb-sortbar .pfx-label { margin: 0; }
 
 /* ---- Authors: one card per author ---- */
 .pfxb-authors { display: flex; flex-direction: column; gap: 12px; }

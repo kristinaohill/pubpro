@@ -21,6 +21,8 @@ const gaveApproval = (st, person) => (st.rounds || []).some(r => r.type === 'Aut
 
 // Knowledge View card order: the same sort keys the old table's columns used (st.kvSort.by indexes these).
 const KV_SORT_KEYS = ['order', 'person', 'typeLabel', 'inviteRank', 'signedTs', 'coiTs', 'debarRank', 'orcid', 'creditCount', 'icmjeCount', 'display'];
+const KV_SORT_OPTIONS = ['Order', 'Author', 'Type', 'Invitation', 'Agreement', 'COI', 'Debarment', 'ORCID iD', 'CRediT Roles', 'ICMJE', 'Display Name']
+  .map((label, i) => ({ value: String(i), label }));
 
 const INTERNAL_COLS = [
   { header: 'Order', width: '52px', sortable: true },
@@ -255,6 +257,20 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
           </div>
           <SegmentedToggle options={FILTER_OPTIONS} value={st.authorFilter} onChange={v => set({ authorFilter: v })} />
         </div>
+
+        {rows.length > 1 && (
+          <div className="pfxb-sortbar">
+            <label htmlFor="pfxb-sort" className="pfx-label">Sort by</label>
+            <Select id="pfxb-sort" options={KV_SORT_OPTIONS} value={String(st.kvSort.by)} onChange={e => set(s => ({ kvSort: { ...s.kvSort, by: Number(e.target.value) } }))} width="180px" />
+            <Button
+              variant="secondary"
+              icon={st.kvSort.dir === 'desc' ? 'arrow_downward' : 'arrow_upward'}
+              onClick={() => set(s => ({ kvSort: { ...s.kvSort, dir: s.kvSort.dir === 'desc' ? 'asc' : 'desc' } }))}
+            >
+              {st.kvSort.dir === 'desc' ? 'Descending' : 'Ascending'}
+            </Button>
+          </div>
+        )}
 
         {rows.length > 0 && (
           <div className="pfxb-authors">
