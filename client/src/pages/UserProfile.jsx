@@ -146,7 +146,7 @@ export default function UserProfile() {
                   <Field label="Until"><DateField value={ooo.to} onChange={e => setOoo({ ...ooo, to: e.target.value })} width="100%" /></Field>
                 </div>
                 <Field label="Message for colleagues" help="Shown next to your name in pickers and on review rounds.">
-                  <TextArea value={ooo.note} onChange={e => setOoo({ ...ooo, note: e.target.value })} width="100%" height="60px" placeholder="e.g. At ESC Congress, then on leave. Contact Ben Cho for urgent reviews." />
+                  <TextArea value={ooo.note} onChange={e => setOoo({ ...ooo, note: e.target.value })} width="100%" height="60px" placeholder="e.g. At ESC Congress, then on leave. Contact Greg Vogel for urgent reviews." />
                 </Field>
                 {profile.oooNow && <InlineMessage kind="info">You&rsquo;re showing as out of office now.</InlineMessage>}
               </>

@@ -187,7 +187,7 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(EMAIL_SEED_KEY)) {
   const sampleEmail = 'koconnell920@gmail.com';
   if (!db.prepare("SELECT 1 FROM pp_authors WHERE author_id = 'EA-24-001' OR lower(email) = ?").get(sampleEmail)) {
     const form = { firstName: 'Kristina', middleInitial: '', lastName: 'Oconnell', displayName: 'Oconnell K', email: sampleEmail, confirmEmail: sampleEmail, institution: '', street: '', city: 'Charleston', state: 'South Carolina', country: 'United States', zip: '' };
-    db.prepare("INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by, created_at) VALUES ('EA-24-001', ?, ?, 'Active', 'Joe Submitter', ?, ?, NULL, '2024-09-06 16:20:00')")
+    db.prepare("INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by, created_at) VALUES ('EA-24-001', ?, ?, 'Active', 'Kristina Hill', ?, ?, NULL, '2024-09-06 16:20:00')")
       .run('Kristina Oconnell', sampleEmail, JSON.stringify({ displayName: 'Oconnell K', location: 'Charleston, South Carolina, United States' }),
         JSON.stringify({ active: true, form, na: true, manual: false, checks: [], agreements: [], coi: [], signedCoi: null, studies: [], audit: [], seededMinimal: true }));
   }

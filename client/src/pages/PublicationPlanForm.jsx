@@ -37,9 +37,9 @@ const SAMPLE_AUDIT = [
   ['Plan created', 'Kristina Hill', '2/3/2026 9:14 AM', 'Draft PLAN-26-DAX-002', 'add_circle', 'var(--ok)'],
   ['Strategy updated', 'Kristina Hill', '2/11/2026 3:42 PM', 'Executive Summary, Strategic Communication Goals', 'edit', 'var(--info-icon)'],
   ['Study linked', 'Kristina Hill', '3/2/2026 10:05 AM', '100210 — DAX-301 (CLARIFY) Phase III Pivotal Trial', 'science', 'var(--info-icon)'],
-  ['Plan activated', 'Dana Ruiz', '3/6/2026 8:20 AM', 'Draft to Active', 'play_circle', 'var(--ok)'],
+  ['Plan activated', 'Jack Bedel', '3/6/2026 8:20 AM', 'Draft to Active', 'play_circle', 'var(--ok)'],
   ['Publication added', 'Kristina Hill', '4/14/2026 1:33 PM', '26-A-DAX-004-V01', 'menu_book', 'var(--info-icon)'],
-  ['Budget revised', 'Ben Cho', '5/8/2026 11:07 AM', '$450,000.00 to $500,000.00', 'payments', 'var(--warn-text)'],
+  ['Budget revised', 'Greg Vogel', '5/8/2026 11:07 AM', '$450,000.00 to $500,000.00', 'payments', 'var(--warn-text)'],
   ['Stakeholder added', 'Kristina Hill', '6/1/2026 4:51 PM', 'Julius Caesar — External', 'person_add', 'var(--info-icon)'],
 ].map(([action, user, date, detail, icon, color]) => ({ action, user, date, detail, icon, color }));
 
@@ -86,13 +86,13 @@ const INITIAL_STRATEGY = {
 
 const INITIAL_IDEAS = [
   { id: 1, title: 'Daxafort in Pediatric Atopic Dermatitis: Feasibility Cohort', owner: 'Kristina Hill', pubType: 'Abstract', cost: 10000 },
-  { id: 2, title: 'Real-World Persistence with Daxafort in AD', owner: 'Dana Ruiz', pubType: 'Manuscript', cost: 50000 },
-  { id: 3, title: 'Daxafort Dosing Optimization Poster', owner: 'Ben Cho', pubType: 'Abstract-Poster', cost: 15000 },
+  { id: 2, title: 'Real-World Persistence with Daxafort in AD', owner: 'Jack Bedel', pubType: 'Manuscript', cost: 50000 },
+  { id: 3, title: 'Daxafort Dosing Optimization Poster', owner: 'Greg Vogel', pubType: 'Abstract-Poster', cost: 15000 },
   { id: 4, title: 'IL-13 Pathway Review in Dermatologic Disease', owner: 'Kristina Hill', pubType: 'Editorial', cost: 10000 },
-  { id: 5, title: 'Daxafort Safety Update: Long-Term Extension Data', owner: 'Dana Ruiz', pubType: 'Manuscript', cost: 50000 },
+  { id: 5, title: 'Daxafort Safety Update: Long-Term Extension Data', owner: 'Jack Bedel', pubType: 'Manuscript', cost: 50000 },
   { id: 6, title: 'Patient-Reported Outcomes with Daxafort: 24-Week Analysis', owner: 'Richa Garg', pubType: 'Abstract', cost: 10000 },
   { id: 7, title: 'Daxafort in Combination Regimens: Case Series', owner: 'Pedro Pinho', pubType: 'Case Report', cost: 10000 },
-  { id: 8, title: 'Health Economic Impact of Daxafort in AD', owner: 'Ben Cho', pubType: 'Manuscript', cost: 50000 },
+  { id: 8, title: 'Health Economic Impact of Daxafort in AD', owner: 'Greg Vogel', pubType: 'Manuscript', cost: 50000 },
   { id: 9, title: 'Daxafort Mechanism of Action Explainer', owner: 'Kristina Hill', pubType: 'Abstract', cost: 10000 },
   { id: 10, title: 'Daxafort Congress Roundup Poster', owner: 'Richa Garg', pubType: 'Abstract-Poster', cost: 15000 },
 ];
@@ -100,7 +100,7 @@ const INITIAL_IDEAS = [
 const INITIAL_STAKEHOLDERS = [
   { id: 1, type: 'Internal', name: 'Kristina Hill', role: 'Regulatory Affairs Liaison', coiDate: '', affiliation: '', email: '' },
   { id: 2, type: 'External', name: 'Steve Altschuler', role: 'Steering Committee Chair', coiDate: '8/21/2026', affiliation: 'UCLA School of Medicine', email: 'stevefakeemail@bplogix.com' },
-  { id: 3, type: 'Internal', name: 'Alejandra Sánchez', role: 'Medical Writer', coiDate: '', affiliation: '', email: '' },
+  { id: 3, type: 'Internal', name: 'Christy Risser-Milne', role: 'Medical Writer', coiDate: '', affiliation: '', email: '' },
   { id: 4, type: 'External', name: 'Julius Caesar', role: '', coiDate: '8/13/2026', affiliation: 'University of Houston Medical Center', email: 'imperator@spqr.hmc.net' },
 ];
 

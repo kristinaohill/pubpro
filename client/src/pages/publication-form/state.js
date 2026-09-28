@@ -30,9 +30,9 @@ const SAMPLE_ROUNDS = [
     due: '9/7/2026', sentOn: '9/1/2026', closedOn: '9/7/2026', status: 'closed', outcome: 'Changes Requested',
     summary: 'Round 1 closed with edits required. Kristina Hill revised the abstract before Round 2.',
     reviewers: [
-      reviewer('Pat Pending', 'Patent Attorney - Daxafort', 'reviewer', { decision: 'approve', on: '9/3/2026', comment: 'No IP concerns.' }),
+      reviewer('Richa Garg', 'Patent Attorney - Daxafort', 'reviewer', { decision: 'approve', on: '9/3/2026', comment: 'No IP concerns.' }),
       reviewer('Christy Risser-Milne', 'Internal Author', 'internal', { decision: 'approve', on: '9/4/2026' }),
-      reviewer('Dana Ruiz', 'Medical Director - Immunology', 'reviewer', { decision: 'changes', on: '9/7/2026', comment: 'Tighten the Week 52 durability claim.' }),
+      reviewer('Jack Bedel', 'Medical Director - Immunology', 'reviewer', { decision: 'changes', on: '9/7/2026', comment: 'Tighten the Week 52 durability claim.' }),
     ],
   },
   {
@@ -40,7 +40,7 @@ const SAMPLE_ROUNDS = [
     due: '9/8/2026', sentOn: '9/7/2026', closedOn: '9/8/2026', status: 'closed', outcome: 'Approved',
     summary: 'Round 2 approved. Data verified against source tables before the author draft review.',
     reviewers: [
-      reviewer('Ben Cho', 'Biostatistics', 'reviewer', { decision: 'approve', on: '9/8/2026', comment: 'Week 52 figures match the source tables.' }),
+      reviewer('Greg Vogel', 'Biostatistics', 'reviewer', { decision: 'approve', on: '9/8/2026', comment: 'Week 52 figures match the source tables.' }),
       reviewer('Christy Risser-Milne', 'Internal Author', 'internal', { decision: 'approve', on: '9/8/2026' }),
     ],
   },
@@ -66,8 +66,8 @@ const SAMPLE_AUDIT = [
   ['Author Invitations', 'Kristina Hill → 7 authors', '8/5/2026 10:15 AM', '8/11/2026', '6 accepted'],
   ['Kick-off Complete', 'Kristina Hill', '8/19/2026 2:00 PM', '8/19/2026', 'Complete'],
   ['Draft Development Complete', 'Kristina Hill', '8/31/2026 4:40 PM', '8/31/2026', 'Complete'],
-  ['Internal Draft Review (Round 1)', 'Pat Pending [Patent Attorney - Daxafort]\nChristy Risser-Milne [Internal Author]\nDana Ruiz [Medical Director - Immunology]', '9/1/2026 9:30 AM', '9/7/2026', 'Changes Requested'],
-  ['Stats / Data QC (Round 2)', 'Ben Cho [Biostatistics]\nChristy Risser-Milne [Internal Author]', '9/7/2026 3:10 PM', '9/8/2026', 'Approved'],
+  ['Internal Draft Review (Round 1)', 'Richa Garg [Patent Attorney - Daxafort]\nChristy Risser-Milne [Internal Author]\nJack Bedel [Medical Director - Immunology]', '9/1/2026 9:30 AM', '9/7/2026', 'Changes Requested'],
+  ['Stats / Data QC (Round 2)', 'Greg Vogel [Biostatistics]\nChristy Risser-Milne [Internal Author]', '9/7/2026 3:10 PM', '9/8/2026', 'Approved'],
 ].map(([action, participants, start, completed, result]) => ({ action, participants, start, completed, result, active: false, comment: '' }))
   .concat([{ action: 'Author Draft Review (Round 3)', participants: '6 authors · secure link with one-time code for external authors', start: '9/8/2026 11:00 AM', completed: '-', result: '', active: true, comment: '', roundNum: 3 }]);
 
@@ -121,10 +121,10 @@ export const INITIAL_STATE = {
     { invite: { status: 'accepted', sent: '8/5/2026', on: '8/6/2026' }, id: 5, name: 'Raj Patel-Imperial College London', display: 'Raj Patel', agreement: 'Authorship_Agreement_Patel_Signed.pdf', agreementDate: '8/11/2026', selected: true, corr: 'optional' },
   ],
   mandatory: [
-    { id: 1, name: 'Pat Pending', role: 'Patent Attorney - Daxafort' },
+    { id: 1, name: 'Richa Garg', role: 'Patent Attorney - Daxafort' },
   ],
   additional: [
-    { id: 1, name: 'Dana Ruiz', role: 'Medical Director - Immunology', selected: true },
+    { id: 1, name: 'Jack Bedel', role: 'Medical Director - Immunology', selected: true },
   ],
   nextReviewerId: 2,
   subType: '',

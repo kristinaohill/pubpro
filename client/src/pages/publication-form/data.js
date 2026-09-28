@@ -41,17 +41,17 @@ const TRZ = ["Triazapam (Dermatology)", "Immunology"];
 export const STUDY_DIRECTORY = [
   ["100210", "DAX-301 (CLARIFY): Phase III Pivotal Trial of Daxafort in Moderate-to-Severe Atopic Dermatitis", "Completed", DAX, "Kristina Hill", "6/30/2026", "3/1/2026", "5/12/2026", "10/30/2026", "11/15/2026", "Met primary endpoint", "Available", "Planned", "", "NCT09900101"],
   ["100211", "DAX-302: 52-Week Open-Label Extension of Daxafort in Atopic Dermatitis", "In Progress", DAX, "Kristina Hill", "3/31/2027", "12/15/2026", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900102"],
-  ["100212", "DAX-303: Daxafort in Children Aged 6 to 11 with Severe Atopic Dermatitis", "On Hold", DAX, "Dana Ruiz", "6/30/2028", "", "", "", "", "Pending", "Not yet available", "Under review", "", "NCT09900103"],
-  ["100220", "BLX-CAD-301 (CLARITY-CAD): Biologix in Non-Obstructive Coronary Artery Disease", "Completed", BLX, "Ben Cho", "5/29/2026", "1/15/2026", "4/20/2026", "11/20/2026", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900201"],
-  ["100221", "BLX-310: Biologix vs. Placebo on Glycemic Control in Type 2 Diabetes", "Completed", BLX, "Ben Cho", "11/14/2025", "", "10/2/2025", "", "", "Did not meet primary endpoint", "Available", "Planned", "", "NCT09900202"],
-  ["100222", "BLX-CVOT: Cardiovascular Outcomes Trial of Biologix in High-Risk Adults", "In Progress", BLX, "Lena Ortiz", "12/31/2027", "6/30/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900203"],
-  ["100223", "BLX-215: Once-Weekly Biologix Pharmacokinetic Bridging Study", "Cancelled", BLX, "Tom Nakamura", "", "", "", "", "", "Not applicable", "Not available", "Not planned", "Terminated before enrollment completed after a portfolio decision", ""],
-  ["100230", "DXN-301: Phase III Trial of Daxafont in Ambulatory Boys with Duchenne Muscular Dystrophy", "In Progress", DXN, "Tom Nakamura", "8/31/2027", "2/1/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900301"],
-  ["100231", "DXN-201: Phase II Dystrophin Expression Study of Daxafont in DMD", "Completed", DXN, "Tom Nakamura", "2/27/2026", "", "1/9/2026", "12/4/2026", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900302"],
+  ["100212", "DAX-303: Daxafort in Children Aged 6 to 11 with Severe Atopic Dermatitis", "On Hold", DAX, "Jack Bedel", "6/30/2028", "", "", "", "", "Pending", "Not yet available", "Under review", "", "NCT09900103"],
+  ["100220", "BLX-CAD-301 (CLARITY-CAD): Biologix in Non-Obstructive Coronary Artery Disease", "Completed", BLX, "Greg Vogel", "5/29/2026", "1/15/2026", "4/20/2026", "11/20/2026", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900201"],
+  ["100221", "BLX-310: Biologix vs. Placebo on Glycemic Control in Type 2 Diabetes", "Completed", BLX, "Greg Vogel", "11/14/2025", "", "10/2/2025", "", "", "Did not meet primary endpoint", "Available", "Planned", "", "NCT09900202"],
+  ["100222", "BLX-CVOT: Cardiovascular Outcomes Trial of Biologix in High-Risk Adults", "In Progress", BLX, "Richa Garg", "12/31/2027", "6/30/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900203"],
+  ["100223", "BLX-215: Once-Weekly Biologix Pharmacokinetic Bridging Study", "Cancelled", BLX, "Richa Garg", "", "", "", "", "", "Not applicable", "Not available", "Not planned", "Terminated before enrollment completed after a portfolio decision", ""],
+  ["100230", "DXN-301: Phase III Trial of Daxafont in Ambulatory Boys with Duchenne Muscular Dystrophy", "In Progress", DXN, "Richa Garg", "8/31/2027", "2/1/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900301"],
+  ["100231", "DXN-201: Phase II Dystrophin Expression Study of Daxafont in DMD", "Completed", DXN, "Richa Garg", "2/27/2026", "", "1/9/2026", "12/4/2026", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900302"],
   ["100232", "DXN-302: Long-Term Extension of Daxafont on Motor and Pulmonary Function in DMD", "In Progress", DXN, "Christy Risser-Milne", "10/31/2028", "", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900303"],
-  ["100240", "TRZ-301: Triazapam Cream in Mild-to-Moderate Plaque Psoriasis", "Completed", TRZ, "Lena Ortiz", "4/30/2026", "", "3/18/2026", "1/15/2027", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900401"],
-  ["100241", "TRZ-302: Triazapam vs. Vehicle in Chronic Hand Eczema", "In Progress", TRZ, "Lena Ortiz", "9/30/2027", "3/31/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900402"],
-  ["100242", "TRZ-204: Phase II Study of Triazapam in Seborrheic Dermatitis", "Completed", TRZ, "Dana Ruiz", "1/30/2026", "", "12/12/2025", "", "", "Did not meet primary endpoint", "Available", "Not planned", "Exploratory study; results will be posted to the trial registry only", "NCT09900403"],
+  ["100240", "TRZ-301: Triazapam Cream in Mild-to-Moderate Plaque Psoriasis", "Completed", TRZ, "Richa Garg", "4/30/2026", "", "3/18/2026", "1/15/2027", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900401"],
+  ["100241", "TRZ-302: Triazapam vs. Vehicle in Chronic Hand Eczema", "In Progress", TRZ, "Richa Garg", "9/30/2027", "3/31/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900402"],
+  ["100242", "TRZ-204: Phase II Study of Triazapam in Seborrheic Dermatitis", "Completed", TRZ, "Jack Bedel", "1/30/2026", "", "12/12/2025", "", "", "Did not meet primary endpoint", "Available", "Not planned", "Exploratory study; results will be posted to the trial registry only", "NCT09900403"],
 ].map(([id, title, status, [product, area], manager, expected, interim, lock, deadline, embargo, outcome, availability, dissemination, rationale, nct]) => ({
   id, title, status, product, area, manager, expected, interim, lock, deadline, embargo,
   outcome, availability, dissemination, rationale, nct,
@@ -74,7 +74,7 @@ export const STUDY_STATUS_BG = {
   "Cancelled": "var(--status-cancelled)",
 };
 
-export const INTERNAL_AUTHOR_DIRECTORY = ["Christy Risser-Milne", "Kristina Hill", "Dana Ruiz", "Ben Cho", "Tom Nakamura", "Lena Ortiz"];
+export const INTERNAL_AUTHOR_DIRECTORY = ["Kristina Hill", "Jack Bedel", "Christy Risser-Milne", "Richa Garg", "Greg Vogel"];
 export const EXTERNAL_AUTHOR_DIRECTORY = [
   { name: "Steve Altschuler-UCLA School of Medicine", display: "Steve Altschuler", agreement: "Authorship_Agreement_Altschuler_Signed.pdf", agreementDate: "3/14/2025" },
   { name: "Priya Raman-Karolinska Institutet", display: "Priya Raman", agreement: "Authorship_Agreement_Raman_Signed.pdf", agreementDate: "1/8/2026" },
@@ -191,16 +191,9 @@ export const PROGRESS = {
   },
 };
 
-export const REVIEWER_DIRECTORY = [
-  { name: "Dana Ruiz", role: "Medical Director - Immunology" },
-  { name: "Lena Ortiz", role: "Regulatory Affairs" },
-  { name: "Ben Cho", role: "Biostatistics" },
-  { name: "Priya Raman", role: "Medical Affairs - Publications" },
-  { name: "Marcus Webb", role: "Legal - Promotional Review" },
-  { name: "Sofia Almeida", role: "Pharmacovigilance" },
-  { name: "Tom Nakamura", role: "Health Economics & Outcomes Research" },
-  { name: "Christy Risser-Milne", role: "Internal Author" },
-];
+// Reviewers are PubPro users now (System Administrator > Internal users); this only names people
+// on older records who aren't users, for their role label.
+export const REVIEWER_DIRECTORY = [];
 
 export const PUBTYPE_OPTIONS = ["Abstract", "Poster", "Manuscript", "Congress Presentation"];
 // Abstracts only; the Overview tab disables it for every other publication type.
@@ -326,8 +319,8 @@ export const OUTCOME_STATUS_OPTIONS = STATUS_OPTIONS;
 export const OUTCOME_OPTIONS = [{ value: "", label: "Please select" }, { value: "Accepted", label: "Accepted" }, { value: "Declined", label: "Declined" }];
 export const TIMEZONE_OPTIONS = ["ET", "CT", "PT", "GMT", "CET"];
 export const CITATION_TYPE_OPTIONS = ["Journal Article", "Congress Abstract", "Poster", "Book Chapter"];
-export const DELEGATE_OPTIONS = ["Kristina Hill", "Christy Risser-Milne", "Ben Cho", "Dana Ruiz"];
-export const REASSIGN_FROM_OPTIONS = ["Kristina Hill", "Christy Risser-Milne", "Ben Cho", "Dana Ruiz"];
+export const DELEGATE_OPTIONS = ["Kristina Hill", "Jack Bedel", "Christy Risser-Milne", "Richa Garg", "Greg Vogel"];
+export const REASSIGN_FROM_OPTIONS = ["Kristina Hill", "Jack Bedel", "Christy Risser-Milne", "Richa Garg", "Greg Vogel"];
 
 export const PLANS = [
   { id: "PLAN-26-DAX-002", name: "Daxafort Dissemination Plan" },
@@ -367,12 +360,12 @@ export const CONGRESS_CHECKLIST = [
   { id: 1, group: "Compliance", label: "ICMJE authorship criteria confirmed for all authors", owner: "Kristina Hill", due: "8/14/2026", done: true, required: true },
   { id: 2, group: "Compliance", label: "Author agreements on file for external authors", owner: "Kristina Hill", due: "8/14/2026", done: true, required: true },
   { id: 3, group: "Compliance", label: "Conflict of interest disclosures collected", owner: "Christy Risser-Milne", due: "9/18/2026", done: false, required: true },
-  { id: 4, group: "Content", label: "Data on file matches source tables and figures", owner: "Ben Cho", due: "9/18/2026", done: false, required: true },
-  { id: 5, group: "Content", label: "Statistical review complete", owner: "Ben Cho", due: "9/18/2026", done: false, required: false },
+  { id: 4, group: "Content", label: "Data on file matches source tables and figures", owner: "Greg Vogel", due: "9/18/2026", done: false, required: true },
+  { id: 5, group: "Content", label: "Statistical review complete", owner: "Greg Vogel", due: "9/18/2026", done: false, required: false },
   { id: 6, group: "Content", label: "Plain language summary drafted", owner: "Kristina Hill", due: "9/29/2026", done: false, required: false },
   { id: 7, group: "Submission", label: "Congress formatting and word count requirements met", owner: "Kristina Hill", due: "10/9/2026", done: false, required: true },
-  { id: 8, group: "Submission", label: "Trial registration number included", owner: "Dana Ruiz", due: "10/9/2026", done: true, required: true },
-  { id: 9, group: "Submission", label: "Copyright and licensing terms reviewed", owner: "Lena Ortiz", due: "10/9/2026", done: false, required: false },
+  { id: 8, group: "Submission", label: "Trial registration number included", owner: "Jack Bedel", due: "10/9/2026", done: true, required: true },
+  { id: 9, group: "Submission", label: "Copyright and licensing terms reviewed", owner: "Richa Garg", due: "10/9/2026", done: false, required: false },
 
   // Congress Abstract Submission Readiness Checklist — Christy Risser-Milne, Sept 2026
   { id: 101, group: "Authorship & Presenting Author", label: "Each author made a substantial contribution to the conception/design of the work, or the acquisition, analysis, or interpretation of data", owner: "Unassigned", due: "", done: false, required: true },

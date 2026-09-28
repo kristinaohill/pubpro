@@ -26,7 +26,7 @@ const COUNTRIES = ['United States', 'Canada', 'United Kingdom', 'Germany', 'Fran
 
 const DEBARMENT_CHECKS = [
   { id: 1, sam: 0, oig: 0, fda: 0, status: 'Clear', searchedAt: '9/6/2024 12:21:53 PM', searchUser: 'Demo Submitter', show: true },
-  { id: 2, sam: 0, oig: 0, fda: 0, status: 'Clear', searchedAt: '8/31/2026 5:32:35 PM', searchUser: 'Joe Submitter', show: true },
+  { id: 2, sam: 0, oig: 0, fda: 0, status: 'Clear', searchedAt: '8/31/2026 5:32:35 PM', searchUser: 'Kristina Hill', show: true },
 ];
 
 const PENDING_AGREEMENTS = [
@@ -36,7 +36,7 @@ const PENDING_AGREEMENTS = [
 const SIGNED_COI = { file: 'ConflictOfInterest-Kristina Oconnell-2026-07-07.pdf', created: '7/7/2026 11:36 AM', by: 'Kristina Hill', signedOn: '7/7/2026' };
 
 const PENDING_COI = [
-  { id: 1, name: 'Kristina Oconnell', email: 'Koconnell920@gmail.com', submittedBy: 'Joe Submitter', createdOn: '8/19/2026' },
+  { id: 1, name: 'Kristina Oconnell', email: 'Koconnell920@gmail.com', submittedBy: 'Kristina Hill', createdOn: '8/19/2026' },
   { id: 2, name: 'Kristina Oconnell', email: 'Koconnell920@gmail.com', submittedBy: 'Kristina Hill', createdOn: '8/7/2026' },
   { id: 3, name: 'Kristina Oconnell', email: 'Koconnell920@gmail.com', submittedBy: 'Kristina Hill', createdOn: '7/7/2026' },
   { id: 4, name: 'Kristina Oconnell', email: 'Koconnell920@gmail.com', submittedBy: 'Kristina Hill', createdOn: '6/11/2026' },
@@ -47,11 +47,11 @@ const PENDING_COI = [
 const STUDY_TONE = { 'In Progress': 'active', Completed: 'draft', 'On Hold': 'hold', Cancelled: 'cancelled' };
 
 const INITIAL_AUDIT = [
-  { action: 'Profile created', user: 'Joe Submitter', at: '9/6/2024 12:20 PM', detail: 'External author record opened', icon: 'add_circle', color: 'var(--ok)' },
+  { action: 'Profile created', user: 'Kristina Hill', at: '9/6/2024 12:20 PM', detail: 'External author record opened', icon: 'add_circle', color: 'var(--ok)' },
   { action: 'Debarment check run', user: 'Demo Submitter', at: '9/6/2024 12:21 PM', detail: 'Clear — SAM 0, OIG 0, FDA 0', icon: 'gavel', color: 'var(--info-icon)' },
   { action: 'Authorship agreement sent', user: 'Kristina Hill', at: '5/18/2026 9:05 AM', detail: 'Awaiting signature', icon: 'description', color: 'var(--info-icon)' },
   { action: 'COI form signed', user: 'Kristina Oconnell', at: '7/7/2026 11:36 AM', detail: SIGNED_COI.file, icon: 'task', color: 'var(--ok)' },
-  { action: 'Debarment check run', user: 'Joe Submitter', at: '8/31/2026 5:32 PM', detail: 'Clear — SAM 0, OIG 0, FDA 0', icon: 'gavel', color: 'var(--info-icon)' },
+  { action: 'Debarment check run', user: 'Kristina Hill', at: '8/31/2026 5:32 PM', detail: 'Clear — SAM 0, OIG 0, FDA 0', icon: 'gavel', color: 'var(--info-icon)' },
 ];
 
 const INITIAL_FORM = {

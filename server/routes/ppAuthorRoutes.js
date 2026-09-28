@@ -80,7 +80,7 @@ router.post('/sample', requireAuth, blockAuthors, (req, res) => {
   if (!name) return res.status(400).json({ error: 'The sample author needs a name.' });
   try {
     const r = db.prepare(`INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, '2024-09-06 16:20:00')`).run(SAMPLE_AUTHOR_ID, name, email, status, 'Joe Submitter', summary, data, req.user.id || null);
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, '2024-09-06 16:20:00')`).run(SAMPLE_AUTHOR_ID, name, email, status, 'Kristina Hill', summary, data, req.user.id || null);
     ensureAuthorLogin({ id: r.lastInsertRowid, name, email });
     res.json(getListRow(r.lastInsertRowid));
   } catch (e) {

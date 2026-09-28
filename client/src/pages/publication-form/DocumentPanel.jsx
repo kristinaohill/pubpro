@@ -58,7 +58,7 @@ export default function DocumentPanel({ st, set, putDocument, onSynced, pubId, s
   const [selected, setSelected] = useState(null); // change id
   const [sync, setSync] = useState({ state: 'saved', error: '' }); // saved | saving | error
   const [viewers, setViewers] = useState([]);
-  const [activity, setActivity] = useState(''); // "Dana Ruiz edited Results" after a remote update
+  const [activity, setActivity] = useState(''); // "Jack Bedel edited Results" after a remote update
   const bodyRef = useRef(null);
   const editorRef = useRef(null);
 

@@ -123,6 +123,11 @@ function replaceInternalAuthors(d, summary) {
 
 function run() {
   db.exec("CREATE TABLE IF NOT EXISTS app_seeds (key TEXT PRIMARY KEY, ran_at TEXT DEFAULT (datetime('now')))");
+  runInternal();
+  runStaffSwap();
+}
+
+function runInternal() {
   if (db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(KEY)) return;
   ensurePeople();
   const { removed, deactivated } = cleanUpAccounts();
@@ -138,6 +143,123 @@ function run() {
   }
   db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(KEY);
   console.log(`BP Logix people: ${PEOPLE.length} internal users set up; ${removed} sample account(s) removed, ${deactivated} deactivated; internal authors replaced on ${pubs} publication(s).`);
+}
+
+// ---- Every other sample staff person -> one of the five (once per database) --------------------
+// Reviewers on rounds, mandatory/additional reviewers, checklist owners, audit lines, notifications,
+// plan stakeholders and author-profile history. Priya Raman is also a real external author, so she's
+// only switched where she appears as staff.
+const STAFF_KEY = 'bplogix-staff-2026-09';
+const STAFF_MAP = {
+  'Dana Ruiz': 'Jack Bedel',
+  'Ben Cho': 'Greg Vogel',
+  'Tom Nakamura': 'Richa Garg',
+  'Lena Ortiz': 'Richa Garg',
+  'Pat Pending': 'Richa Garg',
+  'Marcus Webb': 'Christy Risser-Milne',
+  'Ina Ternal': 'Christy Risser-Milne',
+  'Alejandra S\u00e1nchez': 'Christy Risser-Milne',
+  'Sofia Almeida': 'Kristina Hill',
+  'Joe Submitter': 'Kristina Hill',
+};
+const STAFF_ONLY = { 'Priya Raman': 'Christy Risser-Milne' }; // only in staff contexts
+const FALLBACK_ORDER = ['Jack Bedel', 'Greg Vogel', 'Richa Garg', 'Christy Risser-Milne', 'Kristina Hill'];
+const isExternalRole = role => /External/i.test(String(role || ''));
+
+/** Maps the names in a list of people (reviewers), never putting the same person in twice. */
+function mapPeopleList(list, getName, setName, isStaff, reserved = []) {
+  const used = new Set(list.map(getName).filter(n => !STAFF_MAP[n] && !STAFF_ONLY[n]).concat(reserved));
+  list.forEach(x => {
+    const n = getName(x);
+    const to = STAFF_MAP[n] || (isStaff(x) && STAFF_ONLY[n]);
+    if (!to || !isStaff(x)) return;
+    const pick = used.has(to) ? FALLBACK_ORDER.find(p => !used.has(p)) || to : to;
+    setName(x, pick);
+    used.add(pick);
+  });
+}
+
+/** Replaces exact-match strings (names) anywhere in a JSON value. */
+function mapStrings(v) {
+  if (typeof v === 'string') return STAFF_MAP[v] || v;
+  if (Array.isArray(v)) return v.map(mapStrings);
+  if (v && typeof v === 'object') return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, mapStrings(x)]));
+  return v;
+}
+const mapLine = line => {
+  const m = String(line).match(/^(.*?)( \[(.*)\])?$/);
+  const role = m[3] || '';
+  const to = STAFF_MAP[m[1]] || (!isExternalRole(role) && role && STAFF_ONLY[m[1]]);
+  return to ? to + (m[2] || '') : line;
+};
+
+function swapPublication(d, sm) {
+  const staff = v => v.kind !== 'external' && !isExternalRole(v.role);
+  // The publication's internal authors are reviewers on its rounds too: never switch a reviewer to one.
+  const authors = (d.internal || []).map(a => a.name);
+  (d.rounds || []).forEach(r => mapPeopleList(r.reviewers || [], v => v.name, (v, n) => { v.name = n; }, staff, authors));
+  const reviewers = (d.mandatory || []).concat(d.additional || []);
+  mapPeopleList(reviewers, v => v.name, (v, n) => { v.name = n; }, v => !isExternalRole(v.role), authors);
+  ['checklist', 'journalChecklist'].forEach(k => (d[k] || []).forEach(i => { if (STAFF_MAP[i.owner]) i.owner = STAFF_MAP[i.owner]; }));
+  (d.audit || []).forEach(e => { if (e.participants) e.participants = String(e.participants).split('\n').map(mapLine).join('\n'); });
+  // Audit notes such as "1 change by Dana Ruiz".
+  (d.audit || []).forEach(e => {
+    if (!e.comment) return;
+    Object.entries(STAFF_MAP).forEach(([from, to]) => { e.comment = String(e.comment).split(from).join(to); });
+  });
+  // Tracked changes in the document: credit the real account (name and id).
+  (d.pubDocMarkup || []).forEach(seg => ["ins", "del"].forEach(k => {
+    const m = seg[k];
+    if (!m || !STAFF_MAP[m.by]) return;
+    const u = db.prepare("SELECT id FROM users WHERE name = ? AND role != 'author'").get(STAFF_MAP[m.by]);
+    seg[k] = { ...m, by: STAFF_MAP[m.by], uid: u ? u.id : null };
+  }));
+  if (d.fields) ['delegateTo', 'reassignFrom'].forEach(k => { if (STAFF_MAP[d.fields[k]]) d.fields[k] = STAFF_MAP[d.fields[k]]; });
+  if (d.cancelled && STAFF_MAP[d.cancelled.by]) d.cancelled.by = STAFF_MAP[d.cancelled.by];
+  // The saved summary lists the open round's reviewers in order: take their new names from it.
+  if (sm && Array.isArray(sm.people)) {
+    const open = (d.rounds || []).find(r => r.status === 'open');
+    if (open && open.reviewers && open.reviewers.length === sm.people.length) sm.people.forEach((p, i) => { p.name = open.reviewers[i].name; });
+    else mapPeopleList(sm.people, p => p.name, (p, n) => { p.name = n; }, p => !isExternalRole(p.role), authors);
+  }
+}
+
+function runStaffSwap() {
+  if (db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(STAFF_KEY)) return;
+  let pubs = 0;
+  for (const row of db.prepare('SELECT id, owner, data, summary FROM pp_publications').all()) {
+    const d = parse(row.data, null);
+    if (!d) continue;
+    const sm = parse(row.summary, {});
+    const before = JSON.stringify([d, sm, row.owner]);
+    swapPublication(d, sm);
+    const owner = STAFF_MAP[row.owner] || row.owner;
+    if (JSON.stringify([d, sm, owner]) !== before) {
+      db.prepare('UPDATE pp_publications SET owner = ?, data = ?, summary = ? WHERE id = ?').run(owner, JSON.stringify(d), JSON.stringify(sm), row.id);
+      pubs += 1;
+    }
+  }
+  // Plans and author profiles only name staff in plain fields (owners, stakeholders, history).
+  let other = 0;
+  for (const table of ['pp_plans', 'pp_authors']) {
+    for (const row of db.prepare('SELECT id, owner, data FROM ' + table).all()) {
+      const d = parse(row.data, null);
+      const next = mapStrings(d);
+      const owner = STAFF_MAP[row.owner] || row.owner;
+      if (JSON.stringify(next) !== JSON.stringify(d) || owner !== row.owner) {
+        db.prepare('UPDATE ' + table + ' SET owner = ?, data = ? WHERE id = ?').run(owner, JSON.stringify(next), row.id);
+        other += 1;
+      }
+    }
+  }
+  // Notifications sent to or by sample staff go to the person who replaced them.
+  let notes = 0;
+  for (const [from, to] of Object.entries(STAFF_MAP)) {
+    notes += db.prepare('UPDATE pp_notifications SET recipient = ? WHERE recipient = ?').run(to, from).changes;
+    db.prepare('UPDATE pp_notifications SET sender = ? WHERE sender = ?').run(to, from);
+  }
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(STAFF_KEY);
+  console.log('BP Logix people: sample staff replaced on ' + pubs + ' publication(s), ' + other + ' plan/author record(s), ' + notes + ' notification(s).');
 }
 
 module.exports = { run, DOMAIN, isInternalEmail: e => norm(e).endsWith('@' + DOMAIN) };
