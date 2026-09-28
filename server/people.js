@@ -70,6 +70,8 @@ function directory() {
   return db.prepare("SELECT * FROM users WHERE active = 1 AND pending = 0 AND role != 'author' ORDER BY lower(name)").all()
     .map(u => ({
       id: u.id, name: u.name, email: u.email, role: u.role, roles: P.rolesOf(u), roleName: P.roleNamesOf(u), ...profileFields(u),
+      // Each role with the products it covers (null = all): review types add role holders per product.
+      scopes: P.scopesOf(u),
       // Roles marked "required reviewer" and the products they cover: added to rounds automatically.
       reviewFor: P.scopesOf(u).filter(sc => autoRoles.has(sc.role))
         .map(sc => ({ role: sc.role, roleName: P.roleName(sc.role), products: sc.products, label: P.scopeLabel(sc.products) })),

@@ -242,6 +242,11 @@ router.put('/external/:profileId', (req, res) => {
   res.json({ tempPassword: tempPw });
 });
 
+// Review types: the whole list at once (Save on the Review Types tab).
+router.put('/review-types', (req, res) => {
+  try { res.json(require('../reviewTypes').save(req.body.types)); } catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 router.post('/users/:id/reset-password', (req, res) => {
   const u = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
   if (!u) return res.status(404).json({ error: 'User not found.' });

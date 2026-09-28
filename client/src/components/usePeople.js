@@ -74,3 +74,26 @@ export function useExternalAuthors() {
   }, []);
   return list;
 }
+
+// Review types (System Administrator > Review Types): { types, roles } from GET /api/review-types.
+let rtCache = null;
+let rtInflight = null;
+const rtListeners = new Set();
+export function refreshReviewTypes() {
+  if (!rtInflight) {
+    rtInflight = api.get('/review-types')
+      .then(r => { rtCache = r; rtListeners.forEach(fn => fn(r)); return r; })
+      .catch(() => rtCache)
+      .finally(() => { rtInflight = null; });
+  }
+  return rtInflight;
+}
+export function useReviewTypes() {
+  const [value, setValue] = useState(rtCache);
+  useEffect(() => {
+    rtListeners.add(setValue);
+    refreshReviewTypes();
+    return () => { rtListeners.delete(setValue); };
+  }, []);
+  return value;
+}

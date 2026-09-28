@@ -6,6 +6,7 @@ import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import { SignupTab, UsersTab } from './SystemAdminUsers';
 import ExternalUsersTab from './SystemAdminExternal';
+import ReviewTypesTab from './SystemAdminReviewTypes';
 import './SystemAdmin.css';
 
 const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many || one + 's');
@@ -54,6 +55,9 @@ export default function SystemAdmin() {
         <button type="button" role="tab" aria-selected={tab === 'roles'} className="sa-tab" onClick={() => setTab('roles')}>
           Roles &amp; permissions{roleData ? <span className="sa-tab-n">{roleData.roles.length}</span> : null}
         </button>
+        <button type="button" role="tab" aria-selected={tab === 'reviews'} className="sa-tab" onClick={() => setTab('reviews')}>
+          Review types
+        </button>
         <button type="button" role="tab" aria-selected={tab === 'signup'} className="sa-tab" onClick={() => setTab('signup')}>
           Sign-up{users && users.some(x => x.pending) ? <span className="sa-tab-n sa-tab-n--alert">{users.filter(x => x.pending).length} waiting</span> : null}
         </button>
@@ -75,6 +79,8 @@ export default function SystemAdmin() {
           onChanged={(msg, list) => { setError(''); if (msg) setNotice(msg); if (list) setUsers(list); else loadUsers(); loadRoles(); }}
           onError={setError}
         />
+      ) : tab === 'reviews' ? (
+        <ReviewTypesTab onChanged={msg => { setError(''); if (msg) setNotice(msg); }} onError={setError} />
       ) : tab === 'signup' ? (
         <SignupTab
           data={roleData}
@@ -161,15 +167,6 @@ function RolesTab({ data, onChanged, onError }) {
     try {
       const res = await api.delete('/admin/roles/' + r.key);
       onChanged('Deleted the ' + r.name + ' role.', res);
-    } catch (err) {
-      onError(err.message);
-    }
-  };
-
-  const setAutoReview = async (r, on) => {
-    try {
-      const res = await api.put('/admin/roles', { roles: [{ key: r.key, autoReview: on }] });
-      onChanged(on ? r.name + 's are now added automatically as required reviewers for their products.' : r.name + 's are no longer added automatically.', res);
     } catch (err) {
       onError(err.message);
     }
@@ -270,12 +267,6 @@ function RolesTab({ data, onChanged, onError }) {
             <li key={r.key}>
               <span className="sa-rolelist-name"><span className="sa-mrole-name">{r.name}</span>{!r.builtIn && <Pill tone="draft">Custom</Pill>}</span>
               <span className="sa-faint">{r.description || 'No description.'}</span>
-              {r.locked ? <span /> : (
-                <label className="sa-check sa-autoreview" title="Everyone with this role is added as a mandatory reviewer on review rounds for the products their role covers.">
-                  <input type="checkbox" checked={r.autoReview} onChange={() => setAutoReview(r, !r.autoReview)} />
-                  Required reviewer
-                </label>
-              )}
             </li>
           ))}
         </ul>

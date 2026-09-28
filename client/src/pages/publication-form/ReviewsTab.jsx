@@ -1,6 +1,6 @@
 import React from 'react';
 import useDismiss from '../../components/useDismiss';
-import usePeople, { jobTitle, oooText, personNamed } from '../../components/usePeople';
+import usePeople, { jobTitle, oooText, personNamed, useReviewTypes } from '../../components/usePeople';
 import {
   AIActionButton, BandHeader, Button, Checkbox, Icon, IconButton, InlineMessage, Pill,
   SearchSelect, Select, TextArea, TextField,
@@ -48,47 +48,78 @@ const dueRel = due => {
   return { label, tone: dueTone(n) };
 };
 
-/** People who receive a new round: mandatory reviewers, ticked reviewers, and ticked authors who haven't declined. */
-function roundRecipients(st) {
-  const author = kind => a => a.selected && !(a.invite && a.invite.status === 'declined');
-  return st.mandatory.map(v => reviewer(v.name, v.role, 'reviewer'))
-    .concat(st.additional.filter(v => v.selected).map(v => reviewer(v.name, v.role, /^External/.test(v.role || '') ? 'external' : 'reviewer')))
-    .concat(st.internal.filter(author('internal')).map(a => reviewer(a.name, 'Internal Author', 'internal')))
-    .concat(st.external.filter(author('external')).map(a => {
-      const [person, ...aff] = a.name.split('-');
-      return reviewer(person, 'External Author · ' + aff.join('-'), 'external');
-    }));
+// Who a review type brings in (System Administrator > Review Types): its required and optional
+// participants, resolved for this record. Authors who declined the invitation are left out; role
+// holders count when their role's product scope covers the publication's product.
+const FALLBACK_TYPE = { required: [], optional: [{ kind: 'internal_authors' }, { kind: 'external_authors' }] };
+
+function resolveSources(st, sources, staff, roleName) {
+  const out = [];
+  const notDeclined = a => !(a.invite && a.invite.status === 'declined');
+  (sources || []).forEach(src => {
+    if (src.kind === 'internal_authors') {
+      st.internal.filter(notDeclined).forEach(a => out.push({ name: a.name, role: 'Internal Author', kind: 'internal', from: 'Internal authors' }));
+    } else if (src.kind === 'external_authors') {
+      st.external.filter(notDeclined).forEach(a => {
+        const [person, ...aff] = a.name.split('-');
+        out.push({ name: person, role: 'External Author · ' + aff.join('-'), kind: 'external', from: 'External authors' });
+      });
+    } else if (src.kind === 'role') {
+      staff.filter(p => (p.scopes || []).some(sc => sc.role === src.role && (!sc.products || (st.product && sc.products.includes(st.product)))))
+        .forEach(p => out.push({ name: p.name, role: roleName(src.role), kind: 'reviewer', from: 'By role' }));
+    } else if (src.kind === 'user') {
+      const p = staff.find(x => String(x.id) === String(src.userId));
+      if (p) out.push({ name: p.name, role: jobTitle(p) || 'Reviewer', kind: 'reviewer', from: 'Named' });
+    }
+  });
+  return out;
+}
+const dedupe = list => list.filter((x, i) => list.findIndex(y => y.name === x.name) === i);
+
+/** { required, optional } for the record's chosen review type. The record's own mandatory reviewers are required too. */
+function participantsFor(st, cfg, staff, roleName) {
+  const own = (st.mandatory || []).map(v => ({ name: v.name, role: v.role, kind: 'reviewer', from: 'This publication' }));
+  const required = dedupe(own.concat(resolveSources(st, cfg.required, staff, roleName)));
+  const optional = dedupe(resolveSources(st, cfg.optional, staff, roleName)).filter(x => !required.some(r => r.name === x.name));
+  return { required, optional };
+}
+
+/** People who receive a new round: required, optional ones left ticked, and ticked additional reviewers. */
+function roundRecipients(st, parts) {
+  const off = st.optionalOff || [];
+  const people = parts.required
+    .concat(parts.optional.filter(x => !off.includes(x.name)))
+    .concat(st.additional.filter(v => v.selected).map(v => ({ name: v.name, role: v.role, kind: /^External/.test(v.role || '') ? 'external' : 'reviewer' })));
+  return dedupe(people).map(x => reviewer(x.name, x.role, x.kind));
 }
 
 export default function ReviewsTab({ st, set, bind, commit, saving, userName }) {
   // Reviewers are PubPro users (System Administrator); titles and out of office come from their profiles.
   const staff = usePeople();
   const directory = staff.map(p => ({ name: p.name, role: jobTitle(p), ooo: oooText(p) }));
-  // Required reviewers from their roles (System Administrator: roles marked "required reviewer",
-  // e.g. the Patent Attorney for Biologix): added for this publication's product automatically.
-  const autoFor = s => (s.product ? staff
-    .map(p => ({ p, r: (p.reviewFor || []).find(x => !x.products || x.products.includes(s.product)) }))
-    .filter(x => x.r && !s.mandatory.some(m => m.name === x.p.name))
-    .map(x => ({ id: 'auto-' + x.p.id, name: x.p.name, role: x.r.roleName, auto: true, scope: x.r.label }))
-    : []);
-  const mandatory = st.mandatory.concat(autoFor(st));
-  const roleReviewersExist = staff.some(p => (p.reviewFor || []).length);
+  const rt = useReviewTypes();
+  const types = rt && rt.types && rt.types.length ? rt.types : REVIEW_TYPE_OPTIONS.map(name => ({ name, ...FALLBACK_TYPE }));
+  const roleName = key => ((rt && rt.roles) || []).find(r => r.key === key)?.name || key;
+  const typeCfg = name => types.find(t => t.name === name) || FALLBACK_TYPE;
+  const parts = participantsFor(st, typeCfg(st.reviewType), staff, roleName);
+  const scopedRoleWaiting = !st.product && (typeCfg(st.reviewType).required || []).some(x => x.kind === 'role');
   const readiness = deriveReadiness(st);
   const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }), () => set({ searchOpen: true }));
-  const flow = REVIEW_FLOW[st.reviewType];
+  // Custom review types (added on System Administrator) have no workflow step of their own.
+  const flow = REVIEW_FLOW[st.reviewType] || { step: st.reviewType, returnsTo: 'Draft Development' };
   const methodLocked = st.reviewType === 'Author Approval';
   const rounds = st.rounds || [];
   const current = openRoundOf(st);
   const earlier = rounds.filter(r => r.status === 'closed');
   const newRoundNum = rounds.reduce((m, r) => Math.max(m, r.num), 0) + 1;
-  const recipients = roundRecipients({ ...st, mandatory });
+  const recipients = roundRecipients(st, parts);
 
   const q = st.reviewerQuery.trim().toLowerCase();
   const matches = q
     ? directory.filter(p => (p.name + ' ' + p.role).toLowerCase().includes(q)).slice(0, 8)
     : directory.slice(0, 8);
   const suggestions = matches.map(p => {
-    const added = st.additional.some(x => x.name === p.name) || mandatory.some(x => x.name === p.name);
+    const added = st.additional.some(x => x.name === p.name) || parts.required.some(x => x.name === p.name) || parts.optional.some(x => x.name === p.name);
     const away = p.ooo ? ' · ' + p.ooo.split(':')[0] : '';
     return { name: p.name, role: p.role, label: p.name, meta: (added ? p.role + ' · already added' : p.role) + away, added };
   });
@@ -108,7 +139,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   const sendRound = () => commit(s => {
     if (openRoundOf(s)) return null;
     // Anyone out of office (their profile) starts the round marked away, so reminders wait for them.
-    const reviewers = roundRecipients({ ...s, mandatory: s.mandatory.concat(autoFor(s)) }).map(r => {
+    const reviewers = roundRecipients(s, participantsFor(s, typeCfg(s.reviewType), staff, roleName)).map(r => {
       const away = oooText(personNamed(staff, r.name));
       return away && !r.ooo ? { ...r, ooo: away } : r;
     });
@@ -122,6 +153,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     return {
       rounds: (s.rounds || []).concat([round]),
       newRoundOpen: false,
+      optionalOff: [],
       currentRoundOpen: true,
       fields: { ...s.fields, roundDue: '' },
       audit: (s.audit || []).concat([auditEntry(`${round.type} (Round ${round.num})`, {
@@ -204,7 +236,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
     newRoundOpen: true,
     nextReviewerId: s.nextReviewerId + round.reviewers.length,
     additional: round.reviewers
-      .filter(v => v.kind === 'reviewer' && !s.mandatory.concat(autoFor(s)).some(m => m.name === v.name))
+      .filter(v => v.kind === 'reviewer' && !(p => p.required.concat(p.optional))(participantsFor(s, typeCfg(s.reviewType), staff, roleName)).some(m => m.name === v.name))
       .map((v, i) => ({ id: s.nextReviewerId + i, name: v.name, role: v.role, selected: true })),
   }));
 
@@ -263,9 +295,9 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
             <FormField id="pf-reviewtype" label="Review Type">
               <Select
                 id="pf-reviewtype"
-                options={REVIEW_TYPE_OPTIONS}
+                options={types.map(t => t.name)}
                 value={st.reviewType}
-                onChange={e => { const v = e.target.value; set(s => ({ reviewType: v, reviewMethod: v === 'Author Approval' ? 'Comment Only' : s.reviewMethod })); }}
+                onChange={e => { const v = e.target.value; set(s => ({ reviewType: v, optionalOff: [], reviewMethod: v === 'Author Approval' ? 'Comment Only' : s.reviewMethod })); }}
                 width="100%"
               />
             </FormField>
@@ -300,23 +332,48 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
           <div className="pfx-field">
             <span className="pfx-label">Reviewers</span>
             <div className="pfxc-rvgroup">
-              <BandHeader tone="reviewer" note="Set by review type and reviewer roles — cannot be removed">Mandatory</BandHeader>
-              {mandatory.map(v => (
-                <div key={v.id} className="pfxc-rv-row">
+              <BandHeader tone="reviewer" note={'Set for ' + (st.reviewType || 'this review type') + ' on System Administrator › Review Types — cannot be removed'}>Required</BandHeader>
+              {parts.required.map(v => (
+                <div key={'req-' + v.name} className="pfxc-rv-row">
                   <Checkbox checked locked />
-                  <div className="pfxc-rv-name">{v.name}</div>
-                  <div className="pfxc-rv-role">
-                    {v.role}
-                    {v.auto && <span className="pfxc-rv-auto" title={'Added automatically: their ' + v.role + ' role covers ' + v.scope + '.'}>From role · {v.scope}</span>}
+                  <div className="pfxc-rv-name">
+                    <div>{v.name}</div>
+                    {v.kind === 'external' && <SecureLinkNote />}
                   </div>
+                  <div className="pfxc-rv-role">{v.role}<span className="pfxc-rv-auto">{v.from}</span></div>
                   <div className="pfxc-rv-end" />
                 </div>
               ))}
-              {mandatory.length === 0 && <div className="pfxc-rv-empty">No mandatory reviewers for this record.</div>}
-              {!st.product && roleReviewersExist && (
-                <div className="pfxc-rv-empty">Pick a product on the Overview tab to add the required reviewers for it (such as its patent attorney).</div>
+              {parts.required.length === 0 && <div className="pfxc-rv-empty">No required reviewers for this review type.</div>}
+              {scopedRoleWaiting && (
+                <div className="pfxc-rv-empty">Pick a product on the Overview tab to bring in the reviewers whose roles cover it.</div>
               )}
             </div>
+            {parts.optional.length > 0 && (
+              <div className="pfxc-rvgroup">
+                <BandHeader tone="reviewer" note="Suggested for this review type — untick anyone who shouldn’t get it">Optional</BandHeader>
+                {parts.optional.map(v => {
+                  const on = !(st.optionalOff || []).includes(v.name);
+                  return (
+                    <div key={'opt-' + v.name} className="pfxc-rv-row">
+                      <Checkbox
+                        checked={on}
+                        onChange={() => set(s => {
+                          const off = s.optionalOff || [];
+                          return { optionalOff: off.includes(v.name) ? off.filter(n => n !== v.name) : off.concat([v.name]) };
+                        })}
+                      />
+                      <div className="pfxc-rv-name">
+                        <div>{v.name}</div>
+                        {v.kind === 'external' && on && <SecureLinkNote />}
+                      </div>
+                      <div className="pfxc-rv-role">{v.role}<span className="pfxc-rv-auto">{v.from}</span></div>
+                      <div className="pfxc-rv-end" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <div className="pfxc-rvgroup">
               <BandHeader tone="reviewer">Additional</BandHeader>
               {st.additional.map(v => (
@@ -351,7 +408,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
                 style={{ maxWidth: '100%' }}
               />
             </div>
-            <div className="pfx-help">Authors ticked on the Authors tab are included too, unless they declined the invitation.</div>
+            <div className="pfx-help">Who is required and optional comes from the review type. Authors who declined the invitation are left out.</div>
           </div>
 
           <FormField id="pf-roundnote" label="Additional Email Instructions">

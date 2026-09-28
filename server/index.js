@@ -10,6 +10,13 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 require('./permissions');
 require('./people');
 
+require('./reviewTypes');
+// Review types: who is required and optional on each kind of review round (System Administrator).
+app.get('/api/review-types', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => res.json({
+  types: require('./reviewTypes').list(),
+  roles: require('./permissions').listRoles().map(r => ({ key: r.key, name: r.name })),
+}));
+
 // Staff directory for the author, reviewer and task pickers.
 app.get('/api/people', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => res.json(require('./people').directory()));
 
