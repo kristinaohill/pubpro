@@ -23,6 +23,7 @@ import StudyProfile from './pages/StudyProfile';
 import UserProfile from './pages/UserProfile';
 import SystemAdmin from './pages/SystemAdmin';
 import PublicationLibrary, { LibraryPublication } from './pages/PublicationLibrary';
+import AuthorInvitation from './pages/AuthorInvitation';
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -30,7 +31,8 @@ function RequireAuth({ children }) {
   if (loading) return <div className="loading">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
   // External authors only have their own dashboard.
-  if (user.role === 'author' && pathname !== '/author-dashboard') return <Navigate to="/author-dashboard" replace />;
+  // External authors only have their own dashboard (and the invitation page its links open).
+  if (user.role === 'author' && pathname !== '/author-dashboard' && !pathname.startsWith('/invitation/')) return <Navigate to="/author-dashboard" replace />;
   // Library Users (read-only) only have the Publication Library.
   if (user.role === 'library' && !pathname.startsWith('/library')) return <Navigate to="/library" replace />;
   return children;
@@ -55,6 +57,7 @@ export default function App() {
             <Route path="publication-plan/:id" element={<PublicationPlanForm />} />
             <Route path="external-authors" element={<ExternalAuthors />} />
             <Route path="author-dashboard" element={<ExternalAuthorDashboard />} />
+            <Route path="invitation/:id" element={<AuthorInvitation />} />
             <Route path="external-author" element={<SampleAuthor />} />
             <Route path="external-author/:id" element={<ExternalAuthorProfile />} />
             <Route path="profile" element={<UserProfile />} />

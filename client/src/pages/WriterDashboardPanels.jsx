@@ -59,7 +59,9 @@ export function authorBlockers(pubs) {
         add('No reply to invitation', 'Invited ' + (iv.sent || '—') + (n != null ? ' (' + rel(-n) + ')' : ''), n != null && n > 7 ? 2 : 1);
       }
       const signedAge = a.agreementDate ? daysSince(a.agreementDate) : null;
-      if (!a.agreementDate) add('No signed author agreement', 'Needed before submission.', 1);
+      // A4: the authorship agreement is signed before drafting starts, not just before submission.
+      const drafting = !!(d.draftStartedAt || d.pubDoc);
+      if (!a.agreementDate) add('No signed author agreement', drafting ? 'Drafting has started without it (A4).' : 'Needed before drafting starts (A4).', drafting ? 2 : 1);
       else if (signedAge > 365) add('Author agreement expired', 'Signed ' + a.agreementDate + ' (over 365 days ago).', 2);
       const meta = { ...(AUTHOR_META[person] || {}), ...((d.authorMetaEdits || {})[person] || {}) };
       const coiAge = meta.coi ? daysSince(meta.coi) : null;

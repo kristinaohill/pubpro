@@ -83,7 +83,9 @@ export default function Notifications({ canOpenRecords = true, onUnreadChange })
     }
     setOpen(false);
     // Staff jump to the record; external authors act on it from their dashboard.
-    if (n.pub_id && canOpenRecords) navigate('/publication/' + n.pub_id, { state: { tab: n.tab || undefined } });
+    // An invitation opens the page where the author attests to the criteria and signs.
+    if (n.pub_id && n.kind === 'invitation') navigate('/invitation/' + n.pub_id);
+    else if (n.pub_id && canOpenRecords) navigate('/publication/' + n.pub_id, { state: { tab: n.tab || undefined } });
   };
 
   const markAllRead = async () => {

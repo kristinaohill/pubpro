@@ -329,15 +329,6 @@ export default function PublicationForm() {
     setMessage({ kind: 'info', text: 'Your review was submitted.' + (record.owner && record.owner !== userName ? ' ' + record.owner + ' was notified in PubPro.' : '') });
   };
 
-  // The signed-in internal author's reply to their invitation; accepting records their agreement to the ICMJE criteria.
-  const replyInvitation = async (accept, criteria) => {
-    const res = await api.post('/pp-publications/' + record.id + '/invitation-response', { accept, criteria });
-    const patch = { internal: res.internal, external: res.external, audit: res.audit };
-    setSt(cur => ({ ...cur, ...patch }));
-    if (lastSaved.current) lastSaved.current = { ...lastSaved.current, ...patch };
-    setMessage({ kind: 'info', text: accept ? 'You accepted the invitation and agreed to the ICMJE authorship criteria.' : 'You declined the invitation.' });
-  };
-
   const TabView = TAB_VIEWS[st.tab] || OverviewTab;
   const tabProps = {
     st, set, bind, commit, saving, navigate, recordId, prog, userName, plans, allowedProducts, record,
@@ -370,7 +361,7 @@ export default function PublicationForm() {
           <SectionNav active={st.tab} flags={missing} onSelect={openTab} />
           <div className="pfx-main">
             {record && !cancelled && (
-              <YourInvitation st={st} userName={userName} owner={record.owner} full={st.tab === 'authors'} onReply={replyInvitation} onTab={openTab} />
+              <YourInvitation st={st} userName={userName} owner={record.owner} full={st.tab === 'authors'} recordId={record.id} />
             )}
             {record && !cancelled && (
               <YourReview

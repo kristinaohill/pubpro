@@ -228,13 +228,34 @@ router.get('/:id/proofs/:proofId', requireAuth, (req, res) => {
 // { accept, criteria }: accepting means agreeing to the four ICMJE authorship criteria (A1), which is
 // recorded with the server's time. Internal authors reply here from the publication; external
 // authors from their dashboard. Tells the owner in PubPro.
+// What the invitation page shows the signed-in author: the publication, their invitation and the
+// agreement text to attest to and sign.
+router.get('/:id/invitation', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
+  const data = parse(row.data, {});
+  const group = req.user.role === 'author' ? 'external' : 'internal';
+  const me = (data[group] || []).find(a => norm(gates.personOf(a, group)) === norm(req.user.name));
+  if (!me) return res.status(404).json({ error: 'You aren\u2019t an author on this publication.' });
+  const f = data.fields || {};
+  res.json({
+    publication: { id: row.id, recordId: row.record_id, title: f.pubTitle || f.abbrevTitle || row.title, type: row.pub_type, product: row.product, owner: row.owner, cancelled: !!data.cancelled },
+    me: { name: req.user.name, invite: me.invite || { status: 'none' }, criteria: me.criteria || null },
+    agreement: gates.AGREEMENT,
+  });
+});
+
 router.post('/:id/invitation-response', requireAuth, (req, res) => {
   const row = db.prepare('SELECT * FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!row || !canSee(req, row)) return res.status(404).json({ error: 'Publication not found' });
   const data = parse(row.data, {});
   if (data.cancelled || row.status === 'Cancelled') return res.status(400).json({ error: 'This publication is cancelled.' });
   const accept = !!req.body.accept;
-  if (accept && req.body.criteria !== true) return res.status(400).json({ error: 'Confirm you agree to the four ICMJE authorship criteria to accept.' });
+  if (accept && req.body.criteria !== true) return res.status(400).json({ error: 'Attest to each statement to sign the agreement.' });
+  // The signature is the author typing their full name as it appears in PubPro.
+  const squash = s => norm(s).replace(/\s+/g, ' ');
+  const signature = String(req.body.signature || '').trim().replace(/\s+/g, ' ').slice(0, 200);
+  if (accept && squash(signature) !== squash(req.user.name)) return res.status(400).json({ error: 'Type your full name exactly as ' + req.user.name + ' to sign.' });
   const me = norm(req.user.name);
   const group = req.user.role === 'author' ? 'external' : 'internal';
   const list = data[group] || [];
@@ -242,16 +263,23 @@ router.post('/:id/invitation-response', requireAuth, (req, res) => {
   if (i < 0) return res.status(403).json({ error: 'You aren\u2019t an author on this publication.' });
   const now = new Date();
   const on = gates.usDate(now);
+  const A = gates.AGREEMENT;
+  const signed = accept && !(list[i].criteria && list[i].criteria.at);
   list[i] = {
     ...list[i],
     invite: { ...(list[i].invite || {}), status: accept ? 'accepted' : 'declined', on },
-    ...(accept && !(list[i].criteria && list[i].criteria.at) ? { criteria: { at: now.toISOString(), on, by: req.user.name, how: 'self' } } : {}),
+    // Signing = the attestation to the criteria plus the signed authorship agreement, one timestamp.
+    ...(signed ? {
+      criteria: { at: now.toISOString(), on, by: req.user.name, how: 'self', signedName: signature, agreementVersion: A.version, agreementHash: A.hash },
+      agreement: A.title.replace(/\s+/g, '_') + '_' + row.record_id + '_' + req.user.name.replace(/[^\w]+/g, '_') + '.pdf',
+      agreementDate: on,
+    } : {}),
   };
   data[group] = list;
   data.audit = (data.audit || []).concat([{
     action: accept ? 'Authorship Invitation Accepted' : 'Authorship Invitation Declined', participants: req.user.name,
     start: on, completed: on, result: accept ? 'Accepted' : 'Declined', active: false,
-    comment: accept ? 'Agreed to the four ICMJE authorship criteria (A1) · replied in PubPro' : 'Replied in PubPro',
+    comment: signed ? 'Signed the authorship agreement v' + A.version + ' and attested to the four ICMJE criteria (A1, A4) · signature "' + signature + '" · ' + now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : accept ? 'Accepted in PubPro' : 'Replied in PubPro',
   }]);
   const anySent = (data.internal || []).concat(data.external || []).some(a => a.invite && a.invite.status && a.invite.status !== 'none');
   db.prepare("UPDATE pp_publications SET data = ?, status = CASE WHEN status = 'Draft' AND ? THEN 'Active' ELSE status END, updated_at = datetime('now') WHERE id = ?")

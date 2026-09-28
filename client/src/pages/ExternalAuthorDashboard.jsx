@@ -7,7 +7,7 @@ import { api } from '../api';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import { useAuth } from '../AuthContext';
-import { ICMJE_CRITERIA, TODAY_STR, nowStamp, toISO } from './publication-form/data';
+import { TODAY_STR, nowStamp, toISO } from './publication-form/data';
 import {
   auditEntry, deriveSteps, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData,
 } from './publication-form/state';
@@ -83,7 +83,6 @@ export default function ExternalAuthorDashboard() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
   const [answer, setAnswer] = useState({}); // review key -> { decision, comment }
-  const [agreed, setAgreed] = useState({}); // publication id -> agreed to the ICMJE criteria
   // The publication document open in the panel: { p, st } (st holds pubDocText / Markup / Track).
   const [doc, setDoc] = useState(null);
 
@@ -142,23 +141,7 @@ export default function ExternalAuthorDashboard() {
     }
   };
 
-  const replyInvite = (inv, accept) => run(async () => {
-    // Signed in as the author: the server records the reply and their agreement to the criteria.
-    if (isAuthor) {
-      await api.post('/pp-publications/' + inv.p.id + '/invitation-response', { accept, criteria: accept && !!agreed[inv.p.id] });
-      return;
-    }
-    const { group } = inv.entry;
-    await savePub(inv.p, st => ({
-      ...st,
-      [group]: st[group].map(e => (same(personOf(e, group), person) ? { ...e, invite: { ...(e.invite || {}), status: accept ? 'accepted' : 'declined', on: TODAY_STR }, ...(accept ? { criteria: e.criteria || { on: TODAY_STR, by: user && user.name, how: 'recorded' } } : {}) } : e)),
-      audit: (st.audit || []).concat([auditEntry(accept ? 'Authorship Invitation Accepted' : 'Authorship Invitation Declined', { participants: person, result: accept ? 'Accepted' : 'Declined', comment: 'Replied in PubPro' })]),
-    }));
-    await notify(inv.p.owner ? [{
-      recipient: inv.p.owner, kind: 'response', pub_id: inv.p.id, record_id: inv.p.record_id, tab: 'authors',
-      title: `${person} ${accept ? 'accepted' : 'declined'} the authorship invitation`, body: `${inv.p.title} (${inv.p.record_id})`,
-    }] : []);
-  }, accept ? `You accepted the invitation for ${inv.p.record_id}.` : `You declined the invitation for ${inv.p.record_id}.`);
+  // Invitations are answered on the invitation page (/invitation/:id): attest and sign there.
 
   const respond = rv => {
     const key = rv.p.id + ':' + rv.round.num;
@@ -298,22 +281,12 @@ export default function ExternalAuthorDashboard() {
                       <div className="ead-item-kind">{inv.confirmOnly ? 'CONFIRM ICMJE AUTHORSHIP CRITERIA' : 'AUTHORSHIP INVITATION'}</div>
                       <div className="ead-item-title">{inv.p.title}</div>
                       <div className="ead-meta">{inv.p.record_id} · {inv.p.pub_type} · invited {inv.invite.sent || '—'} by {inv.p.owner || 'the publication team'}</div>
-                      <details className="ead-criteria">
-                        <summary>The four ICMJE authorship criteria</summary>
-                        <ol>{ICMJE_CRITERIA.map(c => <li key={c}>{c}</li>)}</ol>
-                      </details>
-                      <label className="ead-agree">
-                        <input type="checkbox" checked={!!agreed[inv.p.id]} onChange={e => setAgreed(x => ({ ...x, [inv.p.id]: e.target.checked }))} />
-                        I agree to meet all four ICMJE authorship criteria for this publication.
-                      </label>
+                      <div className="ead-meta">Read the ICMJE authorship criteria, attest and sign the authorship agreement.</div>
                     </div>
                     <div className="ead-item-actions">
-                      {isAuthor ? (
-                        <>
-                          <Button variant="secondary" icon="check" disabled={busy || !agreed[inv.p.id]} onClick={() => replyInvite(inv, true)}>{inv.confirmOnly ? 'Confirm' : 'Accept'}</Button>
-                          {!inv.confirmOnly && <Button variant="tertiary" disabled={busy} onClick={() => replyInvite(inv, false)}>Decline</Button>}
-                        </>
-                      ) : <span className="ead-meta">{PROXY_NOTE}</span>}
+                      {isAuthor
+                        ? <Button variant="primary" icon="draw" onClick={() => navigate('/invitation/' + inv.p.id)}>Review &amp; Sign</Button>
+                        : <span className="ead-meta">{PROXY_NOTE}</span>}
                     </div>
                   </div>
                 ))}

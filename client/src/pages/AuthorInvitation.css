@@ -1,0 +1,17 @@
+.ai-page { width: 95%; max-width: 820px; margin: 0 auto; padding: 24px 0 48px; display: flex; flex-direction: column; gap: 16px; font-family: var(--font-sans); color: var(--text-body); }
+.ai-card { background: var(--surface-card); border: 1px solid var(--border-divider); border-radius: 8px; padding: 28px 32px; display: flex; flex-direction: column; gap: 14px; }
+.ai-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .09em; color: var(--text-meta); }
+.ai-title { font-size: 24px; font-weight: 700; color: var(--high-emphasis); line-height: 1.25; margin: 0; text-wrap: balance; }
+.ai-meta { font-size: 13px; color: var(--text-meta); }
+.ai-h2 { font-size: 18px; font-weight: 700; color: var(--text-heading); margin: 12px 0 0; padding-top: 16px; border-top: 1px solid var(--border-hairline); }
+.ai-h3 { font-size: 15px; font-weight: 700; color: var(--text-heading); margin: 6px 0 0; }
+.ai-text { margin: 0; font-size: 15px; }
+.ai-criteria { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.45; }
+.ai-attest { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--border-divider); border-radius: 8px; background: #FAFBFC; }
+.ai-sign { display: flex; flex-direction: column; gap: 6px; }
+.ai-sign-label { font-size: 13px; font-weight: 700; color: var(--text-heading); }
+.ai-actions { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; padding-top: 4px; }
+.ai-done { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px solid var(--border-divider); border-radius: 8px; background: #FAFBFC; flex-wrap: wrap; }
+.ai-done > div { flex: 1; min-width: 220px; }
+.ai-done-title { font-weight: 700; font-size: 16px; }
+@media (max-width: 600px) { .ai-card { padding: 20px 16px; } }

@@ -40,7 +40,7 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
             <div className="pfxa-docstart-title">Start the publication document in PubPro</div>
             {blocked && (
               <InlineMessage kind="warning">
-                <strong>A1 (ICMJE, GPP):</strong> every author agrees to the four ICMJE authorship criteria before drafting starts. They agree when they accept their invitation (Authors tab).{' '}
+                <strong>A1, A4 (ICMJE, GPP):</strong> every author signs the authorship agreement, attesting to the four ICMJE criteria, before drafting starts. They sign from their invitation.{' '}
                 {!record ? 'Save the publication and invite its authors first.'
                   : !authors.length ? 'Add the authors first.'
                     : 'Still waiting on ' + waiting.join(', ') + '.'}
@@ -62,7 +62,7 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
             <div className="pfxa-file-text">
               <div className="pfxa-file-name">{docName}</div>
               <div className="pfxa-file-meta">{docMeta}{st.pubDoc === 'new' ? ' · ' + words + (words === 1 ? ' word' : ' words') : ''}</div>
-              {startedText && <div className="pfxa-file-meta"><Icon name="verified" size={14} color="var(--ok)" /> Drafting started {startedText}, after every author agreed to the ICMJE criteria (A1)</div>}
+              {startedText && <div className="pfxa-file-meta"><Icon name="verified" size={14} color="var(--ok)" /> Drafting started {startedText}, after every author signed the authorship agreement (A1, A4)</div>}
             </div>
             <div className="pfxa-file-actions">
               {st.pubDoc === 'new' && <Button variant="secondary" icon="edit_document" onClick={openEditor}>Open Document</Button>}

@@ -10,6 +10,28 @@
 //                     reviewer's response, for them (say the link didn't work and they replied by
 //                     email) must attach proof: the author's written confirmation, uploaded to PubPro.
 
+// The authorship agreement an author attests to and signs from their invitation (A1 criteria + A4
+// accountability). Signed before drafting starts. The version and a hash of the text are stored
+// with each signature, so the record shows exactly what was signed.
+const crypto = require('crypto');
+const AGREEMENT = {
+  version: '2026-09',
+  title: 'Authorship Agreement',
+  intro: 'To be listed as an author on this publication you must meet all four ICMJE authorship criteria:',
+  criteria: [
+    'Substantial contributions to the conception or design of the work, or to acquiring, analyzing or interpreting its data',
+    'Drafting the work or revising it critically for important intellectual content',
+    'Final approval of the version to be published',
+    'Agreement to be accountable for all aspects of the work, including questions of accuracy and integrity',
+  ],
+  attestations: [
+    'I agree to meet all four ICMJE authorship criteria for this publication.',
+    'I accept accountability for the parts of the work I contribute to, and I can identify which co-authors are responsible for the other parts.',
+    'I will direct the content of this publication, and I will disclose any conflicts of interest on the ICMJE form.',
+  ],
+};
+AGREEMENT.hash = crypto.createHash('sha256').update(JSON.stringify([AGREEMENT.version, AGREEMENT.criteria, AGREEMENT.attestations])).digest('hex').slice(0, 16);
+
 // Publication types that are a presentation of an abstract.
 const PRESENTATION_TYPES = ['Poster', 'Congress Presentation'];
 
@@ -60,7 +82,7 @@ function draftingGate(prev, next, now = new Date()) {
   if (!authors.length) return 'A1 (ICMJE, GPP): add the authors and have each agree to the ICMJE authorship criteria before drafting starts.';
   const missing = criteriaMissing(next);
   if (missing.length) {
-    return 'A1 (ICMJE, GPP): every author must agree to the ICMJE authorship criteria before drafting starts. Still waiting on ' + missing.join(', ') + '.';
+    return 'A1, A4 (ICMJE, GPP): every author must sign the authorship agreement, attesting to the ICMJE criteria, before drafting starts. Still waiting on ' + missing.join(', ') + '.';
   }
   next.draftStartedAt = now.toISOString();
   const latest = authors.map(x => x.a.criteria.at).sort().pop();
@@ -129,4 +151,4 @@ function proxyGate(prev, next, userName, isProof) {
   return null;
 }
 
-module.exports = { proxyGate, PRESENTATION_TYPES, authorsOf, criteriaMissing, stampCriteria, draftingGate, ownApproval, presentationGate, personOf, usDate };
+module.exports = { AGREEMENT, proxyGate, PRESENTATION_TYPES, authorsOf, criteriaMissing, stampCriteria, draftingGate, ownApproval, presentationGate, personOf, usDate };

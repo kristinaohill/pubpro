@@ -50,15 +50,15 @@ function criteriaLook(a, iv, draftStartedAt) {
     const how = c.carriedFrom ? ' (agreed on ' + c.carriedFrom + ')' : '';
     return {
       criteriaProxy: c.proof ? { by: c.by, proof: c.proof } : null,
-      criteriaText: 'ICMJE criteria agreed ' + c.on + how, criteriaColor: late ? 'var(--warn-text)' : 'var(--ok)', criteriaGlyph: late ? 'history' : 'verified',
+      criteriaText: (c.how === 'recorded' ? 'Agreement recorded ' : c.signedName ? 'Signed agreement + ICMJE criteria ' : 'ICMJE criteria agreed ') + c.on + how, criteriaColor: late ? 'var(--warn-text)' : 'var(--ok)', criteriaGlyph: late ? 'history' : 'verified',
       criteriaNote: late ? 'Joined after drafting started: record why in the audit trail (A3)' : '', needsCriteria: false,
     };
   }
-  if (c && !c.at) return { criteriaText: 'ICMJE criteria agreement saves with the record', criteriaColor: 'var(--fg-3)', criteriaGlyph: 'schedule', criteriaNote: '', needsCriteria: false };
+  if (c && !c.at) return { criteriaText: 'Recorded agreement saves with the record', criteriaColor: 'var(--fg-3)', criteriaGlyph: 'schedule', criteriaNote: '', needsCriteria: false };
   if (iv.status === 'accepted') {
-    return { criteriaText: 'No ICMJE criteria agreement on record', criteriaColor: 'var(--warn-text)', criteriaGlyph: 'error', criteriaNote: '', needsCriteria: true };
+    return { criteriaText: 'Hasn\u2019t signed the authorship agreement', criteriaColor: 'var(--warn-text)', criteriaGlyph: 'error', criteriaNote: '', needsCriteria: true };
   }
-  return { criteriaText: 'Agrees to the ICMJE criteria when accepting', criteriaColor: 'var(--fg-3)', criteriaGlyph: 'gavel', criteriaNote: '', needsCriteria: false };
+  return { criteriaText: 'Signs the agreement when accepting', criteriaColor: 'var(--fg-3)', criteriaGlyph: 'gavel', criteriaNote: '', needsCriteria: false };
 }
 const INVITED = { status: 'sent', sent: TODAY_STR };
 
@@ -251,6 +251,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
           ...x,
           invite: { ...(x.invite || {}), status: 'accepted', on: x.invite && x.invite.status === 'accepted' ? x.invite.on : TODAY_STR },
           criteria: { on: TODAY_STR, by: userName, how: 'recorded', proof: { id: proof.id, name: proof.name }, note },
+          agreement: proof.name, agreementDate: TODAY_STR,
         } : x)),
         audit: (s.audit || []).concat([auditEntry('Authorship Accepted (recorded)', {
           participants: a.person, result: 'Accepted',
@@ -264,12 +265,12 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
   };
   // Authors who accepted before PubPro recorded criteria agreement confirm it themselves (A1).
   const askCriteria = person => commit(s => ({
-    audit: (s.audit || []).concat([auditEntry('ICMJE Criteria Confirmation Requested', { participants: person, comment: 'Requested by ' + userName })]),
+    audit: (s.audit || []).concat([auditEntry('Authorship Agreement Requested', { participants: person, comment: 'Requested by ' + userName })]),
   }), {
-    done: 'Asked ' + person + ' to confirm the ICMJE authorship criteria.',
+    done: 'Asked ' + person + ' to sign the authorship agreement.',
     notices: rec => [{
-      recipient: person, kind: 'invitation', tab: 'authors', title: 'Confirm the ICMJE authorship criteria',
-      body: `Please confirm you agree to the four ICMJE authorship criteria for ${rec.title} (${rec.record_id}).`,
+      recipient: person, kind: 'invitation', tab: 'authors', title: 'Sign the authorship agreement',
+      body: `Please attest to the ICMJE authorship criteria and sign the authorship agreement for ${rec.title} (${rec.record_id}).`,
     }],
   });
   const pickAuthor = p => set(s => {
@@ -399,7 +400,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                     )}
                     {a.needsCriteria && (
                       <>
-                        <Button variant="tertiary" onClick={() => askCriteria(a.person)} disabled={saving}>Ask to Confirm ICMJE Criteria</Button>
+                        <Button variant="tertiary" onClick={() => askCriteria(a.person)} disabled={saving}>Ask to Sign Agreement</Button>
                         <Button variant="tertiary" onClick={() => setProxy({ key: a.key, file: null, note: '' })} disabled={!record}>Record With Proof</Button>
                       </>
                     )}
@@ -408,8 +409,8 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                 {proxy && proxy.key === a.key && (
                   <div className="pf-proxy-panel">
                     <div className="pfx-help">
-                      Recording {a.person}&rsquo;s acceptance for them. Upload their written confirmation that they accept authorship
-                      and agree to the four ICMJE authorship criteria, such as their reply by email.
+                      Recording {a.person}&rsquo;s acceptance for them. Upload their written confirmation that they accept authorship,
+                      agree to the four ICMJE authorship criteria and accept the authorship agreement, such as their reply by email.
                     </div>
                     <ProofField id={'pf-proof-' + a.key} file={proxy.file} onFile={f => setProxy(p => ({ ...p, file: f, error: '' }))} />
                     <FormField id={'pf-proof-note-' + a.key} label="Note">
