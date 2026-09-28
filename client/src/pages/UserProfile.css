@@ -1,0 +1,6 @@
+/* My Profile additions (the page otherwise uses the study profile layout, StudyProfile.css). */
+.up-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 18px; max-width: 900px; }
+.up-grid--dates { grid-template-columns: repeat(2, minmax(0, 200px)); }
+.up-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.up-legend { padding: 0; margin-bottom: 8px; font-size: var(--fs-meta); font-weight: var(--fw-bold); color: var(--fg-1); }
+@media (max-width: 760px) { .up-grid, .up-grid--dates { grid-template-columns: 1fr; } }

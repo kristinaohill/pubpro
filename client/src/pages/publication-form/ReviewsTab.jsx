@@ -1,12 +1,13 @@
 import React from 'react';
 import useDismiss from '../../components/useDismiss';
+import usePeople, { jobTitle, oooText, personNamed } from '../../components/usePeople';
 import {
   AIActionButton, BandHeader, Button, Checkbox, Icon, IconButton, InlineMessage, Pill,
   SearchSelect, Select, TextArea, TextField,
 } from '../../ds/pubpro';
 import DateField from '../../components/DateField';
 import {
-  PRIORITY_OPTIONS, REVIEWER_DIRECTORY, REVIEW_FLOW, REVIEW_METHOD_OPTIONS, REVIEW_TYPE_OPTIONS, TODAY_STR, daysFromToday,
+  PRIORITY_OPTIONS, REVIEW_FLOW, REVIEW_METHOD_OPTIONS, REVIEW_TYPE_OPTIONS, TODAY_STR, daysFromToday,
 } from './data';
 import { auditEntry, deriveReadiness, dueTone, openRoundOf, reviewer, roundOutcome } from './state';
 import { ReadinessPanel, WorkflowStepLine } from './shared';
@@ -60,6 +61,9 @@ function roundRecipients(st) {
 }
 
 export default function ReviewsTab({ st, set, bind, commit, saving, userName }) {
+  // Reviewers are PubPro users (System Administrator); titles and out of office come from their profiles.
+  const staff = usePeople();
+  const directory = staff.map(p => ({ name: p.name, role: jobTitle(p), ooo: oooText(p) }));
   const readiness = deriveReadiness(st);
   const reviewerRef = useDismiss(st.searchOpen, () => set({ searchOpen: false }), () => set({ searchOpen: true }));
   const flow = REVIEW_FLOW[st.reviewType];
@@ -72,11 +76,12 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
 
   const q = st.reviewerQuery.trim().toLowerCase();
   const matches = q
-    ? REVIEWER_DIRECTORY.filter(p => (p.name + ' ' + p.role).toLowerCase().includes(q)).slice(0, 6)
-    : REVIEWER_DIRECTORY.slice(0, 6);
+    ? directory.filter(p => (p.name + ' ' + p.role).toLowerCase().includes(q)).slice(0, 8)
+    : directory.slice(0, 8);
   const suggestions = matches.map(p => {
     const added = st.additional.some(x => x.name === p.name) || st.mandatory.some(x => x.name === p.name);
-    return { name: p.name, role: p.role, label: p.name, meta: added ? p.role + ' · already added' : p.role, added };
+    const away = p.ooo ? ' · ' + p.ooo.split(':')[0] : '';
+    return { name: p.name, role: p.role, label: p.name, meta: (added ? p.role + ' · already added' : p.role) + away, added };
   });
   const pickReviewer = sug => {
     if (!sug || sug.added) return;
@@ -93,7 +98,11 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   // Sending, reminding and closing save the record and notify people in PubPro (no email).
   const sendRound = () => commit(s => {
     if (openRoundOf(s)) return null;
-    const reviewers = roundRecipients(s);
+    // Anyone out of office (their profile) starts the round marked away, so reminders wait for them.
+    const reviewers = roundRecipients(s).map(r => {
+      const away = oooText(personNamed(staff, r.name));
+      return away && !r.ooo ? { ...r, ooo: away } : r;
+    });
     if (!reviewers.length) return null;
     const method = s.reviewType === 'Author Approval' ? 'Comment Only' : s.reviewMethod;
     const due = s.fields.roundDue || '';
@@ -195,10 +204,13 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName }) 
   const people = current ? current.reviewers.map(v => {
     const done = v.decision !== 'pending';
     const d = DEC[v.decision] || DEC.pending;
-    const ooo = !done && !!v.ooo;
+    // Out of office: noted when the round went out, or set on their profile since.
+    const away = v.ooo || oooText(personNamed(staff, v.name));
+    const ooo = !done && !!away;
     const reminded = v.remindedOn === TODAY_STR;
     return {
       ...v,
+      ooo: away,
       done,
       isExternal: v.kind === 'external' || /^External/.test(v.role || ''),
       statusLabel: done ? d.decision + ' · ' + v.on : ooo ? 'Out of office' : reminded ? 'Reminder sent ' + TODAY_STR : 'Awaiting response',

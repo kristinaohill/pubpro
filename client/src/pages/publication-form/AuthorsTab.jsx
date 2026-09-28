@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import useDismiss from '../../components/useDismiss';
+import usePeople, { jobTitle, oooText, personNamed } from '../../components/usePeople';
 import { api } from '../../api';
 import {
   Button, CheckboxGroup, DataTable, Icon, IconButton, SearchSelect,
@@ -7,7 +8,7 @@ import {
 } from '../../ds/pubpro';
 import {
   AUTHOR_META, CREDIT_ROLES, EXTERNAL_AUTHOR_DIRECTORY,
-  INTERNAL_AUTHOR_DIRECTORY, REVIEWER_DIRECTORY, TODAY, TODAY_STR,
+  REVIEWER_DIRECTORY, TODAY, TODAY_STR,
 } from './data';
 import { auditEntry } from './state';
 import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
@@ -41,7 +42,8 @@ const EXTERNAL_COLS = [
 const FILTER_OPTIONS = ['All', 'Internal', 'External'];
 const INVITED = { status: 'sent', sent: TODAY_STR };
 
-const ROLE_OF = n => (REVIEWER_DIRECTORY.find(p => p.name === n) || {}).role || 'Internal Author';
+// An internal author's job title from their user profile (older records may name people who aren't users).
+const roleOf = (staff, n) => jobTitle(personNamed(staff, n)) || (REVIEWER_DIRECTORY.find(p => p.name === n) || {}).role || 'Internal Author';
 
 // Row tones (DS Pill names) shown as layout-kit Tags.
 const TAG_TONE = { draft: 'grey', outline: 'outline', 'on-track': 'green', overdue: 'red' };
@@ -96,6 +98,7 @@ function useProfileOpener(navigate) {
 }
 
 function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval }) {
+  const staff = usePeople();
   const openProfile = useProfileOpener(navigate);
   const authorRef = useDismiss(st.authorSearchOpen, () => set({ authorSearchOpen: false }), () => set({ authorSearchOpen: true }));
   const patchAuthor = (group, id, p) => set(s => ({ [group]: s[group].map(x => (x.id === id ? { ...x, ...p } : x)) }));
@@ -137,7 +140,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         group: a.group,
         isExternal: ext,
         person,
-        affiliation: ext ? parts.slice(1).join('-') : ROLE_OF(a.name),
+        affiliation: ext ? parts.slice(1).join('-') : roleOf(staff, a.name),
         typeLabel: ext ? 'External' : 'Internal',
         typeTone: ext ? 'outline' : 'draft',
         agreementText: m.agreementDate || 'Not sent',
@@ -174,8 +177,8 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
   const kvFiltered = kvAll.filter(a => st.authorFilter === 'All' || a.typeLabel === st.authorFilter);
   const rows = sortList(kvFiltered, st.kvSort, KV_SORT_KEYS);
   const aq = st.authorQuery.trim().toLowerCase();
-  const authorPool = INTERNAL_AUTHOR_DIRECTORY.filter(n => !st.internal.some(a => a.name === n))
-    .map(n => ({ label: n, meta: 'Internal · ' + ROLE_OF(n), group: 'internal', name: n }))
+  const authorPool = staff.filter(p => !st.internal.some(a => a.name === p.name))
+    .map(p => ({ label: p.name, meta: 'Internal · ' + roleOf(staff, p.name) + (p.oooNow ? ' · ' + oooText(p).split(':')[0] : ''), group: 'internal', name: p.name }))
     .concat(EXTERNAL_AUTHOR_DIRECTORY.filter(d => !st.external.some(a => a.name === d.name))
       .map(d => ({ label: d.display, meta: 'External · ' + d.name.split('-').slice(1).join('-'), group: 'external', name: d.name })))
     .filter(s => !aq || (s.label + ' ' + s.meta).toLowerCase().includes(aq));
@@ -402,12 +405,13 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
 // ---- Split Tables --------------------------------------------------------------
 
 function SplitAuthors({ st, set, navigate }) {
+  const staff = usePeople();
   const openProfile = useProfileOpener(navigate);
   const patchAuthor = (group, id, p) => set(s => ({ [group]: s[group].map(x => (x.id === id ? { ...x, ...p } : x)) }));
   const removeAuthor = (group, id) => set(s => ({ [group]: s[group].filter(x => x.id !== id) }));
   const internalAuthors = sortList(st.internal.map(mapAuthor), st.internalSort, ['order', 'name', 'display']);
   const externalAuthors = sortList(st.external.map(mapAuthor), st.externalSort, ['order', 'name', 'display', 'signedTs']);
-  const internalOptions = INTERNAL_AUTHOR_DIRECTORY.filter(n => !st.internal.some(a => a.name === n));
+  const internalOptions = staff.map(p => p.name).filter(n => !st.internal.some(a => a.name === n));
   const externalOptions = EXTERNAL_AUTHOR_DIRECTORY.filter(d => !st.external.some(a => a.name === d.name)).map(d => d.name);
 
   const addInternal = () => set(s => (s.internalAuthorPick ? {

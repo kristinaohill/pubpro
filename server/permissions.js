@@ -38,6 +38,8 @@ db.exec(`CREATE TABLE IF NOT EXISTS roles (
 db.exec('CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)');
 try { db.exec('ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1'); } catch (e) { /* exists */ }
 try { db.exec('ALTER TABLE users ADD COLUMN last_login_at TEXT'); } catch (e) { /* exists */ }
+// Roles beyond the first (users.role). A user can hold several; their permissions combine.
+try { db.exec('ALTER TABLE users ADD COLUMN extra_roles TEXT'); } catch (e) { /* exists */ }
 
 BUILT_IN.forEach((r, i) => {
   db.prepare('INSERT OR IGNORE INTO roles (key, name, description, permissions, built_in, sort) VALUES (?, ?, ?, ?, 1, ?)')
@@ -68,8 +70,36 @@ function permissionsOf(roleKey) {
   return row ? normalize(parseList(row.permissions)) : [];
 }
 
+/** Every role a user holds (users.role first, then extra_roles), known roles only. */
+function rolesOf(u) {
+  const out = [u.role].concat(parseList(u.extra_roles)).filter(k => k && roleRow(k));
+  return [...new Set(out)];
+}
+/** The combined permissions of all of a user's roles. */
+function permissionsForUser(u) {
+  const set = new Set();
+  rolesOf(u).forEach(k => permissionsOf(k).forEach(p => set.add(p)));
+  return PERM_KEYS.filter(k => set.has(k));
+}
+const roleNamesOf = u => rolesOf(u).map(roleName).join(', ');
+
+/**
+ * Sets a user's roles. External Author can't be combined with staff roles. The first role (by the
+ * roles' order, so System Administrator leads) is stored in users.role, which older checks read.
+ */
+function setRoles(userId, keys) {
+  const valid = [...new Set((keys || []).filter(k => roleRow(k)))];
+  if (!valid.length) throw new Error('Give them at least one role.');
+  if (valid.includes('author') && valid.length > 1) throw new Error('External Author can\u2019t be combined with other roles.');
+  const order = Object.fromEntries(db.prepare('SELECT key, sort FROM roles').all().map(r => [r.key, r.sort]));
+  valid.sort((a, b) => (order[a] ?? 100) - (order[b] ?? 100));
+  db.prepare('UPDATE users SET role = ?, extra_roles = ? WHERE id = ?').run(valid[0], JSON.stringify(valid.slice(1)), userId);
+  return valid;
+}
+
 function listRoles() {
-  const counts = Object.fromEntries(db.prepare('SELECT role, COUNT(*) AS c FROM users GROUP BY role').all().map(r => [r.role, r.c]));
+  const counts = {};
+  db.prepare('SELECT role, extra_roles FROM users').all().forEach(u => rolesOf(u).forEach(k => { counts[k] = (counts[k] || 0) + 1; }));
   return db.prepare('SELECT * FROM roles ORDER BY sort, name').all().map(r => ({
     key: r.key,
     name: r.name,
@@ -100,4 +130,4 @@ function roleName(key) {
   return row ? row.name : key;
 }
 
-module.exports = { PERMISSIONS, PERM_KEYS, LOCKED, normalize, permissionsOf, listRoles, roleRow, roleName, signupRole, getSetting, setSetting };
+module.exports = { PERMISSIONS, PERM_KEYS, LOCKED, normalize, permissionsOf, permissionsForUser, rolesOf, roleNamesOf, setRoles, listRoles, roleRow, roleName, signupRole, getSetting, setSetting };

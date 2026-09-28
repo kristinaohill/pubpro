@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { api } from '../api';
 import { useNavigate } from 'react-router-dom';
 import { BrandMark, Button, Field, InlineMessage, TextField } from '../ds/pubpro';
 import { useAuth } from '../AuthContext';
@@ -15,14 +16,26 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const signup = mode === 'signup';
+  // Sign-up rules from System Administrator > Sign-up: open, approval, or closed (+ email domains).
+  const [rules, setRules] = useState({ mode: 'open', domains: [] });
+  const [notice, setNotice] = useState('');
+  useEffect(() => { api.get('/auth/signup-options').then(setRules).catch(() => {}); }, []);
+  const domainHint = rules.domains.length ? 'Use your work email (' + rules.domains.map(d => '@' + d).join(' or ') + ').' : undefined;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      if (signup) await register(name, email, password);
-      else await login(email, password);
+      if (signup) {
+        const r = await register(name, email, password);
+        if (r && r.pending) {
+          setMode('signin');
+          setPassword('');
+          setNotice('Thanks, ' + name.trim().split(/\s+/)[0] + '. An administrator needs to approve your account. You can sign in once they have.');
+          return;
+        }
+      } else await login(email, password);
       navigate('/');
     } catch (err) {
       setError(err.message);
@@ -52,7 +65,8 @@ export default function LoginPage() {
               <TextField value={name} onChange={e => setName(e.target.value)} required autoFocus autoComplete="name" />
             </Field>
           )}
-          <Field label="Email" required>
+          {notice && <InlineMessage kind="info">{notice}</InlineMessage>}
+          <Field label="Email" required help={signup ? domainHint : undefined}>
             <TextField type="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus={!signup} autoComplete="email" />
           </Field>
           <Field label="Password" required help={signup ? 'At least 8 characters.' : undefined}>
@@ -71,12 +85,19 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="login-switch-row">
-          {signup ? 'Already have an account?' : 'New to PubPro?'}
-          <button type="button" className="login-switch" onClick={() => { setMode(m => (m === 'signup' ? 'signin' : 'signup')); setError(''); }}>
-            {signup ? 'Sign in' : 'Create an account'}
-          </button>
-        </div>
+        {signup && rules.mode === 'approval' && (
+          <div className="login-hint">New accounts are approved by an administrator before you can sign in.</div>
+        )}
+        {rules.mode === 'closed' ? (
+          <div className="login-switch-row">New to PubPro? Ask your system administrator for an account.</div>
+        ) : (
+          <div className="login-switch-row">
+            {signup ? 'Already have an account?' : 'New to PubPro?'}
+            <button type="button" className="login-switch" onClick={() => { setMode(m => (m === 'signup' ? 'signin' : 'signup')); setError(''); setNotice(''); }}>
+              {signup ? 'Sign in' : 'Create an account'}
+            </button>
+          </div>
+        )}
         {import.meta.env.DEV && !signup && <div className="login-hint">Local default: admin@example.com / admin123</div>}
       </div>
     </div>

@@ -4,7 +4,7 @@ import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
-import { fmtSaved } from './Publications';
+import { SignupTab, UsersTab } from './SystemAdminUsers';
 import './SystemAdmin.css';
 
 const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many || one + 's');
@@ -45,10 +45,13 @@ export default function SystemAdmin() {
       />
       <div className="sa-tabs" role="tablist" aria-label="System Administrator sections">
         <button type="button" role="tab" aria-selected={tab === 'users'} className="sa-tab" onClick={() => setTab('users')}>
-          Users{users ? <span className="sa-tab-n">{users.length}</span> : null}
+          Users{users ? <span className="sa-tab-n">{users.filter(x => !x.pending).length}</span> : null}
         </button>
         <button type="button" role="tab" aria-selected={tab === 'roles'} className="sa-tab" onClick={() => setTab('roles')}>
           Roles &amp; permissions{roleData ? <span className="sa-tab-n">{roleData.roles.length}</span> : null}
+        </button>
+        <button type="button" role="tab" aria-selected={tab === 'signup'} className="sa-tab" onClick={() => setTab('signup')}>
+          Sign-up{users && users.some(x => x.pending) ? <span className="sa-tab-n sa-tab-n--alert">{users.filter(x => x.pending).length} waiting</span> : null}
         </button>
       </div>
 
@@ -57,8 +60,14 @@ export default function SystemAdmin() {
 
       {tab === 'users' ? (
         <UsersTab
-          me={user} users={users} roles={roleData ? roleData.roles : []}
+          me={user} users={users} roles={roleData ? roleData.roles : []} options={roleData && roleData.options}
           onChanged={(msg, list) => { setError(''); if (msg) setNotice(msg); if (list) setUsers(list); else loadUsers(); loadRoles(); }}
+          onError={setError}
+        />
+      ) : tab === 'signup' ? (
+        <SignupTab
+          data={roleData}
+          onChanged={(msg, data) => { setError(''); if (msg) setNotice(msg); if (data) setRoleData(data); else loadRoles(); }}
           onError={setError}
         />
       ) : (
@@ -69,194 +78,6 @@ export default function SystemAdmin() {
         />
       )}
     </div>
-  );
-}
-
-// ---- Users -----------------------------------------------------------------
-
-function UsersTab({ me, users, roles, onChanged, onError }) {
-  const [query, setQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ name: '', email: '', role: 'reviewer' });
-  const [busy, setBusy] = useState(false);
-  const [secret, setSecret] = useState(null); // { name, password, reset }
-  const [confirm, setConfirm] = useState(null); // { kind: 'deactivate' | 'reset', user }
-
-  const staffRoles = roles.filter(r => r.key !== 'author');
-  const roleOptions = staffRoles.map(r => ({ value: r.key, label: r.name }));
-  const q = query.trim().toLowerCase();
-  const list = (users || []).filter(u => (showInactive || u.active)
-    && (!roleFilter || u.role === roleFilter)
-    && (!q || (u.name + ' ' + u.email).toLowerCase().includes(q)));
-  const inactiveCount = (users || []).filter(u => !u.active).length;
-
-  const createUser = async () => {
-    setBusy(true);
-    try {
-      const r = await api.post('/admin/users', draft);
-      setSecret({ name: r.user.name, email: r.user.email, password: r.tempPassword });
-      setAdding(false);
-      setDraft({ name: '', email: '', role: draft.role });
-      onChanged('Added ' + r.user.name + ' as ' + r.user.role_name + '.');
-    } catch (err) {
-      onError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const update = async (u, patch, msg) => {
-    try {
-      const saved = await api.put('/admin/users/' + u.id, patch);
-      onChanged(msg(saved), (users || []).map(x => (x.id === saved.id ? saved : x)));
-    } catch (err) {
-      onError(err.message);
-    }
-  };
-
-  const runConfirm = async () => {
-    const { kind, user: u } = confirm;
-    setConfirm(null);
-    if (kind === 'deactivate') {
-      update(u, { active: false }, s => s.name + ' is deactivated and can no longer sign in.');
-      return;
-    }
-    try {
-      const r = await api.post('/admin/users/' + u.id + '/reset-password', {});
-      setSecret({ name: u.name, email: u.email, password: r.tempPassword, reset: true });
-      onChanged('');
-    } catch (err) {
-      onError(err.message);
-    }
-  };
-
-  const copy = text => { try { navigator.clipboard.writeText(text); } catch (e) { /* ignore */ } };
-
-  return (
-    <>
-      {secret && (
-        <div className="sa-secret" role="status">
-          <Icon name="key" size={20} color="var(--nav)" />
-          <div className="sa-secret-text">
-            <div>
-              {secret.reset ? 'New temporary password for ' : 'Temporary password for '}<strong>{secret.name}</strong> ({secret.email}):{' '}
-              <code className="sa-code">{secret.password}</code>
-            </div>
-            <div className="sa-faint">
-              Share it with them privately. They sign in with it and set their own from the account menu (Change password).
-              It won&rsquo;t be shown again.
-            </div>
-          </div>
-          <Button variant="secondary" icon="content_copy" onClick={() => copy(secret.password)}>Copy</Button>
-          <button type="button" className="sa-x" aria-label="Dismiss" onClick={() => setSecret(null)}><Icon name="close" size={18} /></button>
-        </div>
-      )}
-
-      <section className="sa-card">
-        <div className="sa-toolbar">
-          <TextField iconBefore="search" placeholder="Search by name or email" value={query} onChange={e => setQuery(e.target.value)} width="280px" aria-label="Search users" />
-          <Select options={[{ value: '', label: 'All roles' }].concat(roles.map(r => ({ value: r.key, label: r.name })))} value={roleFilter} onChange={e => setRoleFilter(e.target.value)} width="220px" aria-label="Filter by role" />
-          {inactiveCount > 0 && (
-            <label className="sa-check">
-              <input type="checkbox" checked={showInactive} onChange={() => setShowInactive(v => !v)} />
-              Show deactivated ({inactiveCount})
-            </label>
-          )}
-          <span className="sa-grow" />
-          {!adding && <Button variant="primary" icon="person_add" onClick={() => setAdding(true)}>Add User</Button>}
-        </div>
-
-        {adding && (
-          <div className="sa-add">
-            <div className="sa-add-grid">
-              <Field label="Name"><TextField value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} autoFocus /></Field>
-              <Field label="Email"><TextField type="email" value={draft.email} onChange={e => setDraft({ ...draft, email: e.target.value })} /></Field>
-              <Field label="Role"><Select options={roleOptions} value={draft.role} onChange={e => setDraft({ ...draft, role: e.target.value })} width="100%" /></Field>
-            </div>
-            <div className="sa-add-foot">
-              <span className="sa-faint">PubPro creates a temporary password for you to pass on. External authors get their login from their author profile instead.</span>
-              <span className="sa-grow" />
-              <Button variant="secondary" onClick={() => setAdding(false)}>Cancel</Button>
-              <Button variant="primary" onClick={createUser} disabled={busy || !draft.name.trim() || !draft.email.trim()}>{busy ? 'Adding…' : 'Add User'}</Button>
-            </div>
-          </div>
-        )}
-
-        {users === null ? <div className="empty-state empty-state--inset">Loading&hellip;</div> : list.length === 0 ? (
-          <div className="empty-state empty-state--inset">No users match. Clear the search or filters to see everyone.</div>
-        ) : (
-          <div className="sa-table" role="table" aria-label="Users">
-            <div className="sa-row sa-row--head" role="row">
-              <span role="columnheader">User</span>
-              <span role="columnheader">Role</span>
-              <span role="columnheader">Status</span>
-              <span role="columnheader">Last sign-in</span>
-              <span role="columnheader"><span className="sa-sr">Actions</span></span>
-            </div>
-            {list.map(u => {
-              const self = String(u.id) === String(me && me.id);
-              const author = u.role === 'author';
-              return (
-                <div key={u.id} className={'sa-row' + (u.active ? '' : ' sa-row--off')} role="row">
-                  <span role="cell" className="sa-user">
-                    <span className="sa-avatar" aria-hidden="true">{u.name.split(/\s+/).map(w => w[0]).slice(0, 2).join('')}</span>
-                    <span>
-                      <span className="sa-name">{u.name}{self && <span className="sa-you"> (you)</span>}</span>
-                      <span className="sa-email">{u.email}</span>
-                    </span>
-                  </span>
-                  <span role="cell">
-                    {author ? (
-                      <span className="sa-fixed" title="External author logins come from their author profile.">External Author</span>
-                    ) : self ? (
-                      <span className="sa-fixed" title="Another administrator can change your role.">{u.role_name}</span>
-                    ) : (
-                      <Select
-                        options={roleOptions}
-                        value={u.role}
-                        disabled={!u.active}
-                        aria-label={'Role for ' + u.name}
-                        onChange={e => update(u, { role: e.target.value }, s => s.name + ' is now ' + s.role_name + '.')}
-                        width="100%"
-                      />
-                    )}
-                  </span>
-                  <span role="cell">{u.active ? <Pill tone="active">Active</Pill> : <Pill tone="cancelled">Deactivated</Pill>}</span>
-                  <span role="cell" className="sa-faint">{u.last_login_at ? fmtSaved(u.last_login_at) : 'Never'}</span>
-                  <span role="cell" className="sa-actions">
-                    {!self && u.active && (
-                      <>
-                        <Button variant="secondary" onClick={() => setConfirm({ kind: 'reset', user: u })}>Reset Password</Button>
-                        <Button variant="fatal" onClick={() => setConfirm({ kind: 'deactivate', user: u })}>Deactivate</Button>
-                      </>
-                    )}
-                    {!self && !u.active && (
-                      <Button variant="secondary" onClick={() => update(u, { active: true }, s => s.name + ' can sign in again.')}>Reactivate</Button>
-                    )}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {confirm && (
-        <ConfirmModal
-          title={confirm.kind === 'reset' ? 'Reset ' + confirm.user.name + '’s password?' : 'Deactivate ' + confirm.user.name + '?'}
-          confirmLabel={confirm.kind === 'reset' ? 'Reset Password' : 'Deactivate'}
-          cancelLabel="Keep"
-          onConfirm={runConfirm}
-          onCancel={() => setConfirm(null)}
-        >
-          {confirm.kind === 'reset'
-            ? 'Their current password stops working. You’ll get a temporary one to pass on.'
-            : 'They’re signed out and can’t sign in until you reactivate them. Their name stays on records and audit trails.'}
-        </ConfirmModal>
-      )}
-    </>
   );
 }
 
@@ -329,15 +150,6 @@ function RolesTab({ data, onChanged, onError }) {
     try {
       const res = await api.delete('/admin/roles/' + r.key);
       onChanged('Deleted the ' + r.name + ' role.', res);
-    } catch (err) {
-      onError(err.message);
-    }
-  };
-
-  const setSignup = async key => {
-    try {
-      const res = await api.put('/admin/settings', { signupRole: key });
-      onChanged('New sign-ups now get the ' + res.roles.find(r => r.key === key).name + ' role.', res);
     } catch (err) {
       onError(err.message);
     }
@@ -441,10 +253,6 @@ function RolesTab({ data, onChanged, onError }) {
             </li>
           ))}
         </ul>
-        <div className="sa-signup">
-          <label htmlFor="sa-signup-role">People who create their own account on the sign-in page get</label>
-          <Select id="sa-signup-role" options={cols.filter(r => !r.locked).map(r => ({ value: r.key, label: r.name }))} value={data.signupRole} onChange={e => setSignup(e.target.value)} width="240px" />
-        </div>
       </section>
 
       {toDelete && (

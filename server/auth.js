@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 
 const SECRET = process.env.JWT_SECRET || 'pubplanning_secret_key_change_in_prod';
 
-function signToken(payload) {
-  return jwt.sign(payload, SECRET, { expiresIn: '7d' });
+function signToken(payload, expiresIn = '7d') {
+  return jwt.sign(payload, SECRET, { expiresIn });
 }
 
 function verifyToken(token) {
@@ -24,12 +24,15 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ error: 'Invalid token' });
   }
   const db = require('./db');
-  const { permissionsOf } = require('./permissions');
-  const row = db.prepare('SELECT id, email, name, role, client_id, author_profile_id, active FROM users WHERE id = ?').get(claims.id);
+  const { permissionsForUser, rolesOf } = require('./permissions');
+  const row = db.prepare('SELECT id, email, name, role, extra_roles, client_id, author_profile_id, active, pending FROM users WHERE id = ?').get(claims.id);
   if (!row) return res.status(401).json({ error: 'Your account no longer exists. Sign in again.' });
   if (!row.active) return res.status(401).json({ error: 'Your account has been deactivated. Contact your system administrator.' });
-  req.user = { ...claims, email: row.email, name: row.name, role: row.role, client_id: row.client_id, author_profile_id: row.author_profile_id || null };
-  req.perms = permissionsOf(row.role);
+  if (row.pending) return res.status(401).json({ error: 'Your account is waiting for an administrator to approve it.' });
+  req.user = { ...claims, email: row.email, name: row.name, role: row.role, roles: rolesOf(row), client_id: row.client_id, author_profile_id: row.author_profile_id || null };
+  // Set when a System Administrator is signed in as this user (System Administrator > Sign In As).
+  req.impersonator = claims.imp || null;
+  req.perms = permissionsForUser(row);
   next();
 }
 
@@ -47,7 +50,7 @@ function requirePerm(perm) {
 
 function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
-    if (req.user.role !== 'admin') {
+    if (!(req.user.roles || [req.user.role]).includes('admin')) {
       return res.status(403).json({ error: 'Admin only' });
     }
     next();

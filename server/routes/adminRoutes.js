@@ -4,13 +4,27 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const db = require('../db');
-const { requireAuth, requirePerm } = require('../auth');
+const { requireAuth, requirePerm, signToken } = require('../auth');
 const P = require('../permissions');
+const people = require('../people');
 
 router.use(requireAuth, requirePerm('admin.users'));
 
-const USER_COLS = 'id, email, name, role, active, created_at, last_login_at, author_profile_id';
-const userOut = u => ({ ...u, active: !!u.active, role_name: P.roleName(u.role) });
+// Who signed in as whom, and when (System Administrator > Sign In As).
+db.exec(`CREATE TABLE IF NOT EXISTS admin_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT DEFAULT (datetime('now')),
+  actor_id INTEGER, actor_name TEXT, action TEXT, target_id INTEGER, target_name TEXT
+)`);
+const logAdmin = (req, action, target) => db.prepare('INSERT INTO admin_log (actor_id, actor_name, action, target_id, target_name) VALUES (?, ?, ?, ?, ?)')
+  .run(req.user.id, req.user.name, action, target ? target.id : null, target ? target.name : null);
+
+const USER_COLS = 'id, email, name, role, extra_roles, active, pending, created_at, last_login_at, author_profile_id, title, department, phone, therapeutic_areas, ooo_from, ooo_to, ooo_note';
+const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, ...u }) => ({
+  ...u, active: !!u.active, pending: !!u.pending,
+  roles: P.rolesOf({ role: u.role, extra_roles }), role_name: P.roleNamesOf({ role: u.role, extra_roles }),
+  ...people.profileFields({ therapeutic_areas, ooo_from, ooo_to, ooo_note, title: u.title, department: u.department, phone: u.phone }),
+});
+const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 /** A readable one-time password the admin passes on; the user changes it from the account menu. */
 const tempPassword = () => {
@@ -18,23 +32,30 @@ const tempPassword = () => {
   return words.slice(0, 5) + '-' + words.slice(5);
 };
 
-const activeAdmins = () => db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'admin' AND active = 1").get().c;
+const activeAdmins = () => db.prepare('SELECT role, extra_roles FROM users WHERE active = 1 AND pending = 0').all().filter(u => P.rolesOf(u).includes('admin')).length;
+/** The roles in a request: { roles: [..] }, or the older single { role }. */
+const rolesIn = body => (Array.isArray(body.roles) ? body.roles.map(String) : body.role != null ? [String(body.role)] : null);
 
 router.get('/users', (req, res) => {
-  res.json(db.prepare(`SELECT ${USER_COLS} FROM users ORDER BY active DESC, lower(name)`).all().map(userOut));
+  res.json(db.prepare(`SELECT ${USER_COLS} FROM users ORDER BY pending DESC, active DESC, lower(name)`).all().map(userOut));
 });
 
 router.post('/users', (req, res) => {
   const name = String(req.body.name || '').trim();
   const email = String(req.body.email || '').trim().toLowerCase();
-  const role = String(req.body.role || '');
+  const roles = rolesIn(req.body) || [];
+  const role = roles[0] || '';
   if (!name || !email) return res.status(400).json({ error: 'Enter a name and email address.' });
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
-  if (!P.roleRow(role) || role === 'author') return res.status(400).json({ error: 'Choose a staff role. External author logins are created from their author profile.' });
+  if (!emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
+  let cols;
+  try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
+  if (!roles.length || roles.some(k => !P.roleRow(k) || k === 'author')) return res.status(400).json({ error: 'Choose one or more staff roles. External author logins are created from their author profile.' });
   if (db.prepare('SELECT 1 FROM users WHERE lower(email) = ?').get(email)) return res.status(400).json({ error: 'Someone already uses that email address.' });
   const password = tempPassword();
   const r = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)')
     .run(email, bcrypt.hashSync(password, 10), name, role);
+  people.writeProfile(r.lastInsertRowid, cols);
+  P.setRoles(r.lastInsertRowid, roles);
   res.json({ user: userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(r.lastInsertRowid)), tempPassword: password });
 });
 
@@ -43,21 +64,71 @@ router.put('/users/:id', (req, res) => {
   if (!u) return res.status(404).json({ error: 'User not found.' });
   const self = String(u.id) === String(req.user.id);
   const name = req.body.name == null ? u.name : String(req.body.name).trim();
-  const role = req.body.role == null ? u.role : String(req.body.role);
+  const before = P.rolesOf(u);
+  const roles = rolesIn(req.body) || before;
   const active = req.body.active == null ? !!u.active : !!req.body.active;
+  const email = req.body.email == null ? u.email : String(req.body.email).trim().toLowerCase();
   if (!name) return res.status(400).json({ error: 'Enter a name.' });
-  if (!P.roleRow(role)) return res.status(400).json({ error: 'Unknown role.' });
-  if ((u.role === 'author') !== (role === 'author')) {
+  if (!emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
+  if (email !== u.email && db.prepare('SELECT 1 FROM users WHERE lower(email) = ? AND id != ?').get(email, u.id)) return res.status(400).json({ error: 'Someone already uses that email address.' });
+  let cols;
+  try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
+  if (!roles.length) return res.status(400).json({ error: 'Give them at least one role.' });
+  if (roles.some(k => !P.roleRow(k))) return res.status(400).json({ error: 'Unknown role.' });
+  if (before.includes('author') !== roles.includes('author')) {
     return res.status(400).json({ error: 'External author logins keep the External Author role; they come from author profiles.' });
   }
-  if (self && (role !== u.role || !active)) {
+  const changedRoles = roles.slice().sort().join() !== before.slice().sort().join();
+  if (self && (changedRoles || !active)) {
     return res.status(400).json({ error: 'You can’t change your own role or deactivate yourself. Ask another administrator.' });
   }
-  if (u.role === 'admin' && u.active && (role !== 'admin' || !active) && activeAdmins() <= 1) {
+  if (before.includes('admin') && u.active && (!roles.includes('admin') || !active) && activeAdmins() <= 1) {
     return res.status(400).json({ error: 'Keep at least one active System Administrator.' });
   }
-  db.prepare('UPDATE users SET name = ?, role = ?, active = ? WHERE id = ?').run(name, role, active ? 1 : 0, u.id);
+  db.prepare('UPDATE users SET name = ?, email = ?, active = ? WHERE id = ?').run(name, email, active ? 1 : 0, u.id);
+  people.writeProfile(u.id, cols);
+  if (changedRoles) { try { P.setRoles(u.id, roles); } catch (e) { return res.status(400).json({ error: e.message }); } }
   res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
+});
+
+// Self sign-ups waiting for approval (sign-up rule "approval"): approve, or decline (removes the account).
+router.post('/users/:id/approve', (req, res) => {
+  const u = db.prepare('SELECT id, pending FROM users WHERE id = ?').get(req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found.' });
+  const roles = rolesIn(req.body);
+  if (roles) {
+    if (!roles.length || roles.some(k => !P.roleRow(k) || k === 'author')) return res.status(400).json({ error: 'Choose a staff role.' });
+    P.setRoles(u.id, roles);
+  }
+  db.prepare('UPDATE users SET pending = 0, active = 1 WHERE id = ?').run(u.id);
+  res.json(userOut(db.prepare(`SELECT ${USER_COLS} FROM users WHERE id = ?`).get(u.id)));
+});
+router.delete('/users/:id', (req, res) => {
+  const u = db.prepare('SELECT id, pending FROM users WHERE id = ?').get(req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found.' });
+  if (!u.pending) return res.status(400).json({ error: 'Only sign-ups waiting for approval can be removed. Deactivate other accounts instead.' });
+  db.prepare('DELETE FROM users WHERE id = ?').run(u.id);
+  res.json({ success: true });
+});
+
+/**
+ * Sign In As: a 2-hour session as another user, to see PubPro exactly as they do. The token carries
+ * the administrator (imp) so the app can show a banner and switch back; everything done in it is
+ * done as that user. Not for yourself, deactivated or unapproved accounts, or from inside another
+ * impersonation.
+ */
+router.post('/users/:id/impersonate', (req, res) => {
+  if (req.impersonator) return res.status(400).json({ error: 'Return to your own account before signing in as someone else.' });
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found.' });
+  if (String(u.id) === String(req.user.id)) return res.status(400).json({ error: 'That\u2019s you.' });
+  if (!u.active || u.pending) return res.status(400).json({ error: u.name + '\u2019s account isn\u2019t active, so you can\u2019t sign in as them.' });
+  const claims = { id: u.id, email: u.email, name: u.name, role: u.role, client_id: u.client_id, author_profile_id: u.author_profile_id || null, imp: { id: req.user.id, name: req.user.name } };
+  logAdmin(req, 'impersonate', u);
+  res.json({
+    token: signToken(claims, '2h'),
+    user: { ...claims, roles: P.rolesOf(u), role_name: P.roleNamesOf(u), permissions: P.permissionsForUser(u) },
+  });
 });
 
 router.post('/users/:id/reset-password', (req, res) => {
@@ -68,7 +139,10 @@ router.post('/users/:id/reset-password', (req, res) => {
   res.json({ tempPassword: password });
 });
 
-const rolesPayload = () => ({ roles: P.listRoles(), permissions: P.PERMISSIONS, signupRole: P.signupRole() });
+const rolesPayload = () => ({
+  roles: P.listRoles(), permissions: P.PERMISSIONS, signupRole: P.signupRole(),
+  signup: people.signupRules(), options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS },
+});
 
 router.get('/roles', (req, res) => res.json(rolesPayload()));
 
@@ -108,17 +182,21 @@ router.delete('/roles/:key', (req, res) => {
   const row = P.roleRow(req.params.key);
   if (!row) return res.status(404).json({ error: 'Role not found.' });
   if (row.built_in) return res.status(400).json({ error: 'Built-in roles can’t be deleted.' });
-  const n = db.prepare('SELECT COUNT(*) AS c FROM users WHERE role = ?').get(row.key).c;
+  const n = db.prepare('SELECT role, extra_roles FROM users').all().filter(x => P.rolesOf(x).includes(row.key)).length;
   if (n) return res.status(400).json({ error: 'Move the ' + n + ' user' + (n === 1 ? '' : 's') + ' with this role to another role first.' });
   if (P.signupRole() === row.key) P.setSetting('signup_role', 'pub_manager');
   db.prepare('DELETE FROM roles WHERE key = ?').run(row.key);
   res.json(rolesPayload());
 });
 
+// Self sign-up: { signupRole, mode: open | approval | closed, domains: [..] } (any subset).
 router.put('/settings', (req, res) => {
-  const role = String(req.body.signupRole || '');
-  if (!P.roleRow(role) || P.LOCKED[role]) return res.status(400).json({ error: 'Choose a staff role other than System Administrator.' });
-  P.setSetting('signup_role', role);
+  if (req.body.signupRole != null) {
+    const role = String(req.body.signupRole);
+    if (!P.roleRow(role) || P.LOCKED[role]) return res.status(400).json({ error: 'Choose a staff role other than System Administrator.' });
+    P.setSetting('signup_role', role);
+  }
+  try { people.setSignupRules({ mode: req.body.mode, domains: req.body.domains }); } catch (e) { return res.status(400).json({ error: e.message }); }
   res.json(rolesPayload());
 });
 

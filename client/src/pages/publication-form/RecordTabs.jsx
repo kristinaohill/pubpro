@@ -1,18 +1,21 @@
 // Task Options, Documents and Audit Trail tabs.
 import React from 'react';
 import { Button, DropZone, Icon, Radio, Select, TextArea, TextField } from '../../ds/pubpro';
-import { DELEGATE_OPTIONS, REASSIGN_FROM_OPTIONS } from './data';
+import usePeople from '../../components/usePeople';
 import { Card, Empty, FormField, ListBox, ListRow, Pair, Stack, TabHead, Tag } from './ui';
 import './tabs-d.css';
 
 export function TaskOptionsTab({ st, set, bind }) {
+  // PubPro users (System Administrator), with anyone already chosen on older records kept in the list.
+  const staff = usePeople().map(p => p.name);
+  const withSaved = v => (v && !staff.includes(v) ? staff.concat([v]) : staff);
   return (
     <Stack>
       <TabHead title="Task Options" sub="Hand this publication to someone else, or bring in a collaborator." />
 
       <Card title="Delegate">
         <FormField id="pfxd-delegate-to" label="User to delegate to:">
-          <Select id="pfxd-delegate-to" options={DELEGATE_OPTIONS} placeholder="Please select" {...bind('delegateTo')} width="100%" />
+          <Select id="pfxd-delegate-to" options={withSaved(st.fields.delegateTo)} placeholder="Please select" {...bind('delegateTo')} width="100%" />
         </FormField>
         <FormField id="pfxd-delegate-comments" label="Comments:">
           <TextArea id="pfxd-delegate-comments" width="100%" height="68px" />
@@ -44,7 +47,7 @@ export function TaskOptionsTab({ st, set, bind }) {
         </fieldset>
         <Pair>
           <FormField id="pfxd-reassign-from" label="Reassign User From:">
-            <Select id="pfxd-reassign-from" options={REASSIGN_FROM_OPTIONS} placeholder="Please select" {...bind('reassignFrom')} width="100%" />
+            <Select id="pfxd-reassign-from" options={withSaved(st.fields.reassignFrom)} placeholder="Please select" {...bind('reassignFrom')} width="100%" />
           </FormField>
           <div />
         </Pair>

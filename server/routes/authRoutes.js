@@ -3,7 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { signToken, requireAuth } = require('../auth');
-const { permissionsOf, roleName, signupRole } = require('../permissions');
+const { permissionsForUser, rolesOf, roleNamesOf } = require('../permissions');
+const people = require('../people');
 
 // Per-user settings from the My Profile page, stored as JSON.
 try {
@@ -13,21 +14,40 @@ try {
 const DEFAULT_PREFS = { weeklySummary: false };
 const readPrefs = raw => { try { return { ...DEFAULT_PREFS, ...JSON.parse(raw || '{}') }; } catch (e) { return { ...DEFAULT_PREFS }; } };
 const claimsOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, client_id: u.client_id, author_profile_id: u.author_profile_id || null });
-const profileOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, role_name: roleName(u.role), created_at: u.created_at, prefs: readPrefs(u.prefs), permissions: permissionsOf(u.role) });
+const profileOf = u => ({
+  id: u.id, email: u.email, name: u.name, role: u.role, roles: rolesOf(u), role_name: roleNamesOf(u), created_at: u.created_at,
+  prefs: readPrefs(u.prefs), permissions: permissionsForUser(u), ...people.profileFields(u),
+  options: { therapeuticAreas: people.THERAPEUTIC_AREAS, departments: people.DEPARTMENTS },
+});
 // What the client keeps about the signed-in user: the token claims plus what their role allows.
-const sessionOf = u => ({ ...claimsOf(u), role_name: roleName(u.role), permissions: permissionsOf(u.role) });
+const sessionOf = u => ({ ...claimsOf(u), roles: rolesOf(u), role_name: roleNamesOf(u), permissions: permissionsForUser(u) });
+
+// What the sign-in page needs to know before someone creates an account (no sign-in required).
+router.get('/signup-options', (req, res) => {
+  const { mode, domains } = people.signupRules();
+  res.json({ mode, domains });
+});
 
 router.post('/register', (req, res) => {
-  const { email, password, name } = req.body;
+  const { password } = req.body;
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const name = String(req.body.name || '').trim();
   if (!email || !password || !name) return res.status(400).json({ error: 'Missing fields' });
+  const rules = people.signupRules();
+  if (rules.mode === 'closed') return res.status(403).json({ error: 'New accounts are created by your system administrator. Ask them for access.' });
+  const domain = email.split('@')[1] || '';
+  if (rules.domains.length && !rules.domains.includes(domain)) {
+    return res.status(403).json({ error: 'Use your work email (' + rules.domains.map(d => '@' + d).join(' or ') + ').' });
+  }
   if (String(password).length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters.' });
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+  const existing = db.prepare('SELECT id FROM users WHERE lower(email) = ?').get(email);
   if (existing) return res.status(400).json({ error: 'Email already registered' });
   const hash = bcrypt.hashSync(password, 10);
-  const r = db.prepare('INSERT INTO users (email, password_hash, name, role, client_id) VALUES (?,?,?,?,?)').run(
-    email, hash, name, signupRole(), null
+  const pending = rules.mode === 'approval' ? 1 : 0;
+  const r = db.prepare('INSERT INTO users (email, password_hash, name, role, client_id, pending) VALUES (?,?,?,?,?,?)').run(
+    email, hash, name, rules.role, null, pending
   );
-  res.json({ id: r.lastInsertRowid, email, name });
+  res.json({ id: r.lastInsertRowid, email, name, pending: !!pending });
 });
 
 router.post('/login', (req, res) => {
@@ -38,6 +58,7 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
   if (!user.active) return res.status(403).json({ error: 'This account has been deactivated. Contact your system administrator.' });
+  if (user.pending) return res.status(403).json({ error: 'Your account is waiting for an administrator to approve it. You\u2019ll be able to sign in once they do.' });
   db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").run(user.id);
   res.json({ token: signToken(claimsOf(user)), user: sessionOf(user) });
 });
@@ -56,7 +77,7 @@ router.post('/change-password', requireAuth, (req, res) => {
 router.get('/me', requireAuth, (req, res) => {
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json(profileOf(user));
+  res.json({ ...profileOf(user), impersonator: req.impersonator });
 });
 
 // My Profile: update your display name and settings. Returns a fresh token so the new name
@@ -68,9 +89,13 @@ router.put('/me', requireAuth, (req, res) => {
   if (!name) return res.status(400).json({ error: 'Enter your name.' });
   const incoming = req.body.prefs || {};
   const prefs = { ...readPrefs(user.prefs), ...('weeklySummary' in incoming ? { weeklySummary: !!incoming.weeklySummary } : {}) };
+  let cols;
+  try { cols = people.readProfile(req.body); } catch (e) { return res.status(400).json({ error: e.message }); }
   db.prepare('UPDATE users SET name = ?, prefs = ? WHERE id = ?').run(name, JSON.stringify(prefs), user.id);
+  people.writeProfile(user.id, cols);
   const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-  res.json({ token: signToken(claimsOf(updated)), user: sessionOf(updated), profile: profileOf(updated) });
+  const claims = req.impersonator ? { ...claimsOf(updated), imp: req.impersonator } : claimsOf(updated);
+  res.json({ token: signToken(claims, req.impersonator ? '2h' : '7d'), user: { ...sessionOf(updated), imp: req.impersonator || undefined }, profile: profileOf(updated) });
 });
 
 module.exports = router;

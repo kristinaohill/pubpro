@@ -35,7 +35,7 @@ const WORKSPACE_HOME = {
 };
 
 export default function Layout() {
-  const { user, logout, can } = useAuth();
+  const { user, logout, can, impersonator, stopImpersonating } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -92,8 +92,21 @@ export default function Layout() {
     </span>
   );
 
+  const backToAdmin = () => { stopImpersonating(); navigate('/admin'); };
+  const imp = impersonator && (
+    <div className="layout-imp" role="status">
+      <span className="material-symbols-outlined" aria-hidden="true">visibility</span>
+      <span>
+        You&rsquo;re signed in as <strong>{user && user.name}</strong>{user && user.role_name ? ' (' + user.role_name + ')' : ''}.
+        Anything you do is saved as them.
+      </span>
+      <button type="button" className="layout-imp-btn" onClick={backToAdmin}>Return to {impersonator.name}</button>
+    </div>
+  );
+
   return (
     <div className="layout">
+      {imp}
       {chrome && (
         <div className="layout-chrome">
           <div className="layout-topnav" ref={navRef}>

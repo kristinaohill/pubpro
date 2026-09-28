@@ -8,6 +8,10 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 // Roles, permissions and the users.active column, before any route reads them.
 require('./permissions');
+require('./people');
+
+// Staff directory for the author, reviewer and task pickers.
+app.get('/api/people', require('./auth').requireAuth, require('./auth').blockAuthors, (req, res) => res.json(require('./people').directory()));
 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/clients', require('./routes/clientRoutes'));
@@ -67,4 +71,21 @@ if (require('fs').existsSync(DIST)) {
 }
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+
+// Hosting (Railway) stops the old copy with SIGTERM on every deploy. Finish open requests, close the
+// database and exit cleanly, so a routine redeploy isn't reported as a crash.
+let stopping = false;
+function shutdown(signal) {
+  if (stopping) return;
+  stopping = true;
+  console.log(signal + ' received: shutting down.');
+  const done = () => {
+    try { require('./db').close(); } catch (e) { /* already closed */ }
+    process.exit(0);
+  };
+  server.close(done);
+  setTimeout(done, 5000).unref();
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

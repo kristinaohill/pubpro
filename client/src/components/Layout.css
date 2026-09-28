@@ -49,3 +49,17 @@
   position: relative;
   z-index: 20;
 }
+
+/* Sign In As banner (System Administrator): always visible while impersonating. */
+.layout-imp {
+  position: sticky; top: 0; z-index: 120; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 8px 16px; background: #FFD66B; color: #3D2E00; font-family: var(--font-sans); font-size: var(--fs-base);
+  flex-wrap: wrap; text-align: center;
+}
+.layout-imp .material-symbols-outlined { font-size: 20px; }
+.layout-imp-btn {
+  border: 1px solid #3D2E00; background: #3D2E00; color: #FFF6D6; border-radius: var(--radius-pill);
+  padding: 5px 14px; font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-bold); cursor: pointer;
+}
+.layout-imp-btn:hover { background: #5A4400; }
+.layout-imp-btn:focus-visible { outline: 2px solid #3D2E00; outline-offset: 2px; }
