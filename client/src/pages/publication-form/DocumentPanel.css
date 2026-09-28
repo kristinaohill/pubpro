@@ -1,0 +1,76 @@
+/* Publication document panel: view tabs, tracking switch, and the tracked-changes review view.
+   The panel frame itself (.pf-docpanel*) is in PublicationForm.css. */
+
+.pf-doc-bar {
+  display: flex; align-items: center; gap: 12px; padding: 8px 14px;
+  border-bottom: 1px solid var(--border-hairline); background: #F7F9FB;
+}
+.pf-doc-tabs { display: flex; gap: 4px; }
+.pf-doc-tab {
+  border: 0; background: transparent; border-radius: var(--radius-pill);
+  padding: 6px 14px; font: inherit; font-size: var(--fs-meta); font-weight: var(--fw-bold);
+  color: #333333; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.pf-doc-tab:hover { background: #E9EEF3; }
+.pf-doc-tab[aria-selected='true'] { background: var(--nav); color: var(--white); }
+.pf-doc-tab:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 1px; }
+.pf-doc-count {
+  min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px;
+  background: var(--high-emphasis); color: var(--white); font-size: 11px; line-height: 18px; text-align: center;
+}
+.pf-doc-tab[aria-selected='true'] .pf-doc-count { background: var(--white); color: var(--nav); }
+
+.pf-doc-track {
+  margin-left: auto; display: inline-flex; align-items: center; gap: 7px;
+  font-size: var(--fs-meta); font-weight: var(--fw-semibold); color: var(--fg-1); cursor: pointer;
+}
+.pf-doc-track input { width: 16px; height: 16px; margin: 0; accent-color: var(--high-emphasis); cursor: inherit; }
+.pf-doc-track--locked { color: var(--fg-3); cursor: default; }
+
+/* Changes view */
+.pf-doc-review { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pf-doc-people {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 14px;
+  border-bottom: 1px solid var(--border-hairline);
+}
+.pf-doc-person {
+  display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px;
+  border: 1px solid var(--border-divider); border-radius: var(--radius-pill); background: var(--white);
+  font: inherit; font-size: var(--fs-meta); color: var(--fg-1); cursor: pointer;
+}
+.pf-doc-person[aria-pressed='true'] { border-color: var(--nav); box-shadow: inset 0 0 0 1px var(--nav); font-weight: var(--fw-semibold); }
+.pf-doc-person:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 1px; }
+.pf-doc-person-n { color: var(--fg-3); font-weight: var(--fw-semibold); }
+.pf-doc-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.pf-doc-bulk { margin-left: auto; display: inline-flex; gap: 8px; }
+
+.pf-doc-markup {
+  flex: 1; min-height: 0; overflow: auto; padding: 14px 16px;
+  font-size: 15px; line-height: 1.7; color: var(--fg-1); white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.pf-doc-mark { cursor: pointer; border-radius: 3px; text-decoration-thickness: 2px; }
+.pf-doc-mark--ins { text-decoration-line: underline; text-underline-offset: 3px; }
+.pf-doc-mark--del { text-decoration-line: line-through; }
+.pf-doc-mark--muted { cursor: default; opacity: .75; }
+.pf-doc-mark--sel { background: #FFF1B8; box-shadow: 0 0 0 2px #FFF1B8; }
+.pf-doc-mark:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 1px; }
+
+.pf-doc-card {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-top: 1px solid var(--border-hairline); background: #F7F9FB; font-size: var(--fs-meta); color: var(--fg-1);
+}
+.pf-doc-card--empty { color: var(--fg-3); }
+.pf-doc-card-text { flex: 1; min-width: 0; line-height: 1.45; }
+.pf-doc-card-text strong { font-weight: var(--fw-bold); }
+.pf-doc-nav { display: inline-flex; gap: 2px; margin-left: 4px; }
+.pf-doc-navbtn {
+  width: 30px; height: 30px; border: 1px solid var(--border-divider); border-radius: 50%; background: var(--white);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; color: var(--fg-1);
+}
+.pf-doc-navbtn:hover { background: #E9EEF3; }
+.pf-doc-navbtn:focus-visible { outline: 2px solid var(--high-emphasis); outline-offset: 1px; }
+
+@media (max-width: 640px) {
+  .pf-doc-bulk { margin-left: 0; width: 100%; }
+  .pf-doc-card { flex-wrap: wrap; }
+}

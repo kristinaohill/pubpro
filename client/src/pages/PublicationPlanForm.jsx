@@ -969,7 +969,8 @@ function AuditTab({ rows }) {
 export default function PublicationPlanForm() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
+  const canEditPlan = can('plans.edit');
   const userName = (user && user.name) || 'Unknown user';
   const isNew = id === 'new';
   const savedId = isNew ? null : id;
@@ -1200,7 +1201,9 @@ export default function PublicationPlanForm() {
   const inherited = inheritedStakeholders(linked.filter(p => p.status !== 'Cancelled'));
   const currentStatus = planStatus(plan);
   const steps = PLAN_STATUSES.map(label => ({ label, active: label === (plan.status || 'Draft') }));
-  const readOnly = !!cancelled;
+  // Roles without plans.edit see plans read-only.
+  const viewOnly = !cancelled && !canEditPlan;
+  const readOnly = !!cancelled || viewOnly;
 
   return (
     <div className="ppf-page">
@@ -1220,8 +1223,13 @@ export default function PublicationPlanForm() {
         {cancelled && (
           <div className="ppf-banner">
             <InlineMessage kind="warning">
-              Cancelled {cancelled.on} by {cancelled.by}: {cancelled.reason}. The plan is read-only; reinstate it to make changes.
+              Cancelled {cancelled.on} by {cancelled.by}: {cancelled.reason}. The plan is read-only{canEditPlan ? '; reinstate it to make changes' : ''}.
             </InlineMessage>
+          </div>
+        )}
+        {viewOnly && (
+          <div className="ppf-banner">
+            <InlineMessage kind="info">View only: {(user && user.role_name) || 'Your role'} can&rsquo;t {record ? 'change publication plans' : 'create publication plans'}.</InlineMessage>
           </div>
         )}
       </div>
@@ -1304,7 +1312,7 @@ export default function PublicationPlanForm() {
           </>
         )}
         right={readOnly ? (
-          <Button variant="secondary" onClick={reinstate} disabled={saving}>Reinstate Publication Plan</Button>
+          cancelled && canEditPlan ? <Button variant="secondary" onClick={reinstate} disabled={saving}>Reinstate Publication Plan</Button> : null
         ) : (
           <>
             <Button variant="tertiary" onClick={() => persist(plan)} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button>

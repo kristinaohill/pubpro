@@ -44,6 +44,10 @@ export const CHROME = {
   '/studies': EXECUTIVE_DASHBOARD,
   '/profile': EXECUTIVE_DASHBOARD,
   '/vendor': EXECUTIVE_DASHBOARD,
+  '/admin': {
+    nav: FULL_NAV, active: 'Workspaces',
+    workspace: 'System Administrator', tabs: [ALERTS_TAB, CREATE_FULL, SEARCH_FULL],
+  },
   // The Financial Report design has its own navy back bar and no app chrome.
   '/financial-report': null,
 };
@@ -58,6 +62,7 @@ export const MENU_ROUTES = {
   'Home': '/dashboard',
   'Reports': '/financial-report',
   'External Author Dashboard': '/author-dashboard',
+  'System Administrator': '/admin',
 };
 
 export const SEARCH_ROUTES = {
@@ -65,6 +70,14 @@ export const SEARCH_ROUTES = {
   'Publication Plans': '/publication-plans',
   'Studies': '/studies',
   'External Authors': '/external-authors',
+};
+
+// Permission each menu row needs (rows not listed are open to all staff).
+export const MENU_PERMS = {
+  'System Administrator': 'admin.users',
+  'Publication': 'pubs.edit',
+  'Publication Planning': 'plans.edit',
+  'External Author': 'authors.edit',
 };
 
 export const CREATE_ROUTES = {

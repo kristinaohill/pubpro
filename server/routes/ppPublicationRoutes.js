@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAuth, blockAuthors } = require('../auth');
+const { requireAuth, requirePerm, can, blockAuthors } = require('../auth');
+const doc = require('../docMarkup');
 const { productCode, yearCode, nextSequence } = require('../recordIds');
 
 // Record IDs follow the PubPro pattern: <yy>-<type>-<product>-<seq>-V01, e.g. 26-M-DAX-015-V01.
@@ -45,6 +46,16 @@ const parse = (text, fallback) => {
 const listRow = row => (row ? { ...row, summary: parse(row.summary, {}) } : row);
 const getListRow = id => listRow(db.prepare(`SELECT ${LIST_COLUMNS} FROM pp_publications WHERE id = ?`).get(id));
 
+// The document's text and tracked changes are only written through PUT /:id/document, so a form
+// save (or one from a dashboard) never overwrites someone's document edits with a stale copy.
+const DOC_KEYS = ['pubDocText', 'pubDocMarkup', 'pubDocTrack'];
+function keepDocument(dataJson, existingData) {
+  const next = parse(dataJson, {});
+  const prev = existingData || {};
+  DOC_KEYS.forEach(k => { if (k in prev) next[k] = prev[k]; else delete next[k]; });
+  return JSON.stringify(next);
+}
+
 function readBody(body) {
   return {
     title: String(body.title || '').trim(),
@@ -70,8 +81,9 @@ router.get('/:id', requireAuth, (req, res) => {
   res.json({ ...listRow(row), data: parse(row.data, {}) });
 });
 
-router.post('/', requireAuth, blockAuthors, (req, res) => {
-  const { title, pubType, product, status, summary, data } = readBody(req.body);
+router.post('/', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
+  const { title, pubType, product, status, summary } = readBody(req.body);
+  const data = keepDocument(readBody(req.body).data, {});
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
   if (!TYPE_CODES[pubType]) return res.status(400).json({ error: 'Choose a publication type.' });
   const recordId = nextRecordId(pubType, product);
@@ -102,14 +114,53 @@ router.post('/sample', requireAuth, blockAuthors, (req, res) => {
 router.put('/:id', requireAuth, (req, res) => {
   const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
-  const { title, product, status, summary, data } = readBody(req.body);
+  // External authors update their own invitation and review responses (their dashboard); staff need pubs.edit.
+  if (req.user.role !== 'author' && !can(req, 'pubs.edit')) return res.status(403).json({ error: 'Your role does not allow editing publications.' });
+  const { title, product, status, summary } = readBody(req.body);
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
+  const prevData = parse(existing.data, {});
+  const data = keepDocument(readBody(req.body).data, prevData);
+  if (!!prevData.cancelled !== !!parse(data, {}).cancelled && !can(req, 'pubs.cancel')) {
+    return res.status(403).json({ error: 'Your role does not allow cancelling or reinstating publications.' });
+  }
   db.prepare(`UPDATE pp_publications SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(title, product, status, summary, data, req.params.id);
   res.json(getListRow(req.params.id));
 });
 
-router.delete('/:id', requireAuth, blockAuthors, (req, res) => {
+/**
+ * Saves the publication document: { markup, track, audit }. markup is the full list of segments
+ * (text plus tracked insertions/deletions); the server derives the plain text from it and checks
+ * the change against the user's permissions (docMarkup.checkEdit).
+ */
+router.put('/:id/document', requireAuth, blockAuthors, requirePerm('doc.edit'), (req, res) => {
+  const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Publication not found' });
+  const data = parse(existing.data, {});
+  if (data.cancelled) return res.status(400).json({ error: 'This publication is cancelled. Reinstate it to change the document.' });
+  const next = doc.clean(req.body.markup);
+  if (!next) return res.status(400).json({ error: 'Nothing to save.' });
+  if (next.reduce((n, x) => n + x.t.length, 0) > doc.MAX_DOC_CHARS) return res.status(400).json({ error: 'The document is too long to save here.' });
+  const canReview = can(req, 'doc.review');
+  const problem = doc.checkEdit(doc.markupOf(data), next, req.user, canReview);
+  if (problem) return res.status(403).json({ error: problem });
+  data.pubDocMarkup = next;
+  data.pubDocText = doc.visibleText(next);
+  if (canReview && typeof req.body.track === 'boolean') data.pubDocTrack = req.body.track;
+  if (!data.pubDoc) data.pubDoc = 'new';
+  const a = req.body.audit;
+  if (a && typeof a === 'object' && a.action) {
+    const str = v => String(v == null ? '' : v).slice(0, 500);
+    data.audit = (data.audit || []).concat([{
+      action: str(a.action), participants: req.user.name, start: str(a.start), completed: str(a.completed),
+      result: str(a.result), active: false, comment: str(a.comment),
+    }]);
+  }
+  db.prepare("UPDATE pp_publications SET data = ?, updated_at = datetime('now') WHERE id = ?").run(JSON.stringify(data), existing.id);
+  res.json({ pubDoc: data.pubDoc, pubDocMarkup: data.pubDocMarkup, pubDocText: data.pubDocText, pubDocTrack: data.pubDocTrack !== false, audit: data.audit || [] });
+});
+
+router.delete('/:id', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res) => {
   const r = db.prepare('DELETE FROM pp_publications WHERE id = ?').run(req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Publication not found' });
   res.json({ success: true });

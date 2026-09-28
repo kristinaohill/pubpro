@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAuth: authOnly, blockAuthors } = require('../auth');
+const { requireAuth: authOnly, requirePerm, blockAuthors } = require('../auth');
 
 const requireAuth = [authOnly, blockAuthors];
+const canEdit = requirePerm('plans.edit');
 const { productCode, yearCode, nextSequence } = require('../recordIds');
 
 // Plan IDs follow PLAN-<yy>-<product>-<seq>, e.g. PLAN-26-DAX-002.
@@ -49,7 +50,7 @@ router.get('/:id', requireAuth, (req, res) => {
   res.json({ ...listRow(row), data: parse(row.data, {}) });
 });
 
-router.post('/', requireAuth, (req, res) => {
+router.post('/', requireAuth, canEdit, (req, res) => {
   const { title, product, status, summary, data } = readBody(req.body);
   if (!title) return res.status(400).json({ error: 'A plan title is required to save the plan.' });
   const planId = nextPlanId(product);
@@ -77,7 +78,7 @@ router.post('/sample', requireAuth, (req, res) => {
 });
 
 // The plan ID is fixed once the plan exists.
-router.put('/:id', requireAuth, (req, res) => {
+router.put('/:id', requireAuth, canEdit, (req, res) => {
   const existing = db.prepare('SELECT id FROM pp_plans WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Publication plan not found' });
   const { title, product, status, summary, data } = readBody(req.body);
@@ -87,7 +88,7 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json(getListRow(req.params.id));
 });
 
-router.delete('/:id', requireAuth, (req, res) => {
+router.delete('/:id', requireAuth, canEdit, (req, res) => {
   const r = db.prepare('DELETE FROM pp_plans WHERE id = ?').run(req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Publication plan not found' });
   res.json({ success: true });

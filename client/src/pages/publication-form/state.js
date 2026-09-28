@@ -4,6 +4,7 @@ import {
   READINESS_RESULTS, READINESS_TONE, CONFERENCE_DIRECTORY, TODAY, TODAY_STR,
   buildTemplateRows, scheduleTemplate, fmtDate, nowStamp, toISO, daysFromToday,
 } from './data';
+import { markupFromSaved } from './trackChanges';
 
 // ---- The design's sample record ----------------------------------------------
 // Seeded as a real saved record (see SamplePublication.jsx); new records start empty.
@@ -158,6 +159,9 @@ export const INITIAL_STATE = {
   historyFiles: SAMPLE_HISTORY,
   pubDocOn: '',
   pubDocBy: '',
+  // The document with its tracked changes (trackChanges.js); saved only through /document.
+  pubDocMarkup: [],
+  pubDocTrack: true,
   cancelled: null,
   respondEdit: null,
   // Values the design shows as static defaults; kept here so the inputs stay editable.
@@ -240,7 +244,10 @@ export function toSavedData(st) {
 /** Rebuilds form state from a saved record, filling any keys added since it was saved. */
 export function fromSavedData(data) {
   const base = blankState();
-  return { ...base, ...data, fields: { ...base.fields, ...(data && data.fields) }, tab: 'overview' };
+  return {
+    ...base, ...data, fields: { ...base.fields, ...(data && data.fields) }, tab: 'overview',
+    pubDocMarkup: markupFromSaved(data), pubDocTrack: !data || data.pubDocTrack !== false,
+  };
 }
 
 /** The title a record is listed under: the abbreviated title, else the full title. */

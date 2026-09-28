@@ -6,6 +6,9 @@ app.use(cors());
 app.use(express.json());
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Roles, permissions and the users.active column, before any route reads them.
+require('./permissions');
+
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/templates', require('./routes/templateRoutes'));
@@ -16,6 +19,7 @@ app.use('/api/pp-publications', require('./routes/ppPublicationRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/pp-plans', require('./routes/ppPlanRoutes'));
 app.use('/api/pp-authors', require('./routes/ppAuthorRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Every external author profile with an email gets a login.
 require('./authorLogins').backfillAuthorLogins();

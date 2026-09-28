@@ -7,7 +7,6 @@ import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
 import './StudyProfile.css';
 
-const ROLE_LABEL = { admin: 'Administrator', user: 'Staff', author: 'External Author' };
 
 /** My Profile (avatar menu): your name and settings, saved on your account. */
 export default function UserProfile() {
@@ -59,7 +58,7 @@ export default function UserProfile() {
         title={profile.name}
         task="My Profile"
         subtitle={profile.email}
-        meta={[<Pill tone="active">{ROLE_LABEL[profile.role] || profile.role}</Pill>]}
+        meta={[<Pill tone="active">{profile.role_name || profile.role}</Pill>]}
       />
 
       <div className="sp-body">
@@ -74,7 +73,7 @@ export default function UserProfile() {
               columns={3}
               items={[
                 { label: 'Email (sign-in)', value: profile.email },
-                { label: 'Role', value: ROLE_LABEL[profile.role] || profile.role },
+                { label: 'Role', value: profile.role_name || profile.role },
                 { label: 'Member Since', value: fmtSaved(profile.created_at) },
               ]}
             />

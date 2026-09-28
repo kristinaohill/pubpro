@@ -12,6 +12,23 @@ export function AuthProvider({ children }) {
     const stored = localStorage.getItem('user');
     if (token && stored) {
       setUser(JSON.parse(stored));
+      // Role and permissions can change on the System Administrator page: refresh them.
+      api.get('/auth/me')
+        .then(me => {
+          setUser(u => {
+            const next = { ...(u || {}), name: me.name, role: me.role, role_name: me.role_name, permissions: me.permissions };
+            localStorage.setItem('user', JSON.stringify(next));
+            return next;
+          });
+        })
+        .catch(err => {
+          // Deactivated or deleted accounts are signed out; a network blip keeps the stored session.
+          if (/deactivated|no longer exists|Invalid token|Unauthorized/.test(err.message)) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+          }
+        });
     }
     setLoading(false);
   }, []);
@@ -42,8 +59,11 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  /** What the signed-in user's role allows (server/permissions.js), e.g. can('pubs.edit'). */
+  const can = perm => !!(user && Array.isArray(user.permissions) && user.permissions.includes(perm));
+
   return (
-    <AuthContext.Provider value={{ user, login, register, updateSession, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, updateSession, logout, loading, can }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { requireAuth, blockAuthors } = require('../auth');
+const { requireAuth, requirePerm, can, blockAuthors } = require('../auth');
+const canEdit = requirePerm('authors.edit');
 const { ensureAuthorLogin, removeAuthorLogin } = require('../authorLogins');
 
 const ownProfileOnly = (req, res, next) => (req.user.role === 'author' && String(req.user.author_profile_id) !== String(req.params.id)
   ? res.status(403).json({ error: 'Authors can only update their own profile' }) : next());
+// Staff edits need authors.edit; an external author may still update their own profile.
+const ownOrEditor = (req, res, next) => (req.user.role === 'author' || can(req, 'authors.edit') ? next() : canEdit(req, res, next));
 const { yearCode, nextSequence } = require('../recordIds');
 
 // Author IDs follow EA-<yy>-<seq>, e.g. EA-26-004.
@@ -53,7 +56,7 @@ router.get('/:id', requireAuth, ownProfileOnly, (req, res) => {
   res.json({ ...listRow(row), data: parse(row.data, {}) });
 });
 
-router.post('/', requireAuth, blockAuthors, (req, res) => {
+router.post('/', requireAuth, blockAuthors, canEdit, (req, res) => {
   const { name, email, status, summary, data } = readBody(req.body);
   if (!name) return res.status(400).json({ error: 'A first and last name are required to save the author.' });
   const r = db.prepare(`INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by)
@@ -81,7 +84,7 @@ router.post('/sample', requireAuth, blockAuthors, (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, ownProfileOnly, (req, res) => {
+router.put('/:id', requireAuth, ownProfileOnly, ownOrEditor, (req, res) => {
   const existing = db.prepare('SELECT id FROM pp_authors WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'External author not found' });
   const { name, email, status, summary, data } = readBody(req.body);
@@ -92,7 +95,7 @@ router.put('/:id', requireAuth, ownProfileOnly, (req, res) => {
   res.json(getListRow(req.params.id));
 });
 
-router.delete('/:id', requireAuth, blockAuthors, (req, res) => {
+router.delete('/:id', requireAuth, blockAuthors, canEdit, (req, res) => {
   const r = db.prepare('DELETE FROM pp_authors WHERE id = ?').run(req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'External author not found' });
   removeAuthorLogin(Number(req.params.id));

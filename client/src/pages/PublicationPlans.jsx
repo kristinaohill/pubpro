@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
+import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
@@ -25,6 +26,8 @@ const money = n => '$' + Math.round(n || 0).toLocaleString('en-US');
 
 /** Saved publication plans (Searches › Publication Plans). */
 export default function PublicationPlans() {
+  // Create and delete need plans.edit (System Administrator > Roles & permissions).
+  const canEdit = useAuth().can('plans.edit');
   const navigate = useNavigate();
   const location = useLocation();
   const savedPlanId = location.state && location.state.savedPlanId;
@@ -73,13 +76,13 @@ export default function PublicationPlans() {
         money(sm.budget), money(sm.committed),
         <Pill tone={PLAN_TONE[p.status] || 'draft'}>{p.status}</Pill>,
         fmtSaved(p.updated_at),
-        <IconButton
+        canEdit ? <IconButton
           icon="delete"
           tone="fatal"
           size={26}
           title={'Delete ' + p.plan_id}
           onClick={e => { e.stopPropagation(); setToDelete(p); }}
-        />,
+        /> : null,
       ],
     };
   });
@@ -94,7 +97,7 @@ export default function PublicationPlans() {
             {cancelledCount > 0 && (
               <Checkbox checked={showCancelled} onChange={() => setShowCancelled(v => !v)} label={`Show cancelled (${cancelledCount})`} />
             )}
-            <Button variant="secondary" icon="add" onClick={() => navigate('/publication-plan/new')}>Create New Publication Plan</Button>
+            {canEdit && <Button variant="secondary" icon="add" onClick={() => navigate('/publication-plan/new')}>Create New Publication Plan</Button>}
           </>
         )}
       />

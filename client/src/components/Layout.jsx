@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { TopNav, WorkspaceTabs, IconButton } from '../ds/pubpro';
-import { ALERTS_TAB, AUTHOR_CHROME, CHROME, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
+import { ALERTS_TAB, AUTHOR_CHROME, CHROME, MENU_PERMS, MENU_ROUTES, CREATE_ROUTES, SEARCH_ROUTES } from './chrome';
 import Notifications from './Notifications';
 import AccountMenu from './AccountMenu';
 import './Layout.css';
@@ -31,10 +31,11 @@ const WORKSPACE_HOME = {
   'Executive Dashboard': '/dashboard',
   'Publication Manager Dashboard': '/publication-manager',
   'External Author Dashboard': '/author-dashboard',
+  'System Administrator': '/admin',
 };
 
 export default function Layout() {
-  const { user, logout } = useAuth();
+  const { user, logout, can } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -46,7 +47,11 @@ export default function Layout() {
   const [tabsRef, tabsKey] = useMenuReset();
 
   const isAuthor = !!user && user.role === 'author';
-  const chrome = isAuthor ? AUTHOR_CHROME : pathname in CHROME ? CHROME[pathname] : CHROME['/external-author'];
+  const baseChrome = isAuthor ? AUTHOR_CHROME : pathname in CHROME ? CHROME[pathname] : CHROME['/external-author'];
+  // Menu rows the user's role can't use are left out (System Administrator, Create New entries).
+  const allowed = row => !MENU_PERMS[typeof row === 'string' ? row : row.label] || can(MENU_PERMS[typeof row === 'string' ? row : row.label]);
+  const trim = item => (item && typeof item === 'object' && item.menuItems ? { ...item, menuItems: item.menuItems.filter(allowed) } : item);
+  const chrome = baseChrome && { ...baseChrome, nav: baseChrome.nav.map(trim), tabs: baseChrome.tabs.map(trim) };
 
   const go = label => {
     if (MENU_ROUTES[label]) navigate(MENU_ROUTES[label]);

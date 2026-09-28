@@ -139,7 +139,7 @@ function AttentionCard({ a }) {
 export default function WriterDashboard() {
   const navigate = useNavigate();
   // Saved records open by id; the design's sample rows open the sample publication.
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const openPublication = (p, tab) => navigate('/publication/' + p.savedId, { state: { tab } });
   const [saved, setSaved] = useState([]);
   // Live (not cancelled) records with their data, for the author, congress and review panels.
@@ -334,7 +334,7 @@ export default function WriterDashboard() {
       <div className="wdp-row-panels">
         <AuthorBlockersPanel pubs={live} onOpen={openRecord} />
         <CongressDeadlinesPanel pubs={live} onOpen={openRecord} />
-        <ReviewsPanel pubs={live} onOpen={openRecord} onRemind={remind} busyId={busyId} />
+        <ReviewsPanel pubs={live} onOpen={openRecord} onRemind={can('pubs.edit') ? remind : null} busyId={busyId} />
       </div>
     </div>
   );

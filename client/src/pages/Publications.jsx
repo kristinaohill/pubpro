@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
+import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import './Publications.css';
@@ -46,6 +47,8 @@ export const duePill = iso => {
 
 /** Saved publication records (Searches › Publications). */
 export default function Publications() {
+  // Create and delete need pubs.edit (System Administrator > Roles & permissions).
+  const canEdit = useAuth().can('pubs.edit');
   const navigate = useNavigate();
   const location = useLocation();
   const savedRecordId = location.state && location.state.savedRecordId;
@@ -86,13 +89,13 @@ export default function Publications() {
         <Pill tone={due.tone} style={{ fontSize: 12 }}>{due.label}</Pill>,
         <Pill tone={STATUS_TONE[p.status] || 'draft'}>{p.status}</Pill>,
         fmtSaved(p.updated_at),
-        <IconButton
+        canEdit ? <IconButton
           icon="delete"
           tone="fatal"
           size={26}
           title={'Delete ' + p.record_id}
           onClick={e => { e.stopPropagation(); setToDelete(p); }}
-        />,
+        /> : null,
       ],
     };
   });
@@ -107,7 +110,7 @@ export default function Publications() {
             {cancelledCount > 0 && (
               <Checkbox checked={showCancelled} onChange={() => setShowCancelled(v => !v)} label={`Show cancelled (${cancelledCount})`} />
             )}
-            <Button variant="secondary" icon="add" onClick={() => navigate('/publication/new')}>Create New Publication</Button>
+            {canEdit && <Button variant="secondary" icon="add" onClick={() => navigate('/publication/new')}>Create New Publication</Button>}
           </>
         )}
       />

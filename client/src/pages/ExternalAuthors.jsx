@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
 import { api } from '../api';
+import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import Flash from '../components/Flash';
 import { fmtSaved } from './Publications';
@@ -21,6 +22,8 @@ const COLUMNS = [
 
 /** Saved external author profiles (Searches › External Authors). */
 export default function ExternalAuthors() {
+  // Create and delete need authors.edit (System Administrator > Roles & permissions).
+  const canEdit = useAuth().can('authors.edit');
   const navigate = useNavigate();
   const location = useLocation();
   const savedAuthorId = location.state && location.state.savedAuthorId;
@@ -62,7 +65,7 @@ export default function ExternalAuthors() {
         String(sm.pending || 0),
         <Pill tone={a.status === 'Active' ? 'active' : 'draft'}>{a.status}</Pill>,
         fmtSaved(a.updated_at),
-        <IconButton icon="delete" tone="fatal" size={26} title={'Delete ' + a.author_id} onClick={e => { e.stopPropagation(); setToDelete(a); }} />,
+        canEdit ? <IconButton icon="delete" tone="fatal" size={26} title={'Delete ' + a.author_id} onClick={e => { e.stopPropagation(); setToDelete(a); }} /> : null,
       ],
     };
   });
@@ -77,7 +80,7 @@ export default function ExternalAuthors() {
             {inactiveCount > 0 && (
               <Checkbox checked={showInactive} onChange={() => setShowInactive(v => !v)} label={`Show inactive (${inactiveCount})`} />
             )}
-            <Button variant="secondary" icon="person_add" onClick={() => navigate('/external-author/new')}>Create New External Author</Button>
+            {canEdit && <Button variant="secondary" icon="person_add" onClick={() => navigate('/external-author/new')}>Create New External Author</Button>}
           </>
         )}
       />

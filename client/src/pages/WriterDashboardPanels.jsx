@@ -185,7 +185,7 @@ export function ReviewsPanel({ pubs, onOpen, onRemind, busyId }) {
                     {answered} of {r.reviewers.length} responded
                     {r.waiting.length > 0 && ' · waiting on ' + r.waiting.map(v => v.name + (v.ooo ? ' (out of office)' : '')).join(', ')}
                   </div>
-                  {r.waiting.length > 0 && (
+                  {r.waiting.length > 0 && onRemind && (
                     <div className="wdp-actions">
                       <Button
                         variant="secondary"

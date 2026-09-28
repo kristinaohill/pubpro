@@ -504,10 +504,12 @@ export default function ExternalAuthorProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const userName = (user && user.name) || 'Unknown user';
   const isNew = id === 'new';
   const savedId = isNew ? null : id;
+  // Staff need authors.edit; an external author can still update their own profile.
+  const viewOnly = !can('authors.edit') && !(user && user.role === 'author');
 
   const [author, setAuthor] = useState(blankAuthor);
   const [record, setRecord] = useState(null);
@@ -691,10 +693,15 @@ export default function ExternalAuthorProfile() {
       />
 
       <div className="eap-shell eap-shell--stack">
-        <InlineMessage kind="info">
-          Fill in the required fields (marked) before saving. Run a debarment check whenever the author&rsquo;s name or institution changes.
-        </InlineMessage>
+        {viewOnly ? (
+          <InlineMessage kind="info">View only: {(user && user.role_name) || 'Your role'} can&rsquo;t change external author profiles.</InlineMessage>
+        ) : (
+          <InlineMessage kind="info">
+            Fill in the required fields (marked) before saving. Run a debarment check whenever the author&rsquo;s name or institution changes.
+          </InlineMessage>
+        )}
 
+        <fieldset disabled={viewOnly} style={{ border: 0, margin: 0, padding: 0, minWidth: 0, display: 'contents' }}>
         <AuthorDetails
           form={form}
           setField={setField}
@@ -747,10 +754,14 @@ export default function ExternalAuthorProfile() {
             {tab === 'audit' && <AuditTab rows={audit} />}
           </div>
         </div>
+        </fieldset>
 
         {notice && <Flash kind={notice.kind} watch={notice}>{notice.text}</Flash>}
       </div>
 
+      {viewOnly ? (
+        <FormActionBar left={<Button variant="secondary" onClick={() => navigate('/external-authors')}>Close</Button>} right={null} />
+      ) : (
       <FormActionBar
         left={(
           <>
@@ -771,6 +782,7 @@ export default function ExternalAuthorProfile() {
           </>
         )}
       />
+      )}
     </div>
   );
 }

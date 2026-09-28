@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { signToken, requireAuth } = require('../auth');
+const { permissionsOf, roleName, signupRole } = require('../permissions');
 
 // Per-user settings from the My Profile page, stored as JSON.
 try {
@@ -12,7 +13,9 @@ try {
 const DEFAULT_PREFS = { weeklySummary: false };
 const readPrefs = raw => { try { return { ...DEFAULT_PREFS, ...JSON.parse(raw || '{}') }; } catch (e) { return { ...DEFAULT_PREFS }; } };
 const claimsOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, client_id: u.client_id, author_profile_id: u.author_profile_id || null });
-const profileOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, created_at: u.created_at, prefs: readPrefs(u.prefs) });
+const profileOf = u => ({ id: u.id, email: u.email, name: u.name, role: u.role, role_name: roleName(u.role), created_at: u.created_at, prefs: readPrefs(u.prefs), permissions: permissionsOf(u.role) });
+// What the client keeps about the signed-in user: the token claims plus what their role allows.
+const sessionOf = u => ({ ...claimsOf(u), role_name: roleName(u.role), permissions: permissionsOf(u.role) });
 
 router.post('/register', (req, res) => {
   const { email, password, name } = req.body;
@@ -22,7 +25,7 @@ router.post('/register', (req, res) => {
   if (existing) return res.status(400).json({ error: 'Email already registered' });
   const hash = bcrypt.hashSync(password, 10);
   const r = db.prepare('INSERT INTO users (email, password_hash, name, role, client_id) VALUES (?,?,?,?,?)').run(
-    email, hash, name, 'user', null
+    email, hash, name, signupRole(), null
   );
   res.json({ id: r.lastInsertRowid, email, name });
 });
@@ -34,8 +37,9 @@ router.post('/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  const claims = claimsOf(user);
-  res.json({ token: signToken(claims), user: claims });
+  if (!user.active) return res.status(403).json({ error: 'This account has been deactivated. Contact your system administrator.' });
+  db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").run(user.id);
+  res.json({ token: signToken(claimsOf(user)), user: sessionOf(user) });
 });
 
 // Lets any signed-in user replace their password (authors start with a shared one).
@@ -66,8 +70,7 @@ router.put('/me', requireAuth, (req, res) => {
   const prefs = { ...readPrefs(user.prefs), ...('weeklySummary' in incoming ? { weeklySummary: !!incoming.weeklySummary } : {}) };
   db.prepare('UPDATE users SET name = ?, prefs = ? WHERE id = ?').run(name, JSON.stringify(prefs), user.id);
   const updated = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
-  const claims = claimsOf(updated);
-  res.json({ token: signToken(claims), user: claims, profile: profileOf(updated) });
+  res.json({ token: signToken(claimsOf(updated)), user: sessionOf(updated), profile: profileOf(updated) });
 });
 
 module.exports = router;

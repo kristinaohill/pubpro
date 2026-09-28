@@ -6,6 +6,7 @@ import { api } from '../api';
 import { STATUS_TONE } from './Publications';
 import { useAuth } from '../AuthContext';
 import DocumentPanel from './publication-form/DocumentPanel';
+import { fold, visibleText } from './publication-form/trackChanges';
 import { AtAGlance, RecordSummary, SectionNav } from './publication-form/frame';
 import { TODAY_STR } from './publication-form/data';
 import {
@@ -53,8 +54,13 @@ export default function PublicationForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const userName = (user && user.name) || 'Unknown user';
+  // What this user's role allows (System Administrator > Roles & permissions; the server checks too).
+  const canEditPub = can('pubs.edit');
+  const canCancel = can('pubs.cancel');
+  const canDoc = can('doc.edit');
+  const canReview = can('doc.review');
   const isNew = id === 'new';
   const savedId = isNew ? null : id;
 
@@ -85,6 +91,8 @@ export default function PublicationForm() {
   }, []);
   // What was last saved, so each save can log which tabs changed.
   const lastSaved = useRef(null);
+  // The document as last saved (it saves separately, through /document).
+  const savedDoc = useRef({ markup: [], track: true });
 
   useEffect(() => {
     // After the first save the URL changes to the new id; that record is already in hand.
@@ -94,6 +102,7 @@ export default function PublicationForm() {
       setRecord(null);
       setSt(blankState());
       lastSaved.current = null;
+      savedDoc.current = { markup: [], track: true };
       setLoadState('ready');
       return undefined;
     }
@@ -109,6 +118,7 @@ export default function PublicationForm() {
         setRecord(meta);
         setSt(next);
         lastSaved.current = toSavedData(next);
+        savedDoc.current = { markup: next.pubDocMarkup, track: next.pubDocTrack };
         setLoadState('ready');
       })
       .catch(err => { if (!cancelled) { setLoadState('error'); setMessage({ kind: 'error', text: err.message }); } });
@@ -126,7 +136,7 @@ export default function PublicationForm() {
    * Saves `next` (the current state plus any final changes). close: go back to the list afterwards.
    * notices(savedRecord, next): in-app notifications to send once the save succeeds (never email).
    */
-  const persist = async (next, { close = false, done, notices } = {}) => {
+  const persist = async (next, { close = false, done, notices, skipDoc = false } = {}) => {
     const title = titleOf(next);
     if (!title) {
       setSt(s => ({ ...s, tab: 'overview' }));
@@ -152,6 +162,10 @@ export default function PublicationForm() {
       setRecord(saved);
       setSt(withLog);
       lastSaved.current = data;
+      // Document edits typed since the last save go with the record's Save.
+      if (!skipDoc && canDoc && !withLog.cancelled && docDirty(withLog)) {
+        await putDocument(saved.id, withLog, auditEntry('Publication Document Saved', { comment: String(withLog.pubDocText || '').trim().split(/\s+/).filter(Boolean).length + ' words' }));
+      }
       if (notices) {
         const list = notices({ record_id: saved.record_id, title }, withLog)
           .map(n => ({ ...n, pub_id: saved.id, record_id: saved.record_id }));
@@ -169,6 +183,42 @@ export default function PublicationForm() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const docAuthor = () => ({ by: userName, uid: user ? user.id : null });
+  const docDirty = x => visibleText(x.pubDocMarkup || []) !== (x.pubDocText || '')
+    || JSON.stringify(x.pubDocMarkup || []) !== JSON.stringify(savedDoc.current.markup || [])
+    || (x.pubDocTrack !== false) !== (savedDoc.current.track !== false);
+
+  /** Saves the document (text + tracked changes) of saved record recId. Returns the saved doc or null. */
+  const putDocument = async (recId, x, audit) => {
+    const tracking = x.pubDocTrack !== false || !canReview;
+    const markup = fold(x.pubDocMarkup || [], x.pubDocText || '', { ...docAuthor(), at: new Date().toISOString() }, tracking);
+    setSaving(true);
+    try {
+      const res = await api.put('/pp-publications/' + recId + '/document', { markup, track: x.pubDocTrack !== false, audit });
+      const patch = { pubDoc: res.pubDoc, pubDocMarkup: res.pubDocMarkup, pubDocText: res.pubDocText, pubDocTrack: res.pubDocTrack, audit: res.audit };
+      setSt(cur => ({ ...cur, ...patch }));
+      savedDoc.current = { markup: res.pubDocMarkup, track: res.pubDocTrack };
+      if (lastSaved.current) lastSaved.current = { ...lastSaved.current, ...patch };
+      return res;
+    } catch (err) {
+      setMessage({ kind: 'error', text: 'Could not save the document: ' + err.message });
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /** The document panel's Save: a new record is saved first (it needs a title). */
+  const saveDocument = async (x, { audit } = {}) => {
+    let rec = record;
+    if (!rec) {
+      if (!canEditPub) return null;
+      rec = await persist(x, { skipDoc: true });
+      if (!rec) return null;
+    }
+    return putDocument(rec.id, x, audit);
   };
 
   /** Applies a change and saves it at once, sending any notifications. Used by actions that notify people. */
@@ -245,6 +295,9 @@ export default function PublicationForm() {
   const title = titleOf(st) || 'New Publication';
   const owner = record ? record.owner : userName;
   const cancelled = st.cancelled;
+  // Roles without pubs.edit see the record read-only (they may still work in the document).
+  const viewOnly = !cancelled && !canEditPub;
+  const roleName = (user && user.role_name) || 'Your role';
   const prog = deriveProgress(st);
   const missing = missingFlags(st);
   const status = statusOf(st);
@@ -268,14 +321,20 @@ export default function PublicationForm() {
         />
         {cancelled && (
           <InlineMessage kind="warning">
-            Cancelled {cancelled.on} by {cancelled.by}: {cancelled.reason}. The record is read-only; reinstate it to make changes.
+            Cancelled {cancelled.on} by {cancelled.by}: {cancelled.reason}. The record is read-only{canCancel ? '; reinstate it to make changes' : ''}.
+          </InlineMessage>
+        )}
+        {viewOnly && (
+          <InlineMessage kind="info">
+            View only: {roleName} can&rsquo;t {record ? 'change publication details' : 'create publications'}.
+            {record && canDoc ? ' You can still suggest tracked changes in the publication document.' : ''}
           </InlineMessage>
         )}
 
         <div className="pfx-body">
           <SectionNav active={st.tab} flags={missing} onSelect={openTab} />
-          <div className={'pfx-main' + (cancelled ? ' pf-panel--readonly' : '')}>
-            <fieldset className="pf-fieldset pfx-main" disabled={!!cancelled}>
+          <div className={'pfx-main' + (cancelled || viewOnly ? ' pf-panel--readonly' : '')}>
+            <fieldset className="pf-fieldset pfx-main" disabled={!!cancelled || viewOnly}>
               <TabView {...tabProps} />
             </fieldset>
           </div>
@@ -285,17 +344,23 @@ export default function PublicationForm() {
         {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
 
         <div className="pfx-actions">
-          {cancelled ? (
+          {cancelled || viewOnly ? (
             <Button variant="secondary" onClick={() => navigate('/publications')}>Close</Button>
           ) : (
             <>
-              {record && <Button variant="fatal" onClick={() => setCancelOpen(true)} disabled={saving}>Cancel Publication</Button>}
+              {record && canCancel && <Button variant="fatal" onClick={() => setCancelOpen(true)} disabled={saving}>Cancel Publication</Button>}
               <Button variant="tertiary">Send Note</Button>
             </>
           )}
           <div className="pfx-actions-right">
             {cancelled ? (
-              <Button variant="secondary" onClick={reinstate} disabled={saving}>Reinstate Publication</Button>
+              canCancel && <Button variant="secondary" onClick={reinstate} disabled={saving}>Reinstate Publication</Button>
+            ) : viewOnly ? (
+              record && st.pubDoc && (
+                <Button variant="primary" icon="edit_document" onClick={() => setDocOpen(true)}>
+                  {canDoc ? 'Open Document' : 'View Document'}
+                </Button>
+              )
             ) : (
               <>
                 <Button variant="secondary" onClick={() => navigate('/publications')}>Close Without Saving</Button>
@@ -308,7 +373,11 @@ export default function PublicationForm() {
       </div>
 
       {docOpen && (
-        <DocumentPanel st={st} set={set} commit={commit} saving={saving} recordId={recordId} userName={userName} onClose={() => setDocOpen(false)} />
+        <DocumentPanel
+          st={st} set={set} saveDocument={saveDocument} savedMarkup={savedDoc.current.markup} saving={saving} recordId={recordId}
+          me={docAuthor()} canEdit={canDoc && !cancelled && (!!record || canEditPub)} canReview={canReview}
+          onClose={() => setDocOpen(false)}
+        />
       )}
 
       {cancelOpen && (
