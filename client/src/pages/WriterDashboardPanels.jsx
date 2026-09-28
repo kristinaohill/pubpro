@@ -38,8 +38,7 @@ function Panel({ icon, title, count, children }) {
   );
 }
 
-const MAX_ROWS = 8;
-const More = ({ n }) => (n > 0 ? <div className="wd-meta wdp-more">+ {n} more</div> : null);
+// Every item is listed; the list scrolls inside its card so the row of panels stays even.
 
 /* ---------- Author blockers ---------- */
 
@@ -78,8 +77,8 @@ export function AuthorBlockersPanel({ pubs, onOpen }) {
       {items.length === 0 ? (
         <div className="empty-state">No author issues. Invited authors have replied and their agreements and COIs are current.</div>
       ) : (
-        <div className="wdp-list">
-          {items.slice(0, MAX_ROWS).map(b => (
+        <div className="wdp-list wd-scroll">
+          {items.map(b => (
             <div key={b.key} className="wdp-row">
               <Sym name={b.severity > 1 ? 'error' : 'schedule'} color={b.severity > 1 ? RED : AMBER} />
               <div className="wdp-main">
@@ -88,7 +87,6 @@ export function AuthorBlockersPanel({ pubs, onOpen }) {
               </div>
             </div>
           ))}
-          <More n={items.length - MAX_ROWS} />
         </div>
       )}
     </Panel>
@@ -118,8 +116,8 @@ export function CongressDeadlinesPanel({ pubs, onOpen }) {
       {items.length === 0 ? (
         <div className="empty-state">No upcoming abstract deadlines. Add congresses to a publication&rsquo;s shortlist on its Target tab.</div>
       ) : (
-        <div className="wdp-list">
-          {items.slice(0, MAX_ROWS).map(({ c, pubs: list, n }) => (
+        <div className="wdp-list wd-scroll">
+          {items.map(({ c, pubs: list, n }) => (
             <div key={c.name} className="wdp-row">
               <Sym name={n < 0 ? 'event_busy' : c.prevClose ? 'warning' : 'event'} color={n < 0 || n <= 14 ? RED : c.prevClose ? AMBER : 'var(--high-emphasis)'} />
               <div className="wdp-main">
@@ -137,7 +135,6 @@ export function CongressDeadlinesPanel({ pubs, onOpen }) {
               </div>
             </div>
           ))}
-          <More n={items.length - MAX_ROWS} />
         </div>
       )}
     </Panel>
@@ -168,8 +165,8 @@ export function ReviewsPanel({ pubs, onOpen, onRemind, busyId }) {
       {items.length === 0 ? (
         <div className="empty-state">No review rounds are out. Start one from a publication&rsquo;s Reviews tab.</div>
       ) : (
-        <div className="wdp-list">
-          {items.slice(0, MAX_ROWS).map(r => {
+        <div className="wdp-list wd-scroll">
+          {items.map(r => {
             const answered = r.reviewers.length - r.waiting.length;
             const overdue = r.n != null && r.n < 0;
             return (
@@ -200,7 +197,6 @@ export function ReviewsPanel({ pubs, onOpen, onRemind, busyId }) {
               </div>
             );
           })}
-          <More n={items.length - MAX_ROWS} />
         </div>
       )}
     </Panel>

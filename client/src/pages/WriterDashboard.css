@@ -28,21 +28,42 @@
 .wd-header-aside { margin-left: auto; }
 
 /* Stat row */
-.wd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.wd-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 900px) { .wd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
-/* Two-column body */
-.wd-columns { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+/* Body: one three-column grid. Row 1: My Publications (2 columns) + side panels. Row 2: the three
+   lower panels, under the same columns. Cards in a row share its height; long lists scroll inside. */
+.wd-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;
+  grid-template-rows: auto 380px;
+}
 .wd-card { background: var(--surface-card); border: 1px solid var(--border-divider); border-radius: 6px; }
-.wd-main { flex: 1 1 720px; min-width: 0; padding: 18px 22px 22px; }
-.wd-side { flex: 1 1 320px; max-width: 420px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
-.wd-side-card { padding: 18px 20px 16px; }
+.wd-main { grid-column: span 2; min-width: 0; min-height: 480px; padding: 18px 20px; display: flex; flex-direction: column; }
+/* The side column takes the row height from My Publications (height 0 + min-height 100%). */
+.wd-side { min-width: 0; height: 0; min-height: 100%; display: flex; flex-direction: column; gap: 20px; }
+.wd-side-card { padding: 18px 20px; min-height: 0; display: flex; flex-direction: column; }
+/* Needs Attention and Upcoming Deadlines split the column; with nothing needing attention it shrinks to its header. */
+.wd-side-card { flex: 1 1 0; }
+.wd-side-card--quiet { flex: none; }
+.wd-side-card--quiet { padding-top: 14px; padding-bottom: 14px; }
+.wd-side-card--quiet .wd-side-head { margin-bottom: 0; }
+.wd-side-card--quiet .wd-side-icon { color: var(--ok); }
+.wd-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+@media (max-width: 1100px) {
+  .wd-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+  .wd-main { grid-column: auto; min-height: 0; }
+  .wd-side { height: auto; min-height: 0; }
+  .wd-side-card { flex: none; }
+  .wd-side-card--fill .wd-scroll, .wdp-panel .wd-scroll { max-height: 360px; }
+}
 
 /* My Publications */
-.wd-main-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.wd-main-head { flex-wrap: wrap; margin-bottom: 14px; }
 .wd-badge { width: 26px; height: 26px; border-radius: 5px; background: var(--nav); display: flex; align-items: center; justify-content: center; flex: none; }
 .wd-page .wd-badge-icon { font-size: 18px; color: var(--text-button); }
 .wd-main-title { font-size: 20px; font-weight: 700; color: var(--text-heading); }
 .wd-main-tools { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.wd-main .wd-table-scroll { flex: 1; }
 .wd-count { font-size: 13px; color: var(--fg-faint); }
 
 .wd-table-scroll { overflow-x: auto; }
@@ -71,9 +92,8 @@
 .wd-page .wd-chevron { font-size: 22px; color: var(--high-emphasis); }
 
 
-/* Side panels */
-.wd-side-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.wd-side-head--attn { margin-bottom: 12px; }
+/* Card headers: the same on every card */
+.wd-side-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; min-height: 32px; flex: none; }
 .wd-page .wd-side-icon { font-size: 22px; color: var(--high-emphasis); }
 .wd-side-title { font-size: 19px; font-weight: 700; color: var(--high-emphasis); }
 
@@ -97,7 +117,8 @@
 
 
 /* Lower row: author blockers, congress deadlines, reviews in progress (WriterDashboardPanels.jsx) */
-.wdp-row-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
+.wdp-panel { min-width: 0; min-height: 0; }
+.wdp-panel > .empty-state { flex: 1; }
 .wdp-count { margin-left: auto; }
 .wdp-list { display: flex; flex-direction: column; }
 .wdp-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); column-gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-hairline); font-size: 13px; }
@@ -107,4 +128,3 @@
 .wdp-warn { font-size: 12px; font-weight: 700; color: var(--warn-text); }
 .wdp-pubs { margin-top: 2px; }
 .wdp-actions { margin-top: 6px; }
-.wdp-more { padding-top: 8px; }

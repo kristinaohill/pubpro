@@ -274,11 +274,13 @@ export default function WriterDashboard() {
         ))}
       </div>
 
-      <div className="wd-columns">
+      {/* One three-column grid: My Publications spans two columns with the side panels in the third,
+          and the lower panels sit under those same columns. Each row is one height. */}
+      <div className="wd-grid">
         <section className="wd-card wd-main">
-          <div className="wd-main-head">
-            <span className="wd-badge"><Sym name="edit_note" className="wd-badge-icon" /></span>
-            <h2 className="wd-main-title">My Publications</h2>
+          <div className="wd-side-head wd-main-head">
+            <Sym name="edit_note" className="wd-side-icon" />
+            <h2 className="wd-side-title">My Publications</h2>
             <div className="wd-main-tools">
               <div className="wd-count">{rows.length} {rows.length === 1 ? 'publication' : 'publications'}</div>
               <SegmentedToggle options={FILTERS} value={filter} onChange={setFilter} />
@@ -298,22 +300,26 @@ export default function WriterDashboard() {
         </section>
 
         <div className="wd-side">
-          <section className="wd-card wd-side-card">
-            <div className="wd-side-head wd-side-head--attn">
-              <Sym name="priority_high" className="wd-side-icon" />
+          <section className={'wd-card wd-side-card' + (attention.length ? '' : ' wd-side-card--quiet')}>
+            <div className="wd-side-head">
+              <Sym name={attention.length ? 'priority_high' : 'check_circle'} className="wd-side-icon" />
               <h2 className="wd-side-title">Needs Attention</h2>
+              {attention.length > 0 ? <span className="wd-count wdp-count">{attention.length}</span> : <span className="wd-meta wdp-count">Nothing right now</span>}
             </div>
-            <div className="wd-attn-list">
-              {attention.map(a => <AttentionCard key={a.key} a={a} />)}
-              {attention.length === 0 && <div className="empty-state">Nothing needs attention right now.</div>}
-            </div>
+            {attention.length > 0 && (
+              <div className="wd-attn-list wd-scroll">
+                {attention.map(a => <AttentionCard key={a.key} a={a} />)}
+              </div>
+            )}
           </section>
 
-          <section className="wd-card wd-side-card">
+          <section className="wd-card wd-side-card wd-side-card--fill">
             <div className="wd-side-head">
               <Sym name="calendar_month" className="wd-side-icon" />
               <h2 className="wd-side-title">Upcoming Deadlines</h2>
             </div>
+            <div className="wd-scroll">
+            {deadlineGroups.length === 0 && <div className="empty-state">No deadlines coming up.</div>}
             {deadlineGroups.map(g => (
               <div key={g.label} className="wd-dl-group">
                 <div className="wd-eyebrow wd-dl-label">{g.label}</div>
@@ -334,11 +340,10 @@ export default function WriterDashboard() {
                 })}
               </div>
             ))}
+            </div>
           </section>
         </div>
-      </div>
 
-      <div className="wdp-row-panels">
         <AuthorBlockersPanel pubs={live} onOpen={openRecord} />
         <CongressDeadlinesPanel pubs={live} onOpen={openRecord} />
         <ReviewsPanel pubs={live} onOpen={openRecord} onRemind={can('pubs.edit') ? remind : null} busyId={busyId} />
