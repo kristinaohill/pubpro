@@ -13,15 +13,18 @@ const PERMISSIONS = [
 ];
 const PERM_KEYS = PERMISSIONS.map(p => p.key);
 
-// admin always has everything; author is the external-author login (their own dashboard only).
-const LOCKED = { admin: 'all', author: 'none' };
+// admin always has everything; author is the external-author login: their own dashboard, plus
+// tracked edits to the document of publications they're listed on (checked per record).
+const LOCKED = { admin: 'all', author: 'fixed' };
+const FIXED = { author: ['doc.edit'] };
+const AUTHOR_DESCRIPTION = 'External authors sign in to their own dashboard and can suggest tracked changes to the documents of publications they\u2019re an author on. Logins come from external author profiles.';
 const BUILT_IN = [
   { key: 'admin', name: 'System Administrator', description: 'Full access, including users, roles and permissions.', permissions: PERM_KEYS },
   { key: 'pub_manager', name: 'Publication Manager', description: 'Runs publications and plans end to end.', permissions: ['pubs.edit', 'pubs.cancel', 'doc.edit', 'doc.review', 'plans.edit', 'authors.edit'] },
   { key: 'writer', name: 'Medical Writer', description: 'Writes and revises publications and their documents.', permissions: ['pubs.edit', 'doc.edit', 'doc.review'] },
   { key: 'reviewer', name: 'Reviewer', description: 'Reads publications and suggests tracked changes to the document.', permissions: ['doc.edit'] },
   { key: 'executive', name: 'Executive', description: 'Read-only access to publications, plans and dashboards.', permissions: [] },
-  { key: 'author', name: 'External Author', description: 'External authors sign in to their own dashboard only. Logins come from external author profiles.', permissions: [] },
+  { key: 'author', name: 'External Author', description: AUTHOR_DESCRIPTION, permissions: FIXED.author },
 ];
 
 db.exec(`CREATE TABLE IF NOT EXISTS roles (
@@ -40,6 +43,8 @@ BUILT_IN.forEach((r, i) => {
   db.prepare('INSERT OR IGNORE INTO roles (key, name, description, permissions, built_in, sort) VALUES (?, ?, ?, ?, 1, ?)')
     .run(r.key, r.name, r.description, JSON.stringify(r.permissions), i);
 });
+// The External Author role's wording and permissions are fixed; keep existing databases in step.
+db.prepare('UPDATE roles SET description = ?, permissions = ? WHERE key = ?').run(AUTHOR_DESCRIPTION, JSON.stringify(FIXED.author), 'author');
 // Staff accounts from before roles existed ('user') had full staff access: they become Publication Managers.
 db.prepare("UPDATE users SET role = 'pub_manager' WHERE role = 'user'").run();
 
@@ -58,7 +63,7 @@ function roleRow(key) {
 
 function permissionsOf(roleKey) {
   if (LOCKED[roleKey] === 'all') return PERM_KEYS.slice();
-  if (LOCKED[roleKey] === 'none') return [];
+  if (LOCKED[roleKey] === 'fixed') return FIXED[roleKey].slice();
   const row = roleRow(roleKey);
   return row ? normalize(parseList(row.permissions)) : [];
 }

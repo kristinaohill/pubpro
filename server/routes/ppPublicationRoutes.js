@@ -133,9 +133,10 @@ router.put('/:id', requireAuth, (req, res) => {
  * (text plus tracked insertions/deletions); the server derives the plain text from it and checks
  * the change against the user's permissions (docMarkup.checkEdit).
  */
-router.put('/:id/document', requireAuth, blockAuthors, requirePerm('doc.edit'), (req, res) => {
+// External authors (doc.edit is fixed on their role) may only edit publications that list them.
+router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => {
   const existing = db.prepare('SELECT id, data FROM pp_publications WHERE id = ?').get(req.params.id);
-  if (!existing) return res.status(404).json({ error: 'Publication not found' });
+  if (!existing || !authorCanSee(req, existing.data)) return res.status(404).json({ error: 'Publication not found' });
   const data = parse(existing.data, {});
   if (data.cancelled) return res.status(400).json({ error: 'This publication is cancelled. Reinstate it to change the document.' });
   const next = doc.clean(req.body.markup);

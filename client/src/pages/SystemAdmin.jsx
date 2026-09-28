@@ -404,8 +404,10 @@ function RolesTab({ data, onChanged, onError }) {
                         <span key={r.key} role="cell" className={'sa-mcell' + (changed ? ' sa-mcell--changed' : '')}>
                           {r.locked === 'all' ? (
                             <span role="img" aria-label="Always allowed" title="System Administrators always have every permission."><Icon name="lock" size={16} color="var(--fg-3)" /></span>
-                          ) : r.locked === 'none' ? (
-                            <span className="sa-faint" title="External authors only see their own dashboard.">&mdash;</span>
+                          ) : r.locked === 'fixed' ? (
+                            on
+                              ? <span role="img" aria-label="Always allowed" title="On publications they\u2019re listed on as an author; always tracked."><Icon name="lock" size={16} color="var(--fg-3)" /></span>
+                              : <span className="sa-faint" title="External authors can\u2019t do this.">&mdash;</span>
                           ) : (
                             <input type="checkbox" checked={on} onChange={() => toggle(r, p.key)} aria-label={r.name + ': ' + p.label} />
                           )}

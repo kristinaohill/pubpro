@@ -16,6 +16,7 @@ const KIND_LOOK = {
   overdue: ['error', 'var(--fatal-text)'],
   due_soon: ['event_upcoming', 'var(--warn-text)'],
   response: ['mark_email_read', 'var(--ok)'],
+  document: ['edit_document', 'var(--high-emphasis)'],
 };
 
 // SQLite stores UTC as "YYYY-MM-DD HH:MM:SS".

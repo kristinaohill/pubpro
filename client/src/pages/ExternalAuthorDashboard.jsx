@@ -12,6 +12,9 @@ import {
   auditEntry, deriveSteps, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData,
 } from './publication-form/state';
 import { fromSavedAuthor, summarizeAuthor } from './ExternalAuthorProfile';
+import DocumentPanel from './publication-form/DocumentPanel';
+import { markupFromSaved } from './publication-form/trackChanges';
+import './PublicationForm.css';
 import { STATUS_TONE } from './Publications';
 import './ExternalAuthorDashboard.css';
 
@@ -63,7 +66,7 @@ function workFor(person, pubs, profile) {
 
 export default function ExternalAuthorDashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   // A signed-in external author sees only their own work; staff preview any author.
   const isAuthor = !!user && user.role === 'author';
 
@@ -75,6 +78,9 @@ export default function ExternalAuthorDashboard() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
   const [answer, setAnswer] = useState({}); // review key -> { decision, comment }
+  // The publication document open in the panel: { p, st } (st holds pubDocText / Markup / Track).
+  const [doc, setDoc] = useState(null);
+  const [docSaving, setDocSaving] = useState(false);
 
   const load = () => Promise.all([
     api.get('/pp-publications?include=data').catch(() => []),
@@ -192,6 +198,40 @@ export default function ExternalAuthorDashboard() {
     }
     await notify(requesters.map(r => ({ recipient: r, kind: 'response', title: `${person} signed the ${isCoi ? 'conflict of interest form' : 'authorship agreement'}`, body: file })));
   }, kind === 'coi' ? 'Conflict of interest form signed.' : 'Authorship agreement signed.');
+
+  const openDoc = p => {
+    const d = p.data || {};
+    setDoc({ p, saved: markupFromSaved(d), st: { pubDocText: d.pubDocText || '', pubDocMarkup: markupFromSaved(d), pubDocTrack: d.pubDocTrack !== false } });
+  };
+  const setDocState = patch => setDoc(cur => {
+    if (!cur) return cur;
+    const next = typeof patch === 'function' ? patch(cur.st) : patch;
+    return next ? { ...cur, st: { ...cur.st, ...next } } : cur;
+  });
+
+  /** Saves the open document (tracked under the signed-in user) and tells the publication owner. */
+  const saveDoc = async (x, { audit } = {}) => {
+    const { p } = doc;
+    setDocSaving(true);
+    try {
+      const res = await api.put('/pp-publications/' + p.id + '/document', { markup: x.pubDocMarkup, track: x.pubDocTrack !== false, audit });
+      setDoc(cur => cur && { ...cur, saved: res.pubDocMarkup, st: { pubDocText: res.pubDocText, pubDocMarkup: res.pubDocMarkup, pubDocTrack: res.pubDocTrack } });
+      if (p.owner && p.owner !== user.name) {
+        await notify([{
+          recipient: p.owner, kind: 'document', pub_id: p.id, record_id: p.record_id, tab: 'materials',
+          title: user.name + ' ' + (audit && /Rejected/.test(audit.action) ? 'undid changes in' : 'suggested changes to') + ' the document',
+          body: p.title + ' (' + p.record_id + ')',
+        }]);
+      }
+      load();
+      return res;
+    } catch (err) {
+      setMessage({ kind: 'error', text: 'Could not save the document: ' + err.message });
+      return null;
+    } finally {
+      setDocSaving(false);
+    }
+  };
 
   const openNote = async n => {
     if (!n.read_at) { await api.post(isAuthor ? `/notifications/${n.id}/read` : `/notifications/for/${n.id}/read`).catch(() => {}); loadInbox(person); }
@@ -318,7 +358,15 @@ export default function ExternalAuthorDashboard() {
                       key: m.p.id,
                       id: m.p.id,
                       cells: [
-                        <div className="ead-pub"><div className="ead-pub-id">{m.p.record_id}</div><div className="ead-pub-title">{m.p.title}</div></div>,
+                        <div className="ead-pub">
+                          <div className="ead-pub-id">{m.p.record_id}</div>
+                          <div className="ead-pub-title">{m.p.title}</div>
+                          {m.p.data && m.p.data.pubDoc && (
+                            <button type="button" className="ead-doc-btn" onClick={e => { e.stopPropagation(); openDoc(m.p); }}>
+                              <Icon name="edit_document" size={16} />Open Document
+                            </button>
+                          )}
+                        </div>,
                         m.role,
                         <Pill tone={m.invite === 'accepted' ? 'active' : m.invite === 'declined' ? 'cancelled' : m.invite === 'sent' ? 'hold' : 'outline'}>
                           {{ accepted: 'Accepted', declined: 'Declined', sent: 'Pending', none: 'Not sent' }[m.invite] || '—'}
@@ -332,6 +380,11 @@ export default function ExternalAuthorDashboard() {
                 >
                   {work.mine.length === 0 ? <div className="empty-state empty-state--inset">Not listed as an author on any saved publication.</div> : undefined}
                 </DataTable>
+                {work.mine.some(m => m.p.data && m.p.data.pubDoc) && (
+                  <div className="ead-meta ead-doc-note">
+                    {isAuthor ? 'Your edits to a document are tracked under your name for the publication team to review.' : 'Documents open with your own permissions, and edits are tracked under your name, not the author\u2019s.'}
+                  </div>
+                )}
               </Panel>
             </div>
 
@@ -367,6 +420,14 @@ export default function ExternalAuthorDashboard() {
             </div>
           </div>
         </>
+      )}
+      {doc && (
+        <DocumentPanel
+          st={doc.st} set={setDocState} saveDocument={saveDoc} savedMarkup={doc.saved} saving={docSaving}
+          recordId={doc.p.record_id} me={{ by: user.name, uid: user.id }}
+          canEdit={can('doc.edit') && doc.p.status !== 'Cancelled'} canReview={can('doc.review')}
+          onClose={() => setDoc(null)}
+        />
       )}
     </div>
   );

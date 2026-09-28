@@ -3,7 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const { requireAuth, blockAuthors } = require('../auth');
 
-const KINDS = ['review_request', 'reminder', 'round_closed', 'invitation', 'cancelled', 'reinstated', 'overdue', 'due_soon', 'response'];
+const KINDS = ['review_request', 'reminder', 'round_closed', 'invitation', 'cancelled', 'reinstated', 'overdue', 'due_soon', 'response', 'document'];
 const DUE_SOON_DAYS = 2;
 
 const daysUntil = iso => {
