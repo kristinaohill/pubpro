@@ -176,4 +176,40 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(EXT_SEED_KEY)) {
   if (added) console.log('Added ' + added + ' external author profiles.');
 }
 
-module.exports = { THERAPEUTIC_AREAS, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow, signupRules, setSignupRules };
+// ---- Every external author has an email (and so a sign-in) ------------------------------------
+// Email is required on external authors (2026-09-28). Profiles without one get
+// firstname.lastname@bpl.com; the startup backfill (authorLogins.js) then gives each a login.
+const slugPart = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+function placeholderEmail(name) {
+  const parts = String(name).trim().split(/\s+/);
+  const base = [slugPart(parts[0]), slugPart(parts.length > 1 ? parts[parts.length - 1] : '')].filter(Boolean).join('.') || 'author';
+  const taken = e => db.prepare('SELECT 1 FROM users WHERE lower(email) = ? UNION SELECT 1 FROM pp_authors WHERE lower(email) = ?').get(e, e);
+  let email = base + '@bpl.com';
+  for (let n = 2; taken(email); n += 1) email = base + n + '@bpl.com';
+  return email;
+}
+const EMAIL_SEED_KEY = 'external-emails-2026-09';
+if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(EMAIL_SEED_KEY)) {
+  // The design's sample author (EA-24-001, Kristina Oconnell) is otherwise only created when someone
+  // opens /external-author; make sure she exists. Opening the sample page later fills in the rest.
+  const sampleEmail = 'koconnell920@gmail.com';
+  if (!db.prepare("SELECT 1 FROM pp_authors WHERE author_id = 'EA-24-001' OR lower(email) = ?").get(sampleEmail)) {
+    const form = { firstName: 'Kristina', middleInitial: '', lastName: 'Oconnell', displayName: 'Oconnell K', email: sampleEmail, confirmEmail: sampleEmail, institution: '', street: '', city: 'Charleston', state: 'South Carolina', country: 'United States', zip: '' };
+    db.prepare("INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by, created_at) VALUES ('EA-24-001', ?, ?, 'Active', 'Joe Submitter', ?, ?, NULL, '2024-09-06 16:20:00')")
+      .run('Kristina Oconnell', sampleEmail, JSON.stringify({ displayName: 'Oconnell K', location: 'Charleston, South Carolina, United States' }),
+        JSON.stringify({ active: true, form, na: true, manual: false, checks: [], agreements: [], coi: [], signedCoi: null, studies: [], audit: [], seededMinimal: true }));
+  }
+  let filled = 0;
+  for (const a of db.prepare("SELECT id, name, data FROM pp_authors WHERE email IS NULL OR trim(email) = ''").all()) {
+    const email = placeholderEmail(a.name);
+    let d = {};
+    try { d = JSON.parse(a.data || '{}'); } catch (e) { d = {}; }
+    d.form = { ...(d.form || {}), email, confirmEmail: email };
+    db.prepare("UPDATE pp_authors SET email = ?, data = ?, updated_at = datetime('now') WHERE id = ?").run(email, JSON.stringify(d), a.id);
+    filled += 1;
+  }
+  db.prepare('INSERT INTO app_seeds (key) VALUES (?)').run(EMAIL_SEED_KEY);
+  if (filled) console.log('Gave ' + filled + ' external author(s) an @bpl.com email.');
+}
+
+module.exports = { placeholderEmail, THERAPEUTIC_AREAS, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow, signupRules, setSignupRules };

@@ -218,7 +218,8 @@ router.put('/external/:profileId', (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const institution = req.body.institution == null ? null : String(req.body.institution).trim();
   if (!name) return res.status(400).json({ error: 'Enter a name.' });
-  if (email && !emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
+  if (!email) return res.status(400).json({ error: 'Enter their email: external authors sign in with it.' });
+  if (!emailOk(email)) return res.status(400).json({ error: 'Enter a valid email address.' });
   const login = db.prepare("SELECT * FROM users WHERE role = 'author' AND author_profile_id = ?").get(a.id);
   if (email && db.prepare('SELECT 1 FROM users WHERE lower(email) = ? AND id != ?').get(email, login ? login.id : -1)) {
     return res.status(400).json({ error: 'Someone already signs in with that email address.' });

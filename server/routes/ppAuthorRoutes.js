@@ -59,6 +59,7 @@ router.get('/:id', requireAuth, ownProfileOnly, (req, res) => {
 router.post('/', requireAuth, blockAuthors, canEdit, (req, res) => {
   const { name, email, status, summary, data } = readBody(req.body);
   if (!name) return res.status(400).json({ error: 'A first and last name are required to save the author.' });
+  if (!email) return res.status(400).json({ error: 'An email is required: external authors sign in with it.' });
   const r = db.prepare(`INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(nextAuthorId(), name, email, status, req.user.name || null, summary, data, req.user.id || null);
   ensureAuthorLogin({ id: r.lastInsertRowid, name, email });
@@ -67,8 +68,14 @@ router.post('/', requireAuth, blockAuthors, canEdit, (req, res) => {
 
 // Returns the sample author, creating it from the posted data the first time.
 router.post('/sample', requireAuth, blockAuthors, (req, res) => {
-  const existing = db.prepare('SELECT id FROM pp_authors WHERE author_id = ?').get(SAMPLE_AUTHOR_ID);
-  if (existing) return res.json(getListRow(existing.id));
+  const existing = db.prepare('SELECT id, data FROM pp_authors WHERE author_id = ?').get(SAMPLE_AUTHOR_ID);
+  if (existing) {
+    if (parse(existing.data, {}).seededMinimal) {
+      const { summary, data } = readBody(req.body);
+      db.prepare("UPDATE pp_authors SET summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?").run(summary, data, existing.id);
+    }
+    return res.json(getListRow(existing.id));
+  }
   const { name, email, status, summary, data } = readBody(req.body);
   if (!name) return res.status(400).json({ error: 'The sample author needs a name.' });
   try {
@@ -89,6 +96,7 @@ router.put('/:id', requireAuth, ownProfileOnly, ownOrEditor, (req, res) => {
   if (!existing) return res.status(404).json({ error: 'External author not found' });
   const { name, email, status, summary, data } = readBody(req.body);
   if (!name) return res.status(400).json({ error: 'A first and last name are required to save the author.' });
+  if (!email) return res.status(400).json({ error: 'An email is required: external authors sign in with it.' });
   db.prepare(`UPDATE pp_authors SET name = ?, email = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(name, email, status, summary, data, req.params.id);
   ensureAuthorLogin({ id: Number(req.params.id), name, email });

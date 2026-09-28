@@ -5,9 +5,9 @@ import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import { fmtSaved } from './Publications';
 
-// System Administrator > External users: every external author profile, with or without a sign-in.
-// Adding an email to someone without one gives them a login; the rest of their record (agreements,
-// COI, debarment checks) lives on their author profile.
+// System Administrator > External users: every external author. Each has an email and signs in with
+// it (email is required); the rest of their record (agreements, COI, debarment checks) lives on their
+// author profile.
 
 const initials = name => String(name || '?').split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 const copy = text => { try { navigator.clipboard.writeText(text); } catch (e) { /* ignore */ } };
@@ -17,7 +17,7 @@ export default function ExternalUsersTab({ onChanged, onError }) {
   const { impersonate, impersonator } = useAuth();
   const [rows, setRows] = useState(null);
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState('all'); // all | login | none
+  const [filter, setFilter] = useState('all'); // all | active | off
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState({ name: '', email: '', institution: '' });
   const [editing, setEditing] = useState(null); // { profileId, d }
@@ -42,9 +42,10 @@ export default function ExternalUsersTab({ onChanged, onError }) {
   };
 
   const q = query.trim().toLowerCase();
-  const list = (rows || []).filter(r => (filter === 'all' || (filter === 'login' ? r.login : !r.login))
+  const isActive = r => !!(r.login && r.login.active);
+  const list = (rows || []).filter(r => (filter === 'all' || (filter === 'active' ? isActive(r) : !isActive(r)))
     && (!q || [r.name, r.email, r.institution, r.authorId].join(' ').toLowerCase().includes(q)));
-  const withLogin = (rows || []).filter(r => r.login).length;
+  const activeCount = (rows || []).filter(isActive).length;
 
   const add = () => run(async () => {
     const r = await api.post('/admin/users', { ...draft, roles: ['author'] });
@@ -83,7 +84,7 @@ export default function ExternalUsersTab({ onChanged, onError }) {
   const fields = (d, set) => (
     <div className="sa-add-grid">
       <Field label="Name" required><TextField value={d.name} onChange={e => set({ name: e.target.value })} /></Field>
-      <Field label="Email (sign-in)" help="Add one to let them sign in to their External Author Dashboard.">
+      <Field label="Email (sign-in)" required help="They sign in to their External Author Dashboard with it.">
         <TextField type="email" value={d.email} onChange={e => set({ email: e.target.value })} />
       </Field>
       <Field label="Institution" required><TextField value={d.institution} onChange={e => set({ institution: e.target.value })} placeholder="e.g. Mayo Clinic" /></Field>
@@ -111,7 +112,7 @@ export default function ExternalUsersTab({ onChanged, onError }) {
         <div className="sa-toolbar">
           <TextField iconBefore="search" placeholder="Search by name, email, institution or author ID" value={query} onChange={e => setQuery(e.target.value)} width="340px" aria-label="Search external users" />
           <div className="sa-seg" role="group" aria-label="Show">
-            {[['all', 'All (' + (rows ? rows.length : 0) + ')'], ['login', 'Can sign in (' + withLogin + ')'], ['none', 'No sign-in (' + ((rows ? rows.length : 0) - withLogin) + ')']].map(([k, l]) => (
+            {[['all', 'All (' + (rows ? rows.length : 0) + ')'], ['active', 'Active (' + activeCount + ')'], ['off', 'Deactivated (' + ((rows ? rows.length : 0) - activeCount) + ')']].map(([k, l]) => (
               <button key={k} type="button" aria-pressed={filter === k} className="sa-seg-btn" onClick={() => setFilter(k)}>{l}</button>
             ))}
           </div>
@@ -151,14 +152,14 @@ export default function ExternalUsersTab({ onChanged, onError }) {
                       <span className="sa-avatar" aria-hidden="true">{initials(r.name)}</span>
                       <span>
                         <span className="sa-name">{r.name}</span>
-                        <span className="sa-email">{[r.email, r.institution].filter(Boolean).join(' · ') || 'No email yet'}</span>
+                        <span className="sa-email">{[r.email, r.institution].filter(Boolean).join(' · ')}</span>
                       </span>
                     </span>
                     <span role="cell" className="sa-rolecell">
                       <button type="button" className="sa-link" onClick={() => navigate('/external-author/' + r.profileId)}>{r.authorId}</button>
                     </span>
                     <span role="cell">
-                      {!r.login ? <Pill tone="draft">No sign-in</Pill> : r.login.active ? <Pill tone="active">Active</Pill> : <Pill tone="cancelled">Deactivated</Pill>}
+                      {isActive(r) ? <Pill tone="active">Active</Pill> : <Pill tone="cancelled">{r.login ? 'Deactivated' : 'No sign-in'}</Pill>}
                     </span>
                     <span role="cell" className="sa-faint">{r.login ? (r.login.last_login_at ? fmtSaved(r.login.last_login_at) : 'Never') : '—'}</span>
                     <span role="cell" className="sa-actions">
@@ -183,10 +184,9 @@ export default function ExternalUsersTab({ onChanged, onError }) {
                           <Button variant="secondary" onClick={() => run(() => api.put('/admin/users/' + r.login.userId, { active: true }), r.name + ' can sign in again.')} disabled={busy}>Reactivate Sign-in</Button>
                         ))}
                         <Button variant="tertiary" icon="open_in_new" onClick={() => navigate('/external-author/' + r.profileId)}>Open Author Profile</Button>
-                        {!r.login && <span className="sa-faint">Add an email and save to give them a sign-in.</span>}
                         <span className="sa-grow" />
                         <Button variant="secondary" onClick={() => setEditing(null)}>Cancel</Button>
-                        <Button variant="primary" onClick={() => save(r)} disabled={busy || !editing.d.name.trim() || !editing.d.institution.trim()}>
+                        <Button variant="primary" onClick={() => save(r)} disabled={busy || !editing.d.name.trim() || !editing.d.email.trim() || !editing.d.institution.trim()}>
                           {busy ? 'Saving…' : !r.login && editing.d.email.trim() ? 'Save & Give Sign-in' : 'Save Changes'}
                         </Button>
                       </div>
