@@ -31,6 +31,8 @@ app.get('/api/catalog', require('./auth').requireAuth, (req, res) => {
     products: c.products(),
     productRoles: c.productRoles(),
     levels: require('./permissions').listRoles().map(r => ({ key: r.key, name: r.name, allProducts: r.allProducts })),
+    // Dropdown lists (System Administrator > Dropdown lists).
+    picklists: require('./picklists').all(),
   });
 });
 

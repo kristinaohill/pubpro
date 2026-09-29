@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { withValue } from '../../components/catalog';
 import {
   Button, Checkbox, CommentComposer, DropZone, Icon, InlineMessage, MoneyField, Pill, Select,
 } from '../../ds/pubpro';
@@ -226,7 +227,7 @@ export default function OutcomeTab({ st, set, bind, navigate, userName, record }
           <FormField id="pfxd-embargo-time" label="Embargo Time">
             <div className="pfxd-time">
               <DateField id="pfxd-embargo-time" time width="100%" />
-              <Select options={TIMEZONE_OPTIONS} {...bind('timezone')} width="100%" aria-label="Time zone" />
+              <Select options={withValue(TIMEZONE_OPTIONS, bind('timezone').value)} {...bind('timezone')} width="100%" aria-label="Time zone" />
             </div>
           </FormField>
         </Pair>

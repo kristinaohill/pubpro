@@ -1,4 +1,5 @@
 import React from 'react';
+import { withValue } from '../../components/catalog';
 import useDismiss from '../../components/useDismiss';
 import { Icon, IconButton, Select, TextArea, TextField } from '../../ds/pubpro';
 import {
@@ -56,7 +57,7 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
 
   const abbrev = bind('abbrevTitle');
   const isAbstract = st.pubType === 'Abstract';
-  const subTypeOptions = REVIEW_SUBTYPE_OPTIONS.filter(o => o.value);
+  const subTypeOptions = withValue(REVIEW_SUBTYPE_OPTIONS.filter(o => o.value), isAbstract ? st.subType : '');
 
   return (
     <Stack>
@@ -166,10 +167,10 @@ export default function OverviewTab({ st, set, bind, navigate, typeLocked, plans
         </fieldset>
         <Pair>
           <FormField id="pf-dept" label="Department">
-            <Select id="pf-dept" options={REVIEW_DEPT_OPTIONS} placeholder="Please select" {...bind('department')} width="100%" />
+            <Select id="pf-dept" options={withValue(REVIEW_DEPT_OPTIONS, bind('department').value)} placeholder="Please select" {...bind('department')} width="100%" />
           </FormField>
           <FormField id="pf-sponsor" label="Sponsor Type">
-            <Select id="pf-sponsor" options={REVIEW_SPONSOR_OPTIONS} placeholder="Please select" {...bind('sponsorType')} width="100%" />
+            <Select id="pf-sponsor" options={withValue(REVIEW_SPONSOR_OPTIONS, bind('sponsorType').value)} placeholder="Please select" {...bind('sponsorType')} width="100%" />
           </FormField>
         </Pair>
       </Card>

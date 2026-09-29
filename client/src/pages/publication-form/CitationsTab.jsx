@@ -1,4 +1,5 @@
 import React from 'react';
+import { withValue } from '../../components/catalog';
 import { AIActionButton, Button, IconButton, Pill, Select, TextField } from '../../ds/pubpro';
 import DateField from '../../components/DateField';
 import { CITATION_TYPE_OPTIONS } from './data';
@@ -58,7 +59,7 @@ export default function CitationsTab({ st, set, bind }) {
       <Card title="Add citation">
         <Pair>
           <FormField id="pfxd-cite-type" label="Citation Type">
-            <Select id="pfxd-cite-type" options={CITATION_TYPE_OPTIONS} {...bind('citationType')} width="100%" />
+            <Select id="pfxd-cite-type" options={withValue(CITATION_TYPE_OPTIONS, bind('citationType').value)} {...bind('citationType')} width="100%" />
           </FormField>
           <FormField id="pfxd-cite-date" label="Publication Date"><DateField id="pfxd-cite-date" width="100%" /></FormField>
         </Pair>

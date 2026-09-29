@@ -259,7 +259,7 @@ router.post('/users/:id/reset-password', (req, res) => {
 
 const rolesPayload = () => ({
   roles: P.listRoles(), permissions: P.PERMISSIONS,
-  options: { therapeuticAreas: people.therapeuticAreas(), departments: people.DEPARTMENTS, products: P.PRODUCTS, activeProducts: catalog.ACTIVE_PRODUCTS, productTa: P.PRODUCT_TA, productRoles: catalog.productRoles() },
+  options: { therapeuticAreas: people.therapeuticAreas(), departments: people.departments(), products: P.PRODUCTS, activeProducts: catalog.ACTIVE_PRODUCTS, productTa: P.PRODUCT_TA, productRoles: catalog.productRoles() },
 });
 
 router.get('/roles', (req, res) => res.json(rolesPayload()));
@@ -289,6 +289,11 @@ router.put('/roles', (req, res) => {
 });
 
 router.delete('/roles/:key', (req, res) => res.status(400).json({ error: 'Access levels are fixed.' }));
+
+// ---- Dropdown lists ------------------------------------------------------------------------
+router.put('/picklists/:key', (req, res) => {
+  try { res.json(require('../picklists').save(req.params.key, req.body.items)); } catch (e) { res.status(400).json({ error: e.message }); }
+});
 
 // ---- Catalog: products and product roles (set these up before aligning users) ----------------
 router.put('/products', (req, res) => {

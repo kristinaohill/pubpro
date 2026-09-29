@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { withValue } from '../../components/catalog';
 import useDismiss from '../../components/useDismiss';
 import usePeople, { jobTitle, oooText, personNamed, refreshReviewTypes, useReviewTypes } from '../../components/usePeople';
 import { api } from '../../api';
@@ -373,7 +374,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName, re
           {removedType && <InlineMessage kind="warning">{st.reviewType} was removed on System Administrator › Review Types. Choose another review type to send a new round.</InlineMessage>}
           <Pair>
             <FormField id="pf-priority" label="Priority">
-              <Select id="pf-priority" options={PRIORITY_OPTIONS} {...bind('priority')} width="100%" />
+              <Select id="pf-priority" options={withValue(PRIORITY_OPTIONS, bind('priority').value)} {...bind('priority')} width="100%" />
             </FormField>
             <FormField
               id="pf-reviewmethod"
@@ -384,7 +385,7 @@ export default function ReviewsTab({ st, set, bind, commit, saving, userName, re
             >
               <Select
                 id="pf-reviewmethod"
-                options={REVIEW_METHOD_OPTIONS}
+                options={withValue(REVIEW_METHOD_OPTIONS, st.reviewMethod)}
                 value={methodLocked ? 'Comment Only' : st.reviewMethod}
                 onChange={e => set({ reviewMethod: e.target.value })}
                 disabled={methodLocked}

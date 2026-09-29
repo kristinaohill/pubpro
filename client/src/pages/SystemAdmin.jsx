@@ -7,6 +7,7 @@ import Flash from '../components/Flash';
 import { UsersTab } from './SystemAdminUsers';
 import ExternalUsersTab from './SystemAdminExternal';
 import ReviewTypesTab from './SystemAdminReviewTypes';
+import DropdownListsTab from './SystemAdminLists';
 import { ProductRolesTab, ProductsTab } from './SystemAdminCatalog';
 import './SystemAdmin.css';
 
@@ -68,6 +69,9 @@ export default function SystemAdmin() {
         <button type="button" role="tab" aria-selected={tab === 'reviews'} className="sa-tab" onClick={() => setTab('reviews')}>
           Review types
         </button>
+        <button type="button" role="tab" aria-selected={tab === 'lists'} className="sa-tab" onClick={() => setTab('lists')}>
+          Dropdown lists
+        </button>
       </div>
 
       {notice && <Flash watch={notice}>{notice}</Flash>}
@@ -90,6 +94,8 @@ export default function SystemAdmin() {
           onChanged={(msg, list) => { setError(''); if (msg) setNotice(msg); if (list) setUsers(list); else loadUsers(); loadRoles(); }}
           onError={setError}
         />
+      ) : tab === 'lists' ? (
+        <DropdownListsTab onChanged={msg => { setError(''); if (msg) setNotice(msg); }} onError={setError} />
       ) : tab === 'reviews' ? (
         <ReviewTypesTab onChanged={msg => { setError(''); if (msg) setNotice(msg); }} onError={setError} />
       ) : (

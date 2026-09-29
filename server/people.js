@@ -14,7 +14,8 @@ for (const col of [
 
 // Therapeutic areas are the products' areas (System Administrator > Products).
 const therapeuticAreas = () => [...new Set(Object.values(P.PRODUCT_TA))];
-const DEPARTMENTS = ['Medical Affairs', 'Clinical Development', 'Regulatory Affairs', 'Biostatistics', 'Health Economics & Outcomes Research', 'Legal', 'Pharmacovigilance', 'Publications'];
+// Departments are a managed dropdown list (System Administrator > Dropdown lists).
+const departments = () => require('./picklists').active('departments');
 
 const parseList = t => { try { const v = JSON.parse(t || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
 const isoDate = v => (/^\d{4}-\d{2}-\d{2}$/.test(String(v || '')) ? String(v) : '');
@@ -192,4 +193,4 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get('no-signup-2026-09'
   if (n) console.log('Sign-up removed: ' + n + ' waiting account(s) are now deactivated users.');
 }
 
-module.exports = { placeholderEmail, therapeuticAreas, DEPARTMENTS, profileFields, readProfile, writeProfile, directory, oooNow };
+module.exports = { placeholderEmail, therapeuticAreas, departments, profileFields, readProfile, writeProfile, directory, oooNow };
