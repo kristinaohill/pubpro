@@ -3,6 +3,7 @@ import { Pill, Tooltip } from '../../ds/pubpro';
 import { CONFERENCE_DIRECTORY, STUDY_DIRECTORY, parseDate } from './data';
 import { openRoundOf } from './state';
 import { authorBlockers } from '../WriterDashboardPanels';
+import { useExternalAuthors } from '../../components/usePeople';
 import './ui.css';
 
 /*
@@ -205,7 +206,8 @@ const MAX_BLOCKERS = 5;
 export function AtAGlance({ st, record, recordId, onTab }) {
   const studies = st.noStudy ? [] : (st.selectedStudies || []).map(id => STUDY_DIRECTORY.find(s => s.id === id)).filter(Boolean);
   const targets = (st.targets || []).map((name, i) => ({ c: CONFERENCE_DIRECTORY.find(x => x.name === name) || { name, abbr: '', kind: '' }, primary: i === 0 }));
-  const blockers = authorBlockers([{ id: record ? record.id : 0, record_id: recordId, data: st }]);
+  const externals = useExternalAuthors();
+  const blockers = authorBlockers([{ id: record ? record.id : 0, record_id: recordId, data: st }], externals);
   const round = openRoundOf(st);
   const waiting = round ? round.reviewers.filter(v => !v.decision || v.decision === 'pending') : [];
   const answered = round ? round.reviewers.length - waiting.length : 0;

@@ -12,6 +12,8 @@ import {
 } from './data';
 import { auditEntry } from './state';
 import { ProofField, ProofLink, uploadProof } from './proof';
+import NewExternalAuthor from './NewExternalAuthor';
+import { useAuth } from '../../AuthContext';
 import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
 import './tabs-b.css';
 
@@ -127,9 +129,14 @@ function useProfileOpener(navigate) {
   };
 }
 
-function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval, record }) {
+function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval, record, recordId }) {
+  const recordIdLabel = (record && record.record_id) || recordId || 'a new publication';
   // Recording an author's acceptance for them: { key, file, note, busy, error } (needs proof).
   const [proxy, setProxy] = useState(null);
+  // Adding someone who isn't in PubPro yet (Publication Managers can create external author profiles).
+  const { can } = useAuth();
+  const canAddNew = can('authors.edit');
+  const [adding, setAdding] = useState(null); // the search text they started from
   const staff = usePeople();
   const externals = useExternalDirectory();
   const openProfile = useProfileOpener(navigate);
@@ -216,7 +223,8 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
     .map(p => ({ label: p.name, meta: 'Internal · ' + roleOf(staff, p.name) + (p.oooNow ? ' · ' + oooText(p).split(':')[0] : ''), group: 'internal', name: p.name }))
     .concat(externals.filter(d => !st.external.some(a => a.name === d.name))
       .map(d => ({ label: d.display, meta: 'External · ' + d.name.split('-').slice(1).join('-'), group: 'external', name: d.name })))
-    .filter(s => !aq || (s.label + ' ' + s.meta).toLowerCase().includes(aq));
+    .filter(s => !aq || (s.label + ' ' + s.meta).toLowerCase().includes(aq))
+    .concat(aq && canAddNew ? [{ label: 'Add \u201c' + st.authorQuery.trim() + '\u201d as a new external author', meta: 'Not in PubPro yet? Create their profile', group: 'new' }] : []);
   const roleOptions = st.internal.map(a => a.name).concat(st.external.map(a => a.name.split('-')[0]));
   // Invitations save the record and reach the author in PubPro (no email).
   const uninvited = a => !a.invite || a.invite.status === 'none';
@@ -275,14 +283,26 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
       body: `Please attest to the ICMJE authorship criteria and sign the authorship agreement for ${rec.title} (${rec.record_id}).`,
     }],
   });
-  const pickAuthor = p => set(s => {
+  // A new external author (or an existing one found while adding) goes on the byline and saves.
+  const addExternal = (entry, isNew) => {
+    setAdding(null);
+    if (st.external.some(a => a.name === entry.name || (entry.profileId && a.profileId === entry.profileId))) return;
+    commit(s => ({
+      authorQuery: '', authorSearchOpen: false,
+      external: s.external.concat([{ id: Date.now(), selected: true, corr: 'optional', invite: { status: 'none' }, name: entry.name, display: entry.display, profileId: entry.profileId }]),
+      audit: (s.audit || []).concat([auditEntry(isNew ? 'External Author Created and Added' : 'External Author Added', {
+        participants: entry.display, comment: (isNew ? 'New profile created by ' : 'Added by ') + userName + (entry.institution ? ' · ' + entry.institution : ''),
+      })]),
+    }), { done: (isNew ? 'Created ' + entry.display + '\u2019s profile and added them. ' : 'Added ' + entry.display + '. ') + 'Send the invitation when you\u2019re ready.' });
+  };
+  const pickAuthor = p => (p.group === 'new' ? (setAdding(st.authorQuery), set({ authorSearchOpen: false })) : set(s => {
     const base = { id: Date.now(), selected: true, corr: 'optional', invite: { status: 'none' } };
     if (p.group === 'internal') {
       return { internal: s.internal.concat([{ ...base, name: p.name, display: p.name }]), authorQuery: '', authorSearchOpen: false };
     }
     const d = externals.find(x => x.name === p.name);
-    return d ? { external: s.external.concat([{ ...base, ...asAuthor(d) }]), authorQuery: '', authorSearchOpen: false } : null;
-  });
+    return d ? { external: s.external.concat([{ ...base, ...asAuthor(d), profileId: d.profileId }]), authorQuery: '', authorSearchOpen: false } : null;
+  }));
 
   const accepted = kvAll.filter(a => a.inviteRank === 3).length;
 
@@ -325,9 +345,16 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                 style={{ maxWidth: '100%' }}
               />
             </FormField>
+            {canAddNew && !adding && (
+              <button type="button" className="yr-link nea-add-link" onClick={() => setAdding(st.authorQuery || '')}>Can&rsquo;t find them? Add a new external author</button>
+            )}
           </div>
           <SegmentedToggle options={FILTER_OPTIONS} value={st.authorFilter} onChange={v => set({ authorFilter: v })} />
         </div>
+
+        {adding != null && (
+          <NewExternalAuthor query={adding} recordId={recordIdLabel} userName={userName} onAdd={addExternal} onCancel={() => setAdding(null)} />
+        )}
 
         {rows.length > 1 && (
           <div className="pfxb-sortbar">

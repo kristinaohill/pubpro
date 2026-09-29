@@ -54,7 +54,8 @@ export function refreshExternalAuthors() {
         extCache = list.filter(a => a.status !== 'Inactive').map(a => {
           const display = (a.summary && a.summary.displayName) || a.name;
           const institution = (a.summary && a.summary.institution) || '';
-          return { profileId: a.id, display, institution, name: institution ? display + '-' + institution : display };
+          // lastCheck / lastCheckClear: their latest debarment check ('' = never run; false = a match).
+          return { profileId: a.id, display, institution, name: institution ? display + '-' + institution : display, lastCheck: (a.summary && a.summary.lastCheck) || '', lastCheckClear: a.summary ? a.summary.lastCheckClear : null };
         });
         extAt = Date.now();
         extListeners.forEach(fn => fn(extCache));

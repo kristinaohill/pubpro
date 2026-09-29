@@ -1,4 +1,5 @@
 import React from 'react';
+import { useExternalAuthors } from '../components/usePeople';
 import { Button } from '../ds/pubpro';
 import { AUTHOR_META, CONFERENCE_DIRECTORY, TODAY_STR, parseDate } from './publication-form/data';
 import { openRoundOf } from './publication-form/state';
@@ -42,8 +43,12 @@ function Panel({ icon, title, count, children }) {
 
 /* ---------- Author blockers ---------- */
 
-/** Problems with invited authors: no reply, declined, agreement or COI missing/expired. */
-export function authorBlockers(pubs) {
+/**
+ * Problems with invited authors: no reply, declined, agreement or COI missing/expired, and for
+ * external authors (externals = their profiles, from useExternalAuthors) a debarment check not run
+ * or one that found a match.
+ */
+export function authorBlockers(pubs, externals = []) {
   const out = [];
   pubs.forEach(p => {
     const d = p.data || {};
@@ -69,6 +74,11 @@ export function authorBlockers(pubs) {
       }
       const meta = { ...(AUTHOR_META[person] || {}), ...((d.authorMetaEdits || {})[person] || {}) };
       const coiAge = meta.coi ? daysSince(meta.coi) : null;
+      if (ext) {
+        const prof = externals.find(x => (a.profileId && x.profileId === a.profileId) || x.name === a.name || x.display === shown);
+        if (prof && prof.lastCheckClear === false) add('Debarment check found a match', 'Review it on their author profile before they continue.', 2);
+        else if (prof && !prof.lastCheck) add('Debarment check not run', 'Run it from their author profile.', 1);
+      }
       if (!meta.coi) add('No COI disclosure on file', 'Needed before submission.', 1);
       else if (coiAge > 365) add('COI disclosure expired', 'Submitted ' + meta.coi + ' (over 365 days ago).', 2);
     });
@@ -77,7 +87,7 @@ export function authorBlockers(pubs) {
 }
 
 export function AuthorBlockersPanel({ pubs, onOpen }) {
-  const items = authorBlockers(pubs);
+  const items = authorBlockers(pubs, useExternalAuthors());
   return (
     <Panel icon="person_alert" title="Author Blockers" count={items.length ? plural(items.length, 'issue') : null}>
       {items.length === 0 ? (

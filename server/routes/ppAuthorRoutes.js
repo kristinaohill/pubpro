@@ -50,6 +50,27 @@ router.get('/', requireAuth, (req, res) => {
   res.json(rows.map(r => (full ? { ...listRow(r), data: parse(r.data, {}) } : listRow(r))));
 });
 
+// Before adding someone new: who's already on file with this email, or a similar name. Duplicate
+// profiles would split an author's COI, agreement and debarment history, and share one login.
+const norm = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+const brief = r => { const sm = parse(r.summary, {}); return { id: r.id, authorId: r.author_id, name: r.name, displayName: sm.displayName || r.name, institution: sm.institution || '', email: r.email, status: r.status }; };
+function findMatches({ email, first, last }) {
+  const rows = db.prepare('SELECT id, author_id, name, email, status, summary FROM pp_authors').all();
+  const e = norm(email);
+  const emailMatch = e ? rows.find(r => norm(r.email) === e) : null;
+  const f = norm(first); const l = norm(last);
+  const full = norm(first + ' ' + last);
+  const similar = !l ? [] : rows.filter(r => r !== emailMatch).filter(r => {
+    const n = norm(r.name); const parts = n.split(' ');
+    const rl = parts[parts.length - 1]; const rf = parts[0] || '';
+    return n === full || (rl === l && (!f || rf[0] === f[0]));
+  }).slice(0, 5);
+  return { emailMatch: emailMatch ? brief(emailMatch) : null, similar: similar.map(brief) };
+}
+router.get('/matches', requireAuth, blockAuthors, (req, res) => {
+  res.json(findMatches({ email: req.query.email, first: req.query.first, last: req.query.last }));
+});
+
 router.get('/:id', requireAuth, ownProfileOnly, (req, res) => {
   const row = db.prepare('SELECT * FROM pp_authors WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'External author not found' });
@@ -60,6 +81,11 @@ router.post('/', requireAuth, blockAuthors, canEdit, (req, res) => {
   const { name, email, status, summary, data } = readBody(req.body);
   if (!name) return res.status(400).json({ error: 'A first and last name are required to save the author.' });
   if (!email) return res.status(400).json({ error: 'An email is required: external authors sign in with it.' });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'That email doesn\u2019t look right.' });
+  const { emailMatch } = findMatches({ email });
+  if (emailMatch) return res.status(409).json({ error: emailMatch.displayName + ' (' + emailMatch.authorId + ') already uses that email. Add them instead of creating a duplicate.', existing: emailMatch });
+  const staff = db.prepare("SELECT name FROM users WHERE lower(email) = ? AND role != 'author'").get(email.toLowerCase());
+  if (staff) return res.status(409).json({ error: 'That email belongs to ' + staff.name + ', a BP Logix user. Add them as an internal author instead.' });
   const r = db.prepare(`INSERT INTO pp_authors (author_id, name, email, status, owner, summary, data, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(nextAuthorId(), name, email, status, req.user.name || null, summary, data, req.user.id || null);
   ensureAuthorLogin({ id: r.lastInsertRowid, name, email });
@@ -97,6 +123,8 @@ router.put('/:id', requireAuth, ownProfileOnly, ownOrEditor, (req, res) => {
   const { name, email, status, summary, data } = readBody(req.body);
   if (!name) return res.status(400).json({ error: 'A first and last name are required to save the author.' });
   if (!email) return res.status(400).json({ error: 'An email is required: external authors sign in with it.' });
+  const clash = db.prepare('SELECT author_id, name FROM pp_authors WHERE lower(email) = ? AND id != ?').get(email.toLowerCase(), Number(req.params.id));
+  if (clash) return res.status(409).json({ error: clash.name + ' (' + clash.author_id + ') already uses that email.' });
   db.prepare(`UPDATE pp_authors SET name = ?, email = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(name, email, status, summary, data, req.params.id);
   ensureAuthorLogin({ id: Number(req.params.id), name, email });
