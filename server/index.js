@@ -58,6 +58,8 @@ require('./authorLogins').backfillAuthorLogins();
 require('./bplogixPeople').run();
 // After the people changes: records from before the signing rule follow it (see the file).
 require('./signingBackfill').run();
+// People renames (see the file).
+require('./renames').run();
 
 // Dashboard: upcoming milestones
 app.get('/api/dashboard', require('./auth').requireAuth, (req, res) => {

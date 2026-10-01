@@ -526,7 +526,7 @@ if (!db.prepare('SELECT 1 FROM app_seeds WHERE key = ?').get(LIBRARY_SEED_KEY)) 
         pubType: 'Abstract', product: 'Daxafont (DMD)', subType: 'Poster', outcomeStatus: 'Accepted', selectedStudies: ['100230'],
         targets: ['World Muscle Society Congress'],
         fields: { abbrevTitle: 'DXN-301 Interim Motor Function', pubTitle: 'Daxafont and Motor Function in Ambulatory Boys with Duchenne Muscular Dystrophy: DXN-301 Interim Analysis', therapeuticArea: 'Neuroscience', dateSubmitted: '5/20/2026', statusDate: '9/10/2026' },
-        internal: [int(1, 'Christy Risser-Milne')],
+        internal: [int(1, 'Christy PM')],
         external: [ext(1, 'Kenji Sato-University of Tokyo', 'Kenji Sato')],
         pubDoc: 'new',
         pubDocText: 'Background\nDaxafont is an investigational exon-skipping therapy for Duchenne muscular dystrophy (DMD).\n\nMethods\nDXN-301 randomized 96 ambulatory boys aged 4 to 7 years to Daxafont or placebo. This interim analysis reports 48-week change in North Star Ambulatory Assessment (NSAA).\n\nResults\nNSAA declined by 0.8 points with Daxafont versus 3.2 with placebo (p=0.004). Infusion reactions were mild.\n\nConclusions\nDaxafont slowed motor function decline over 48 weeks.',

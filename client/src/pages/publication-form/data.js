@@ -48,7 +48,7 @@ export const STUDY_DIRECTORY = [
   ["100223", "BLX-215: Once-Weekly Biologix Pharmacokinetic Bridging Study", "Cancelled", BLX, "Richa Garg", "", "", "", "", "", "Not applicable", "Not available", "Not planned", "Terminated before enrollment completed after a portfolio decision", ""],
   ["100230", "DXN-301: Phase III Trial of Daxafont in Ambulatory Boys with Duchenne Muscular Dystrophy", "In Progress", DXN, "Richa Garg", "8/31/2027", "2/1/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900301"],
   ["100231", "DXN-201: Phase II Dystrophin Expression Study of Daxafont in DMD", "Completed", DXN, "Richa Garg", "2/27/2026", "", "1/9/2026", "12/4/2026", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900302"],
-  ["100232", "DXN-302: Long-Term Extension of Daxafont on Motor and Pulmonary Function in DMD", "In Progress", DXN, "Christy Risser-Milne", "10/31/2028", "", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900303"],
+  ["100232", "DXN-302: Long-Term Extension of Daxafont on Motor and Pulmonary Function in DMD", "In Progress", DXN, "Christy PM", "10/31/2028", "", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900303"],
   ["100240", "TRZ-301: Triazapam Cream in Mild-to-Moderate Plaque Psoriasis", "Completed", TRZ, "Richa Garg", "4/30/2026", "", "3/18/2026", "1/15/2027", "", "Met primary endpoint", "Available", "Planned", "", "NCT09900401"],
   ["100241", "TRZ-302: Triazapam vs. Vehicle in Chronic Hand Eczema", "In Progress", TRZ, "Richa Garg", "9/30/2027", "3/31/2027", "", "", "", "Pending", "Not yet available", "Planned", "", "NCT09900402"],
   ["100242", "TRZ-204: Phase II Study of Triazapam in Seborrheic Dermatitis", "Completed", TRZ, "Jack Bedel", "1/30/2026", "", "12/12/2025", "", "", "Did not meet primary endpoint", "Available", "Not planned", "Exploratory study; results will be posted to the trial registry only", "NCT09900403"],
@@ -74,7 +74,7 @@ export const STUDY_STATUS_BG = {
   "Cancelled": "var(--status-cancelled)",
 };
 
-export const INTERNAL_AUTHOR_DIRECTORY = ["Kristina Hill", "Jack Bedel", "Christy Risser-Milne", "Richa Garg", "Greg Vogel"];
+export const INTERNAL_AUTHOR_DIRECTORY = ["Kristina Hill", "Jack Bedel", "Christy PM", "Richa Garg", "Greg Vogel"];
 export const EXTERNAL_AUTHOR_DIRECTORY = [
   { name: "Steve Altschuler-UCLA School of Medicine", display: "Steve Altschuler", agreement: "Authorship_Agreement_Altschuler_Signed.pdf", agreementDate: "3/14/2025" },
   { name: "Priya Raman-Karolinska Institutet", display: "Priya Raman", agreement: "Authorship_Agreement_Raman_Signed.pdf", agreementDate: "1/8/2026" },
@@ -88,7 +88,7 @@ export const EXTERNAL_AUTHOR_DIRECTORY = [
 
 export const CREDIT_ROLES = ["Conceptualization", "Data curation", "Formal analysis", "Funding acquisition", "Investigation", "Methodology", "Project administration", "Resources", "Software", "Supervision", "Validation", "Visualization", "Writing – original draft", "Writing – review & editing"];
 export const AUTHOR_META = {
-  "Christy Risser-Milne": { orcid: "0000-0002-4417-8810", credit: ["Conceptualization", "Methodology", "Writing – original draft"], coi: "3/2/2026", debar: "Clear" },
+  "Christy PM": { orcid: "0000-0002-4417-8810", credit: ["Conceptualization", "Methodology", "Writing – original draft"], coi: "3/2/2026", debar: "Clear" },
   "Steve Altschuler": { orcid: "0000-0001-7732-1045", credit: ["Investigation", "Writing – review & editing"], coi: "2/11/2026", debar: "Clear" },
   "Priya Raman": { orcid: "0000-0003-1190-6627", credit: ["Formal analysis", "Writing – review & editing"], coi: "1/8/2026", debar: "Clear" },
   "Marie Dubois": { orcid: "0000-0002-9054-3318", credit: ["Investigation"], coi: "8/10/2025", debar: "Clear" },
@@ -96,7 +96,7 @@ export const AUTHOR_META = {
   "Kenji Sato": { orcid: "0000-0001-5528-9902", credit: [], coi: "", debar: "Not checked" },
   "Raj Patel": { orcid: "0000-0003-6601-2247", credit: ["Data curation", "Validation"], coi: "8/11/2026", debar: "Clear" },
 };
-export const DRAFT_ROUND_FEEDBACK = ["Christy Risser-Milne"];
+export const DRAFT_ROUND_FEEDBACK = ["Christy PM"];
 export const AUTHOR_APPROVALS = [];
 
 const JC = (id, group, label, required, done) => ({ id, group, label, owner: "Unassigned", due: "", done: !!done, required: !!required });
@@ -185,7 +185,7 @@ export const PROGRESS = {
   responses: {
     "Steve Altschuler": { status: "done", on: "9/15/2026" },
     "Priya Raman": { status: "done", on: "9/17/2026" },
-    "Christy Risser-Milne": { status: "done", on: "9/12/2026" },
+    "Christy PM": { status: "done", on: "9/12/2026" },
     "Marie Dubois": { status: "ooo", last: "9/21/2026", oooNote: "Auto-reply received 9/21/2026: Marie Dubois is away until 10/19/2026, after the 10/14/2026 congress deadline. Reminders are paused." },
     "Henrik Lund": { status: "pending", last: "9/18/2026" },
     "Raj Patel": { status: "pending", last: "9/18/2026" },
@@ -335,8 +335,8 @@ export const OUTCOME_STATUS_OPTIONS = STATUS_OPTIONS;
 export const OUTCOME_OPTIONS = [{ value: "", label: "Please select" }, { value: "Accepted", label: "Accepted" }, { value: "Declined", label: "Declined" }];
 export const TIMEZONE_OPTIONS = ["ET", "CT", "PT", "GMT", "CET"];
 export const CITATION_TYPE_OPTIONS = ["Journal Article", "Congress Abstract", "Poster", "Book Chapter"];
-export const DELEGATE_OPTIONS = ["Kristina Hill", "Jack Bedel", "Christy Risser-Milne", "Richa Garg", "Greg Vogel"];
-export const REASSIGN_FROM_OPTIONS = ["Kristina Hill", "Jack Bedel", "Christy Risser-Milne", "Richa Garg", "Greg Vogel"];
+export const DELEGATE_OPTIONS = ["Kristina Hill", "Jack Bedel", "Christy PM", "Richa Garg", "Greg Vogel"];
+export const REASSIGN_FROM_OPTIONS = ["Kristina Hill", "Jack Bedel", "Christy PM", "Richa Garg", "Greg Vogel"];
 
 export const PLANS = [
   { id: "PLAN-26-DAX-002", name: "Daxafort Dissemination Plan" },
@@ -375,7 +375,7 @@ export const CONFERENCE_DIRECTORY = [
 export const CONGRESS_CHECKLIST = [
   { id: 1, group: "Compliance", label: "ICMJE authorship criteria confirmed for all authors", owner: "Kristina Hill", due: "8/14/2026", done: true, required: true },
   { id: 2, group: "Compliance", label: "Author agreements on file for external authors", owner: "Kristina Hill", due: "8/14/2026", done: true, required: true },
-  { id: 3, group: "Compliance", label: "Conflict of interest disclosures collected", owner: "Christy Risser-Milne", due: "9/18/2026", done: false, required: true },
+  { id: 3, group: "Compliance", label: "Conflict of interest disclosures collected", owner: "Christy PM", due: "9/18/2026", done: false, required: true },
   { id: 4, group: "Content", label: "Data on file matches source tables and figures", owner: "Greg Vogel", due: "9/18/2026", done: false, required: true },
   { id: 5, group: "Content", label: "Statistical review complete", owner: "Greg Vogel", due: "9/18/2026", done: false, required: false },
   { id: 6, group: "Content", label: "Plain language summary drafted", owner: "Kristina Hill", due: "9/29/2026", done: false, required: false },
@@ -383,7 +383,7 @@ export const CONGRESS_CHECKLIST = [
   { id: 8, group: "Submission", label: "Trial registration number included", owner: "Jack Bedel", due: "10/9/2026", done: true, required: true },
   { id: 9, group: "Submission", label: "Copyright and licensing terms reviewed", owner: "Richa Garg", due: "10/9/2026", done: false, required: false },
 
-  // Congress Abstract Submission Readiness Checklist — Christy Risser-Milne, Sept 2026
+  // Congress Abstract Submission Readiness Checklist — Christy PM, Sept 2026
   { id: 101, group: "Authorship & Presenting Author", label: "Each author made a substantial contribution to the conception/design of the work, or the acquisition, analysis, or interpretation of data", owner: "Unassigned", due: "", done: false, required: true },
   { id: 102, group: "Authorship & Presenting Author", label: "Presenting author identified (frequently distinct from the corresponding author; some congress portals grant upload permissions only to the presenting author)", owner: "Unassigned", due: "", done: false, required: true },
   { id: 103, group: "Authorship & Presenting Author", label: "Author order and affiliations confirmed by all authors", owner: "Unassigned", due: "", done: false, required: true },

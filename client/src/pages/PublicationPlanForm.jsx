@@ -100,7 +100,7 @@ const INITIAL_IDEAS = [
 const INITIAL_STAKEHOLDERS = [
   { id: 1, type: 'Internal', name: 'Kristina Hill', role: 'Regulatory Affairs Liaison', coiDate: '', affiliation: '', email: '' },
   { id: 2, type: 'External', name: 'Steve Altschuler', role: 'Steering Committee Chair', coiDate: '8/21/2026', affiliation: 'UCLA School of Medicine', email: 'stevefakeemail@bplogix.com' },
-  { id: 3, type: 'Internal', name: 'Christy Risser-Milne', role: 'Medical Writer', coiDate: '', affiliation: '', email: '' },
+  { id: 3, type: 'Internal', name: 'Christy PM', role: 'Medical Writer', coiDate: '', affiliation: '', email: '' },
   { id: 4, type: 'External', name: 'Julius Caesar', role: '', coiDate: '8/13/2026', affiliation: 'University of Houston Medical Center', email: 'imperator@spqr.hmc.net' },
 ];
 

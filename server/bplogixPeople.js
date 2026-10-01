@@ -17,14 +17,14 @@ const DOMAIN = 'bplogix.com';
 const PEOPLE = [
   { name: 'Kristina Hill', email: 'kristina.hill@bplogix.com', roles: ['admin', 'pub_manager'] },
   { name: 'Jack Bedel', email: 'jack.bedel@bplogix.com', roles: ['pub_manager'] },
-  { name: 'Christy Risser-Milne', email: 'crissermilne@bplogix.com', roles: ['pub_manager'] },
+  { name: 'Christy PM', email: 'crissermilne@bplogix.com', roles: ['pub_manager'] },
   { name: 'Richa Garg', email: 'richa.garg@bplogix.com', roles: ['pub_manager'] },
   { name: 'Greg Vogel', email: 'greg.vogel@bplogix.com', roles: ['pub_manager'] },
 ];
 const NEW_NAMES = PEOPLE.map(p => p.name);
 // Who replaces whom on publications (anyone else gets the next person not already on that record).
 const REPLACES = {
-  'Ina Ternal': 'Christy Risser-Milne',
+  'Ina Ternal': 'Christy PM',
   'Lena Ortiz': 'Richa Garg',
   'Dana Ruiz': 'Jack Bedel',
   'Ben Cho': 'Greg Vogel',
@@ -173,14 +173,14 @@ const STAFF_MAP = {
   'Tom Nakamura': 'Richa Garg',
   'Lena Ortiz': 'Richa Garg',
   'Pat Pending': 'Richa Garg',
-  'Marcus Webb': 'Christy Risser-Milne',
-  'Ina Ternal': 'Christy Risser-Milne',
-  'Alejandra S\u00e1nchez': 'Christy Risser-Milne',
+  'Marcus Webb': 'Christy PM',
+  'Ina Ternal': 'Christy PM',
+  'Alejandra S\u00e1nchez': 'Christy PM',
   'Sofia Almeida': 'Kristina Hill',
   'Joe Submitter': 'Kristina Hill',
 };
-const STAFF_ONLY = { 'Priya Raman': 'Christy Risser-Milne' }; // only in staff contexts
-const FALLBACK_ORDER = ['Jack Bedel', 'Greg Vogel', 'Richa Garg', 'Christy Risser-Milne', 'Kristina Hill'];
+const STAFF_ONLY = { 'Priya Raman': 'Christy PM' }; // only in staff contexts
+const FALLBACK_ORDER = ['Jack Bedel', 'Greg Vogel', 'Richa Garg', 'Christy PM', 'Kristina Hill'];
 const isExternalRole = role => /External/i.test(String(role || ''));
 
 /** Maps the names in a list of people (reviewers), never putting the same person in twice. */
