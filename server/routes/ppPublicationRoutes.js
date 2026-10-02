@@ -242,6 +242,8 @@ router.get('/:id/invitation', requireAuth, (req, res) => {
     publication: { id: row.id, recordId: row.record_id, title: f.pubTitle || f.abbrevTitle || row.title, type: row.pub_type, product: row.product, owner: row.owner, cancelled: !!data.cancelled },
     me: { name: req.user.name, invite: me.invite || { status: 'none' }, criteria: me.criteria || null },
     agreement: gates.AGREEMENT,
+    // ICMJE criterion 4: each author can see who does which parts (their CRediT roles).
+    team: gates.authorsOf(data).map(x => ({ person: x.person, credit: ((data.authorMetaEdits || {})[x.person] || {}).credit || null })),
   });
 });
 

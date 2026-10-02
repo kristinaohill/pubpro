@@ -14,7 +14,7 @@ import { auditEntry } from './state';
 import { ProofField, ProofLink, uploadProof } from './proof';
 import NewExternalAuthor from './NewExternalAuthor';
 import { CreditEditor } from './CreditEditor';
-import { contributionsOf, creditFlagsFor, summaryOf, toStored } from './credit';
+import { contributionsOf, creditFlagsFor, icmjeCriteria, icmjeFlagsFor, summaryOf, toStored } from './credit';
 import { bylineAuthors } from './state';
 import { useAuth } from '../../AuthContext';
 import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
@@ -167,13 +167,10 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         ? ['Not submitted', 'radio_button_unchecked', 'var(--fg-faint)']
         : coiAge > 365 ? ['Expired', 'error', 'var(--fatal-text)'] : ['Current', 'verified', 'var(--ok)'];
       const approved = gaveApproval(st, person) || (!!simulateApproval && (!a.invite || a.invite.status === 'accepted'));
-      const crit = [
-        { k: 'Substantive contribution', ok: contrib.length > 0, src: 'From CRediT roles' },
-        { k: 'Drafted or revised critically', ok: gaveFeedback(st, person), src: 'From feedback given in draft review rounds' },
-        { k: 'Final approval', ok: approved, src: 'From approval given at Author Approval' },
-        { k: 'Accountability agreement', ok: !!m.agreementDate && !m.agreementExpired, src: 'From the signed authorship agreement' },
-      ];
-      const met = crit.filter(c => c.ok).length;
+      // ICMJE criteria from the evidence: CRediT roles, the review record, final approval and the
+      // signed agreement (credit.js). The design's simulated approval still counts for criterion 3.
+      const crit = icmjeCriteria(st, person, a).map(c => (c.n === 3 && c.status !== 'met' && approved ? { ...c, status: 'met', src: 'Approved at Author Approval' } : c));
+      const met = crit.filter(c => c.status === 'met').length;
       const iv = a.invite || { status: 'none' };
       const look = {
         accepted: ['Accepted', 'check_circle', 'var(--ok)', 'Accepted ' + iv.on],
@@ -209,10 +206,11 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         debarRank: { Flagged: 0, 'Not checked': 1, Clear: 2 }[meta.debar],
         icmje: crit.map(c => ({
           k: c.k,
-          tip: c.k + (c.ok ? ' — met. ' : ' — not yet met. ') + c.src + '.',
-          glyph: c.ok ? 'check_circle' : 'radio_button_unchecked',
-          color: c.ok ? 'var(--ok)' : 'var(--fg-disabled)',
+          tip: c.n + '. ' + c.k + (c.status === 'met' ? ': met. ' : c.status === 'planned' ? ': planned. ' : ': not yet met. ') + c.src + '.',
+          glyph: c.status === 'met' ? 'check_circle' : c.status === 'planned' ? 'schedule' : 'radio_button_unchecked',
+          color: c.status === 'met' ? 'var(--ok)' : c.status === 'planned' ? 'var(--warn-text)' : 'var(--fg-disabled)',
         })),
+        icmjeFlags: icmjeFlagsFor(st, person),
         icmjeCount: met,
         inviteLabel: look[0], inviteGlyph: look[1], inviteColor: look[2], inviteMeta: look[3],
         canInvite: iv.status === 'none' || iv.status === 'declined',
@@ -338,23 +336,26 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         <div className="pfxb-addbar">
           <div className="pfxb-addbar-search" ref={authorRef}>
             <FormField label="Add Author">
-              <SearchSelect
-                value={st.authorQuery}
-                placeholder="Search by name, role, or institution"
-                suggestions={authorPool}
-                open={st.authorSearchOpen}
-                emptyLabel={aq ? 'No authors match “' + st.authorQuery + '”.' : 'Everyone in the directory is already an author.'}
-                width="100%"
-                onChange={e => set({ authorQuery: e.target.value, authorSearchOpen: true })}
-                onFocus={() => set({ authorSearchOpen: true })}
-                onClear={() => set({ authorQuery: '', authorSearchOpen: false })}
-                onPick={pickAuthor}
-                style={{ maxWidth: '100%' }}
-              />
+              <div className="nea-searchrow">
+                <SearchSelect
+                  value={st.authorQuery}
+                  placeholder="Search by name, role, or institution"
+                  suggestions={authorPool}
+                  open={st.authorSearchOpen}
+                  emptyLabel={aq ? 'No authors match “' + st.authorQuery + '”.' : 'Everyone in the directory is already an author.'}
+                  width="100%"
+                  onChange={e => set({ authorQuery: e.target.value, authorSearchOpen: true })}
+                  onFocus={() => set({ authorSearchOpen: true })}
+                  onClear={() => set({ authorQuery: '', authorSearchOpen: false })}
+                  onPick={pickAuthor}
+                  style={{ maxWidth: '100%', flex: 1 }}
+                />
+                {/* Only once they've searched: look for the person first, add a new one second. */}
+                {canAddNew && !adding && aq && (
+                  <Button variant="secondary" icon="person_add" onClick={() => { setAdding(st.authorQuery.trim()); set({ authorSearchOpen: false }); }}>Add New Author</Button>
+                )}
+              </div>
             </FormField>
-            {canAddNew && !adding && (
-              <button type="button" className="yr-link nea-add-link" onClick={() => setAdding(st.authorQuery || '')}>Can&rsquo;t find them? Add a new external author</button>
-            )}
           </div>
           <SegmentedToggle options={FILTER_OPTIONS} value={st.authorFilter} onChange={v => set({ authorFilter: v })} />
         </div>
@@ -507,7 +508,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
 
                 <div className="pfxb-credit-editor">
                   <div className="pfx-label">CRediT roles</div>
-                  <CreditEditor person={a.person} list={a.credit} onChange={list => setMeta(a.person, { credit: toStored(list) })} flags={creditFlagsFor(st, bylinePeople, a.person)} />
+                  <CreditEditor person={a.person} list={a.credit} onChange={list => setMeta(a.person, { credit: toStored(list) })} flags={creditFlagsFor(st, bylinePeople, a.person).concat(a.icmjeFlags)} />
                 </div>
               </article>
             ))}

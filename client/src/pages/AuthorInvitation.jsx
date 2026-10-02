@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Checkbox, Icon, InlineMessage, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
+import { contributionsOf } from './publication-form/credit';
 import './AuthorInvitation.css';
 
 // Where an authorship invitation's link lands (/invitation/:id): the author reads the ICMJE
@@ -32,6 +33,23 @@ export default function AuthorInvitation() {
   if (!info) return <div className="ai-page"><div className="empty-state">Loading&hellip;</div></div>;
 
   const { publication: p, me, agreement: A } = info;
+  // Who does what (ICMJE criterion 4): co-authors' CRediT roles, read like the Authors tab does.
+  const teamSt = { authorMetaEdits: Object.fromEntries((info.team || []).filter(t => t.credit).map(t => [t.person, { credit: t.credit }])) };
+  const team = (info.team || []).map(t => ({ person: t.person, roles: contributionsOf(teamSt, t.person).map(r => r.label) }));
+  const TeamCard = team.length > 0 && (
+    <div className="ai-team">
+      <h3 className="ai-h3">Who does what</h3>
+      <p className="ai-meta">ICMJE asks each author to know which co-authors are responsible for which parts of the work (criterion 4). Planned CRediT roles:</p>
+      <div className="ai-team-list">
+        {team.map(t => (
+          <div key={t.person} className="ai-team-row">
+            <span className="ai-team-name">{t.person}{t.person === me.name ? ' (you)' : ''}</span>
+            <span className="ai-meta">{t.roles.length ? t.roles.join(', ') : 'Roles not set yet'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   const signed = me.criteria && me.criteria.at;
   const declined = me.invite.status === 'declined';
   const allChecked = A.attestations.every((_, i) => checks[i]);
@@ -86,6 +104,8 @@ export default function AuthorInvitation() {
               {A.criteria.map(c => <li key={c}>{c}</li>)}
             </ol>
 
+            {TeamCard}
+
             <h3 className="ai-h3">By signing, you attest that:</h3>
             <div className="ai-attest">
               {A.attestations.map((t, i) => (
@@ -106,6 +126,7 @@ export default function AuthorInvitation() {
             </div>
           </>
         )}
+        {signed && TeamCard}
       </div>
     </div>
   );

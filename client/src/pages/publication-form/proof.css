@@ -15,4 +15,4 @@
 .pf-proxy-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; margin-top: 8px; border: 1px solid #DCE1E7; border-radius: 10px; background: #FAFBFC; }
 .pf-proxy-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .nea-similar { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: 4px 0; }
-.nea-add-link { margin-top: 6px; }
+.nea-searchrow { display: flex; align-items: center; gap: 8px; }
