@@ -29,13 +29,10 @@ function kickoffMissing(pubType, d) {
   const unsigned = authors.filter(x => !(x.a.criteria && x.a.criteria.at)).map(x => x.person);
   if (unsigned.length) out.push('signed authorship agreements from ' + unsigned.join(', '));
   if (!prep.orderConfirmed) out.push('the confirmed author order');
-  // CRediT: [{ id, degree }] per author, each role with its extent (lead, equal, supporting).
+  // CRediT: [{ id, degree }] per author. Every author needs a role checked; the extent is optional.
   const roles = k.contributions || {};
   const noRole = authors.filter(x => !(roles[x.person] || []).length).map(x => x.person);
   if (noRole.length) out.push('CRediT roles for ' + noRole.join(', '));
-  const DEGREES = ['lead', 'equal', 'supporting'];
-  const noDegree = authors.filter(x => (roles[x.person] || []).some(r => !r || !DEGREES.includes(r.degree))).map(x => x.person);
-  if (noDegree.length) out.push('the extent of each CRediT role for ' + noDegree.join(', '));
 
   if (!prep.coiReviewed) out.push('the COI disclosure review');
   if (!prep.transferOfValue || (prep.transferOfValue === 'yes' && !filled(prep.tovNote))) out.push('the transfer-of-value answer');

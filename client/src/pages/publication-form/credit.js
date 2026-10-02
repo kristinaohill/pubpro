@@ -1,6 +1,6 @@
 // CRediT contributions per author on a publication. Stored on st.authorMetaEdits[person].credit
-// as [{ id, degree }] (degree: lead | equal | supporting). Older records stored role labels only;
-// they read as roles without a degree. The kick-off plans them (required); final approval confirms.
+// as [{ id, degree }]. Each role is a check-off; the degree (lead | equal | supporting) is optional.
+// Older records stored role labels only. The kick-off plans them (required); final approval confirms.
 import { AUTHOR_META, CREDIT_DEGREES, CREDIT_TAXONOMY } from './data';
 
 const byId = new Map(CREDIT_TAXONOMY.map(r => [r.id, r]));
@@ -21,14 +21,10 @@ export function contributionsOf(st, person) {
 export const toStored = list => list.map(x => ({ id: x.id, degree: x.degree || '' }));
 export const summaryOf = list => list.map(x => x.label + (x.degree ? ' (' + degreeLabel(x.degree) + ')' : '')).join(', ');
 
-/** What the kick-off needs (hard): every author has a role, and every role has its degree. */
+/** What the kick-off needs (hard): every author has at least one role checked. The extent is optional. */
 export function creditMissing(st, people) {
-  const out = [];
   const none = people.filter(p => !contributionsOf(st, p).length);
-  if (none.length) out.push('CRediT roles for ' + none.join(', ') + ' (Authors tab).');
-  const noDegree = people.filter(p => contributionsOf(st, p).some(x => !x.degree));
-  if (noDegree.length) out.push('The extent (lead, equal or supporting) of each role for ' + noDegree.join(', ') + '.');
-  return out;
+  return none.length ? ['CRediT roles for ' + none.join(', ') + ' (Authors tab).'] : [];
 }
 
 /** Soft flags from the taxonomy's rules: worth a look, not blocking. */

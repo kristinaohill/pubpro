@@ -5,8 +5,8 @@ import { contributionsOf, creditFlags, degreeLabel } from './credit';
 import { Card } from './ui';
 import './credit.css';
 
-// CRediT for one author: tick each role they hold and how much of it (lead, equal, supporting,
-// relative to others in the same role). Required for every author before the kick-off is recorded.
+// CRediT for one author: tick each role they hold. How much of it (lead, equal, supporting, relative
+// to others in the same role) is optional. Every author needs a role before the kick-off is recorded.
 
 const DEGREE_LABELS = CREDIT_DEGREES.map(d => d.label);
 const degreeId = label => (CREDIT_DEGREES.find(d => d.label === label) || {}).id || '';
@@ -27,15 +27,15 @@ export function CreditEditor({ person, list, onChange }) {
             </div>
             {mine && (
               <div className="cr-degree">
-                <SegmentedToggle options={DEGREE_LABELS} value={degreeLabel(mine.degree)} onChange={v => setDegree(r.id, v)} />
-                {!mine.degree && <span className="cr-need">Choose the extent</span>}
+                <span className="cr-opt">Extent (optional)</span>
+                <SegmentedToggle options={DEGREE_LABELS} value={degreeLabel(mine.degree)} onChange={v => setDegree(r.id, v === degreeLabel(mine.degree) ? '' : v)} />
               </div>
             )}
           </div>
         );
       })}
       <div className="cr-foot">
-        Degrees are relative within each role: Lead led it, Equal shared it equally, Supporting contributed a smaller share.{' '}
+        Tick every role the author holds. The extent is optional and relative within each role: Lead led it, Equal shared it equally, Supporting contributed a smaller share.{' '}
         <a href="https://credit.niso.org" target="_blank" rel="noreferrer">About CRediT</a>
       </div>
     </div>
@@ -69,7 +69,7 @@ export function ContributionMap({ st, people, onEdit }) {
                     const c = cell(p, r.id);
                     return (
                       <td key={p}>
-                        {c ? <span className={'cr-chip cr-chip--' + (c.degree || 'none')}>{c.degree ? degreeLabel(c.degree) : 'Set extent'}</span> : <span className="cr-dash">—</span>}
+                        {c ? (c.degree ? <span className={'cr-chip cr-chip--' + c.degree}>{degreeLabel(c.degree)}</span> : <Icon name="check" size={18} color="var(--ok)" title="Holds this role" />) : <span className="cr-dash">—</span>}
                       </td>
                     );
                   })}

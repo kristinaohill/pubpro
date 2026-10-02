@@ -197,8 +197,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         credit: contrib,
         creditCount: contrib.length,
         creditSummary: contrib.length ? summaryOf(contrib) : 'No roles assigned',
-        creditColor: !contrib.length ? 'var(--fg-faint)' : contrib.some(x => !x.degree) ? 'var(--warn-text)' : 'var(--text-body)',
-        creditNeedsDegree: contrib.some(x => !x.degree),
+        creditColor: contrib.length ? 'var(--text-body)' : 'var(--fg-faint)',
         creditOpen: st.creditOpen === person,
         coiLabel: coiLook[0], coiGlyph: coiLook[1], coiColor: coiLook[2],
         coiMeta: meta.coi ? 'Last completed ' + meta.coi : 'No disclosure on file',
@@ -508,7 +507,7 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
 
                 <div className="pfxb-credit">
                   <span className="pfxb-credit-label">CRediT roles</span>
-                  <span className="pfxb-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}{a.creditNeedsDegree ? ' · set the extent of each role' : ''}</span>
+                  <span className="pfxb-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}</span>
                   <Button variant="tertiary" onClick={() => set(s => ({ creditOpen: s.creditOpen === a.person ? null : a.person }))}>
                     {a.creditOpen ? 'Done' : 'Edit'}
                   </Button>
