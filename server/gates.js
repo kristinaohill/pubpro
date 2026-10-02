@@ -89,8 +89,11 @@ function kickoffGate(pubType, prev, next) {
   const k = kickoffOf(next);
   if (k.i < 0) return null;
   const before = new Map(planRows(prev).map(r => [r.id, r]));
-  if (k.done && !(before.get(k.row.id) || {}).done && !k.recorded) {
-    return 'V2 (GPP): record the kick-off meeting (date, attendees, what was agreed) on the Planning tab to complete the kick-off.';
+  if (k.done && !(before.get(k.row.id) || {}).done) {
+    if (!k.recorded) return 'V2 (GPP): record the kick-off meeting on the Kick-off tab to complete the kick-off.';
+    // Everything the kick-off must produce (server/kickoff.js; required lazily, it uses this file).
+    const missing = require('./kickoff').kickoffMissing(pubType, next);
+    if (missing.length) return 'V2 (GPP): the kick-off can’t be completed yet. Still needed: ' + missing.join('; ') + '.';
   }
   if (k.done) return null;
   const jumped = k.rows.slice(k.i + 1).find(r => r.done && !(before.get(r.id) || {}).done);
@@ -113,8 +116,8 @@ function draftingGate(prev, next, pubType, now = new Date()) {
   }
   if (needsKickoff(pubType)) {
     const k = kickoffOf(next);
-    if (k.i < 0) return 'V2 (GPP): add the kick-off milestone on the Planning tab and record the kick-off meeting before drafting starts.';
-    if (!k.done) return 'V2 (GPP): record the kick-off meeting on the Planning tab before drafting starts.';
+    if (k.i < 0) return 'V2 (GPP): add the kick-off milestone on the Planning tab and record the kick-off meeting on the Kick-off tab before drafting starts.';
+    if (!k.done) return 'V2 (GPP): record the kick-off meeting on the Kick-off tab before drafting starts.';
   }
   next.draftStartedAt = now.toISOString();
   const latest = authors.map(x => x.a.criteria.at).sort().pop();

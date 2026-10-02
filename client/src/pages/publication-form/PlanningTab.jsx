@@ -9,7 +9,8 @@ import {
 } from './data';
 import { rateCardPatch, stageTemplatePatch } from './state';
 import { BoxCheck } from './shared';
-import KickoffCard, { KICKOFF, needsKickoff } from './KickoffCard';
+import KickoffCard from './KickoffCard';
+import { KICKOFF, needsKickoff } from './kickoff';
 import { Card, ColHead, FormField, ListBox, ListRow, Pair, Stack, TabHead } from './ui';
 import './tabs-c.css';
 
@@ -191,7 +192,7 @@ export default function PlanningTab({ st, set, plans, commit, saving, userName, 
         )}
       </Card>
 
-      <KickoffCard st={st} commit={commit} saving={saving} userName={userName} record={record} />
+      <KickoffCard st={st} set={set} />
 
       <Card title="Milestones and stages">
         {rows.length === 0 ? (
@@ -238,9 +239,9 @@ export default function PlanningTab({ st, set, plans, commit, saving, userName, 
 
                       <div className="pfxc-ms-progress">
                         {gated && i === kickIdx ? (
-                          <span className="pfxc-inline-check" title="Completed by recording the kick-off meeting above">
+                          <span className="pfxc-inline-check" title="Completed by recording the kick-off on the Kick-off tab">
                             <Icon name={r.done ? 'check_circle' : 'event'} size={18} color={r.done ? 'var(--ok)' : 'var(--fg-3)'} />
-                            {r.done ? 'Held' : 'Record above'}
+                            {r.done ? 'Held' : 'On Kick-off tab'}
                           </span>
                         ) : lockedByKickoff(i) ? (
                           <span className="pfxc-inline-check pfxc-kick-lock" title="Record the kick-off meeting first (V2, GPP)">

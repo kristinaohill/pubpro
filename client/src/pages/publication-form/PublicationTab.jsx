@@ -2,7 +2,7 @@ import React from 'react';
 import { Button, CommentComposer, DropZone, Icon, IconButton, InlineMessage } from '../../ds/pubpro';
 import { nowStamp } from './data';
 import { criteriaMissing, bylineAuthors } from './state';
-import { kickoffRowOf, needsKickoff } from './KickoffCard';
+import { kickoffRowOf, needsKickoff } from './kickoff';
 import { Card, Stack, TabHead } from './ui';
 import './tabs-a.css';
 
@@ -47,7 +47,7 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
                 {!record ? 'Save the publication and invite its authors first.'
                   : !authors.length ? 'Add the authors first.'
                     : waiting.length ? 'Still waiting on ' + waiting.join(', ') + '.'
-                      : 'Every author has signed. Next, record the kick-off meeting on the Planning tab (V2, GPP).'}
+                      : 'Every author has signed. Next, record the kick-off on the Kick-off tab (V2, GPP).'}
               </InlineMessage>
             )}
             <div className="pfxa-docstart-actions">

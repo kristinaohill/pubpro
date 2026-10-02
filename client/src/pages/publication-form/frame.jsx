@@ -153,7 +153,7 @@ export function RecordSummary({ st, title, recordId, saved, owner, status, statu
 
 const NAV_GROUPS = [
   ['Record', [['overview', 'Overview'], ['authors', 'Authors'], ['materials', 'Publication'], ['details', 'Target'], ['study', 'Studies']]],
-  ['Workflow', [['planning', 'Planning'], ['reviewers', 'Reviews'], ['checklist', 'Compliance'], ['outcome', 'Outcome']]],
+  ['Workflow', [['kickoff', 'Kick-off'], ['planning', 'Planning'], ['reviewers', 'Reviews'], ['checklist', 'Compliance'], ['outcome', 'Outcome']]],
   ['Records', [['citations', 'Citations'], ['taskoptions', 'Task Options'], ['documents', 'Documents'], ['audit', 'Audit Trail']]],
 ];
 const NAV_ICONS = {
@@ -162,6 +162,7 @@ const NAV_ICONS = {
   materials: 'M2 5h6a4 4 0 0 1 4 4v12a3 3 0 0 0-3-3H2zM22 5h-6a4 4 0 0 0-4 4v12a3 3 0 0 1 3-3h7z',
   details: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12h.01',
   study: 'M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3M7 15h10',
+  kickoff: 'M8 2v4M16 2v4M3 8h18M4 5h16v16H4zM9 15l2 2 4-4',
   planning: 'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4',
   reviewers: 'M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12zM8.5 12l2.5 2.5 4.5-5',
   checklist: 'M9 3h6v3H9zM9 5H5v16h14V5h-4M8.5 14l2.5 2.5 4.5-5',

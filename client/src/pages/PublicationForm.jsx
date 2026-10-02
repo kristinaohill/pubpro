@@ -21,6 +21,7 @@ import PublicationTab from './publication-form/PublicationTab';
 import TargetTab from './publication-form/TargetTab';
 import StudiesTab from './publication-form/StudiesTab';
 import PlanningTab from './publication-form/PlanningTab';
+import KickoffTab from './publication-form/KickoffTab';
 import ReviewsTab from './publication-form/ReviewsTab';
 import ComplianceTab from './publication-form/ComplianceTab';
 import OutcomeTab from './publication-form/OutcomeTab';
@@ -38,6 +39,7 @@ const TAB_VIEWS = {
   materials: PublicationTab,
   details: TargetTab,
   study: StudiesTab,
+  kickoff: KickoffTab,
   planning: PlanningTab,
   reviewers: ReviewsTab,
   checklist: ComplianceTab,

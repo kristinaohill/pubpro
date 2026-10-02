@@ -295,6 +295,8 @@ export function rateCardPatch(s, vendor, rateCard, startStr) {
 
 /** Tabs that carry a "required fields missing" dot on the rail. */
 export const missingFlags = st => ({
+  // V2: abstracts and manuscripts whose kick-off isn't recorded yet.
+  kickoff: (st.pubType === 'Abstract' || st.pubType === 'Manuscript') && !(st.kickoff && st.kickoff.heldOn),
   checklist: activeChecklist(st).some(i => i.required && !i.done),
   planning: st.rows.some(r => r.type === 'Stage' && (!r.start || !r.end)),
 });
