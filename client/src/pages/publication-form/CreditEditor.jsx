@@ -1,41 +1,34 @@
 import React from 'react';
-import { Checkbox, Icon, SegmentedToggle } from '../../ds/pubpro';
+import { Checkbox, Icon } from '../../ds/pubpro';
 import { CREDIT_DEGREES, CREDIT_TAXONOMY } from './data';
 import { contributionsOf, creditFlags, degreeLabel } from './credit';
 import { Card } from './ui';
 import './credit.css';
 
-// CRediT for one author: tick each role they hold. How much of it (lead, equal, supporting, relative
-// to others in the same role) is optional. Every author needs a role before the kick-off is recorded.
+// CRediT for one author: a check-off for each role they hold (Kristina, 2026-10-02: no extent on
+// screen). Every author needs at least one role before the kick-off is recorded.
 
-const DEGREE_LABELS = CREDIT_DEGREES.map(d => d.label);
-const degreeId = label => (CREDIT_DEGREES.find(d => d.label === label) || {}).id || '';
 
-export function CreditEditor({ person, list, onChange }) {
+export function CreditEditor({ person, list, onChange, flags = [] }) {
   const has = id => list.find(x => x.id === id);
   const toggle = id => onChange(has(id) ? list.filter(x => x.id !== id) : list.concat([{ id, degree: '' }]));
-  const setDegree = (id, label) => onChange(list.map(x => (x.id === id ? { ...x, degree: degreeId(label) } : x)));
   return (
     <div className="cr-editor" role="group" aria-label={'CRediT roles for ' + person}>
       {CREDIT_TAXONOMY.map(r => {
         const mine = has(r.id);
         return (
           <div key={r.id} className={'cr-role' + (mine ? ' cr-role--on' : '')}>
-            <div className="cr-role-main">
+            <div className="cr-role-main" title={r.definition}>
               <Checkbox checked={!!mine} onChange={() => toggle(r.id)} label={r.label} />
-              <span className="cr-def">{r.definition}</span>
             </div>
-            {mine && (
-              <div className="cr-degree">
-                <span className="cr-opt">Extent (optional)</span>
-                <SegmentedToggle options={DEGREE_LABELS} value={degreeLabel(mine.degree)} onChange={v => setDegree(r.id, v === degreeLabel(mine.degree) ? '' : v)} />
-              </div>
-            )}
           </div>
         );
       })}
+      {flags.length > 0 && (
+        <ul className="cr-flags cr-flags--inline">{flags.map(f => <li key={f}><Icon name="flag" size={14} />{f}</li>)}</ul>
+      )}
       <div className="cr-foot">
-        Tick every role the author holds. The extent is optional and relative within each role: Lead led it, Equal shared it equally, Supporting contributed a smaller share.{' '}
+        Tick every role the author holds. Hover a role for its definition.{' '}
         <a href="https://credit.niso.org" target="_blank" rel="noreferrer">About CRediT</a>
       </div>
     </div>

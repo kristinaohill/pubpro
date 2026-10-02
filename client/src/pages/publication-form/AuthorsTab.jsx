@@ -13,8 +13,8 @@ import {
 import { auditEntry } from './state';
 import { ProofField, ProofLink, uploadProof } from './proof';
 import NewExternalAuthor from './NewExternalAuthor';
-import { CreditEditor, ContributionMap } from './CreditEditor';
-import { contributionsOf, summaryOf, toStored } from './credit';
+import { CreditEditor } from './CreditEditor';
+import { contributionsOf, creditFlagsFor, summaryOf, toStored } from './credit';
 import { bylineAuthors } from './state';
 import { useAuth } from '../../AuthContext';
 import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
@@ -134,6 +134,8 @@ function useProfileOpener(navigate) {
 
 function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulateApproval, record, recordId }) {
   const recordIdLabel = (record && record.record_id) || recordId || 'a new publication';
+  // The byline, for CRediT flags that compare authors (more than one lead on a role).
+  const bylinePeople = bylineAuthors(st).map(x => x.person);
   // Recording an author's acceptance for them: { key, file, note, busy, error } (needs proof).
   const [proxy, setProxy] = useState(null);
   // Adding someone who isn't in PubPro yet (Publication Managers can create external author profiles).
@@ -332,8 +334,6 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         </Pair>
       </Card>
 
-      <ContributionMap st={st} people={bylineAuthors(st).map(x => x.person)} onEdit={p => set({ creditOpen: p })} />
-
       <Card title="Authors" meta={kvFiltered.length + (kvFiltered.length === 1 ? ' author' : ' authors')}>
         <div className="pfxb-addbar">
           <div className="pfxb-addbar-search" ref={authorRef}>
@@ -505,19 +505,10 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
                   </FormField>
                 </Pair>
 
-                <div className="pfxb-credit">
-                  <span className="pfxb-credit-label">CRediT roles</span>
-                  <span className="pfxb-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}</span>
-                  <Button variant="tertiary" onClick={() => set(s => ({ creditOpen: s.creditOpen === a.person ? null : a.person }))}>
-                    {a.creditOpen ? 'Done' : 'Edit'}
-                  </Button>
+                <div className="pfxb-credit-editor">
+                  <div className="pfx-label">CRediT roles</div>
+                  <CreditEditor person={a.person} list={a.credit} onChange={list => setMeta(a.person, { credit: toStored(list) })} flags={creditFlagsFor(st, bylinePeople, a.person)} />
                 </div>
-                {a.creditOpen && (
-                  <div className="pfxb-credit-editor">
-                    <div className="pfx-label">CRediT roles for {a.person}, and the extent of each</div>
-                    <CreditEditor person={a.person} list={a.credit} onChange={list => setMeta(a.person, { credit: toStored(list) })} />
-                  </div>
-                )}
               </article>
             ))}
           </div>

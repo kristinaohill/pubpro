@@ -41,3 +41,16 @@ export function creditFlags(st, people) {
   });
   return flags;
 }
+
+/** The soft flags that concern one author: their own gaps, or a role they lead alongside others. */
+export function creditFlagsFor(st, people, person) {
+  const mine = contributionsOf(st, person);
+  const out = [];
+  if (!mine.length) out.push('No roles checked yet. The kick-off needs at least one.');
+  else if (!mine.some(x => WRITING.includes(x.id))) out.push('Holds neither writing role (possible ICMJE criterion 2 gap).');
+  mine.filter(x => x.degree === 'lead').forEach(x => {
+    const others = people.filter(p => p !== person && contributionsOf(st, p).some(y => y.id === x.id && y.degree === 'lead'));
+    if (others.length) out.push('Also marked lead on ' + x.label + ': ' + others.join(', ') + '.');
+  });
+  return out;
+}
