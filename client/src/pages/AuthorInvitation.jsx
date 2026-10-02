@@ -28,7 +28,7 @@ export default function AuthorInvitation() {
   useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id]);
 
   const back = () => navigate(isAuthor ? '/author-dashboard' : '/publication/' + id, isAuthor ? undefined : { state: { tab: 'authors' } });
-  if (error) return <div className="ai-page"><InlineMessage kind="error">{error}</InlineMessage><Button variant="secondary" onClick={() => navigate(isAuthor ? '/author-dashboard' : '/dashboard')}>Back</Button></div>;
+  if (error) return <div className="ai-page"><InlineMessage kind="error">{error}</InlineMessage><Button variant="secondary" onClick={() => navigate(isAuthor ? '/author-dashboard' : '/publication-manager')}>Back</Button></div>;
   if (!info) return <div className="ai-page"><div className="empty-state">Loading&hellip;</div></div>;
 
   const { publication: p, me, agreement: A } = info;

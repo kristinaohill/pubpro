@@ -243,7 +243,7 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
 
   const signInAs = u => run(async () => {
     const who = await impersonate(u.id);
-    navigate(who.role === 'author' ? '/author-dashboard' : '/dashboard');
+    navigate(who.role === 'author' ? '/author-dashboard' : '/publication-manager');
     return false;
   });
 

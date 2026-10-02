@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
@@ -139,6 +139,8 @@ function AttentionCard({ a }) {
 
 export default function WriterDashboard() {
   const navigate = useNavigate();
+  // Save & Close on a publication, plan, author or profile lands here with a confirmation.
+  const savedNotice = (useLocation().state || {}).savedNotice;
   // Saved records open by id; the design's sample rows open the sample publication.
   const { user, can } = useAuth();
   const openPublication = (p, tab) => navigate('/publication/' + p.savedId, { state: { tab } });
@@ -266,6 +268,7 @@ export default function WriterDashboard() {
       />
       <ScopeFocusBar focus={focus} />
 
+      {savedNotice && <Flash watch={savedNotice}>{savedNotice}</Flash>}
       {message && <Flash kind={message.kind} watch={message}>{message.text}</Flash>}
 
       <div className="wd-stats">

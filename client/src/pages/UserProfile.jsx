@@ -53,7 +53,7 @@ export default function UserProfile() {
       setDetails(detailsOf(res.profile));
       setOoo(oooOf(res.profile));
       refreshPeople();
-      if (close) { navigate('/dashboard', { state: { savedNotice: 'Saved your profile.' } }); return; }
+      if (close) { navigate('/publication-manager', { state: { savedNotice: 'Saved your profile.' } }); return; }
       setMessage({ kind: 'info', text: 'Profile saved.' });
     } catch (err) {
       setMessage({ kind: 'error', text: err.message });
@@ -166,7 +166,7 @@ export default function UserProfile() {
       </div>
 
       <FormActionBar
-        left={<Button variant="secondary" onClick={() => navigate('/dashboard')}>Close</Button>}
+        left={<Button variant="secondary" onClick={() => navigate('/publication-manager')}>Close</Button>}
         right={(
           <>
             <Button variant="secondary" onClick={() => save(false)} disabled={saving || !dirty}>{saving ? 'Saving…' : 'Save'}</Button>

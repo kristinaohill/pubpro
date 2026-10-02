@@ -1081,7 +1081,7 @@ export default function PublicationPlanForm() {
       setPlan(withLog);
       lastSaved.current = withLog;
       if (close) {
-        navigate('/dashboard', { state: { savedNotice: 'Saved ' + saved.plan_id + '.' } });
+        navigate('/publication-manager', { state: { savedNotice: 'Saved ' + saved.plan_id + '.' } });
         return;
       }
       setMessage({ kind: 'info', text: done || (record ? 'Saved ' : 'Created ') + saved.plan_id + '.' });

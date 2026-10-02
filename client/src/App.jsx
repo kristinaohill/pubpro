@@ -45,7 +45,8 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
+            {/* Staff land on the Publication Manager Dashboard. */}
+            <Route index element={<Navigate to="/publication-manager" replace />} />
             <Route path="dashboard" element={<PubProDashboard />} />
             <Route path="publication-manager" element={<WriterDashboard />} />
             <Route path="writer-dashboard" element={<Navigate to="/publication-manager" replace />} />
@@ -69,7 +70,7 @@ export default function App() {
             <Route path="vendor" element={<VendorProfile />} />
             <Route path="financial-report" element={<FinancialReport />} />
             <Route path="workflows" element={<PublicationWorkflows />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/publication-manager" replace />} />
           </Route>
         </Routes>
       </BrowserRouter>

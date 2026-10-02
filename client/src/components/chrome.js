@@ -68,7 +68,7 @@ export const AUTHOR_CHROME = { nav: [], active: '', workspace: 'My Author Dashbo
 export const MENU_ROUTES = {
   'Publication Manager Dashboard': '/publication-manager',
   'Executive Dashboard': '/dashboard',
-  'Home': '/dashboard',
+  'Home': '/publication-manager',
   'Reports': '/financial-report',
   'External Author Dashboard': '/author-dashboard',
   'Publication Library': '/library',

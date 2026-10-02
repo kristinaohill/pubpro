@@ -182,7 +182,7 @@ export default function PublicationForm() {
         if (list.length) await api.post('/notifications', { notifications: list }).catch(() => {});
       }
       if (close) {
-        navigate('/dashboard', { state: { savedNotice: 'Saved ' + saved.record_id + '.' } });
+        navigate('/publication-manager', { state: { savedNotice: 'Saved ' + saved.record_id + '.' } });
         return;
       }
       setMessage({ kind: 'info', text: done || (record ? 'Saved ' : 'Created ') + saved.record_id + '.' });
