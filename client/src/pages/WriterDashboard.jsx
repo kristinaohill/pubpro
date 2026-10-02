@@ -7,7 +7,7 @@ import PageHeader from '../components/PageHeader';
 import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
 import TrendChart from '../components/TrendChart';
-import { TODAY_STR } from './publication-form/data';
+import { CONFERENCE_DIRECTORY, TODAY_STR, toISO } from './publication-form/data';
 import { auditEntry, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData } from './publication-form/state';
 import { AuthorBlockersPanel, CongressDeadlinesPanel, ReviewsPanel } from './WriterDashboardPanels';
 import './WriterDashboard.css';
@@ -28,36 +28,62 @@ const readScope = () => { try { return localStorage.getItem(SCOPE_KEY) === 'all'
 const sameName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 const firstName = n => String(n || '').trim().split(/\s+/)[0];
 
+// The step where drafting happens in each stage template.
+const DRAFT_STEP = /^(draft|poster|abstract) development$/i;
+const mdyToIso = mdy => toISO(String(mdy || '').split(' ')[0]) || '';
+
+/** When drafting actually began: stamped once every author signed (A1); older records, the document's created date. */
+const draftStartedOn = d => (d.draftStartedAt ? String(d.draftStartedAt).slice(0, 10) : d.pubDoc && d.pubDocOn ? mdyToIso(d.pubDocOn) : '');
+/** When drafting is planned to start: the Draft Development milestone on the Planning tab. */
+const draftPlannedOn = sm => ((sm.steps || []).find(s => DRAFT_STEP.test(s.name)) || {}).start || '';
+/** The publication's due date: its congress's abstract deadline, else the Submission milestone. */
+function pubDueOn(d, sm) {
+  const c = CONFERENCE_DIRECTORY.find(x => x.name === (d.targets || [])[0]);
+  if (c && c.kind !== 'Journal' && c.close) return mdyToIso(c.close);
+  const steps = sm.steps || [];
+  return (steps.find(s => /^submission$/i.test(s.name)) || steps[steps.length - 1] || {}).d || '';
+}
+
 /**
- * Due dates by month over a year: 3 months back, this month and 8 ahead. Counts every workflow
- * step's due date, the steps completed, and submission or presentation dates, from each
- * publication's Planning tab (its saved summary).
+ * Drafting and due dates over a year: 3 months back, this month and 8 ahead. Months behind show
+ * when drafting actually started; this month on, when it's planned to start (from the milestones),
+ * so the line keeps going into the future. Publications due runs across the whole year.
  */
-function dueByMonth(pubs, now = new Date()) {
+function draftsAndDue(pubs, now = new Date()) {
   const months = [];
   for (let i = -3; i <= 8; i += 1) months.push(new Date(now.getFullYear(), now.getMonth() + i, 1));
   const at = iso => {
     const [y, m] = String(iso || '').split('-').map(Number);
     return y && m ? months.findIndex(x => x.getFullYear() === y && x.getMonth() === m - 1) : -1;
   };
+  const NOW = 3;
+  const started = months.map((_, i) => (i <= NOW ? 0 : null));
+  const planned = months.map((_, i) => (i >= NOW ? 0 : null));
   const due = months.map(() => 0);
-  const done = months.map(() => 0);
-  const subs = months.map(() => 0);
-  pubs.forEach(p => ((p.summary && p.summary.steps) || []).forEach(s => {
-    const a = at(s.d); if (a >= 0) due[a] += 1;
-    const b = at(s.done); if (b >= 0) done[b] += 1;
-    if (/submission|presentation/i.test(s.name) && a >= 0) subs[a] += 1;
-  }));
-  const short = d => d.toLocaleDateString('en-US', { month: 'short' });
-  const long = d => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  pubs.forEach(p => {
+    const d = p.data || {};
+    const sm = p.summary || {};
+    const actual = draftStartedOn(d);
+    const a = at(actual);
+    if (a >= 0 && a <= NOW) started[a] += 1;
+    // Not started yet: count it where the milestones plan it (this month or later).
+    if (!actual) {
+      const b = at(draftPlannedOn(sm));
+      if (b >= NOW) planned[b] += 1;
+    }
+    const c = at(pubDueOn(d, sm));
+    if (c >= 0) due[c] += 1;
+  });
+  const short = x => x.toLocaleDateString('en-US', { month: 'short' });
+  const long = x => x.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
   return {
     months: months.map(short),
     range: long(months[0]) + ' – ' + long(months[months.length - 1]),
-    marker: { index: 3, label: 'This month' },
+    marker: { index: NOW, label: 'This month' },
     series: [
-      { label: 'Steps Due', color: 'var(--high-emphasis)', values: due },
-      { label: 'Steps Completed', color: 'var(--ok)', values: done },
-      { label: 'Submissions Due', color: 'var(--bpl-teal)', values: subs, dashed: true },
+      { label: 'Drafts Started', color: 'var(--high-emphasis)', values: started },
+      { label: 'Drafts Planned (milestones)', color: 'var(--high-emphasis)', values: planned, dashed: true },
+      { label: 'Publications Due', color: 'var(--bpl-teal)', values: due },
     ],
   };
 }
@@ -329,13 +355,13 @@ export default function WriterDashboard() {
       </div>
 
       {(() => {
-        const dd = dueByMonth(live);
+        const dd = draftsAndDue(live);
         return (
           <TrendChart
             className="wd-due-chart"
             icon="event_note"
-            title={'Due Dates — ' + dd.range}
-            note="Every step due date on the Planning tab. Watch for months where steps due pull ahead of steps completed."
+            title={'Drafts and Due Dates — ' + dd.range}
+            note="Before this month: drafts actually started. From this month: planned draft starts from each publication's milestones. Due: the congress deadline or Submission milestone."
             months={dd.months}
             series={dd.series}
             marker={dd.marker}

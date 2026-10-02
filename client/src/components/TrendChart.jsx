@@ -3,14 +3,21 @@ import './TrendChart.css';
 
 // A month-by-month line chart (the Executive Dashboard's Publication Activity and the Publication
 // Manager Dashboard's Due Dates). series: [{ label, color, values }] with one value per month;
-// marker: { index, label } draws a vertical line at that month (e.g. "This month").
+// marker: { index, label } draws a vertical line at that month (e.g. "This month"). A null value
+// leaves a gap, so one series can cover the months behind and another the months ahead.
 
 const PLOT = { left: 46, right: 740, top: 8, bottom: 113 };
 const VB_W = 760;
 const VB_H = 140;
 const pct = (n, d) => `${((n / d) * 100).toFixed(3)}%`;
+/** Runs of consecutive months that have a value: [[[i, v], ...], ...]. */
+const runs = values => values.reduce((out, v, i) => {
+  if (v == null) out.push([]);
+  else out[out.length - 1].push([i, v]);
+  return out;
+}, [[]]).filter(r => r.length);
 const scale = series => {
-  const peak = Math.max(1, ...series.flatMap(x => x.values));
+  const peak = Math.max(1, ...series.flatMap(x => x.values.filter(v => v != null)));
   const step = peak <= 5 ? 1 : peak <= 10 ? 2 : Math.ceil(peak / 5);
   return { maxY: Math.ceil(peak / step) * step, step };
 };
@@ -37,15 +44,15 @@ export default function TrendChart({ title, icon = 'timeline', months, series, m
             {marker && marker.index >= 0 && (
               <line x1={xAt(marker.index, n)} y1={PLOT.top} x2={xAt(marker.index, n)} y2={PLOT.bottom} stroke="var(--fatal-text)" strokeWidth="1.5" strokeDasharray="4 3" />
             )}
-            {series.map(x => (
-              <polyline key={x.label} points={x.values.map((v, i) => `${xAt(i, n)},${yAt(v, maxY)}`).join(' ')}
+            {series.flatMap(x => runs(x.values).map((run, k) => (
+              <polyline key={x.label + k} points={run.map(([i, v]) => `${xAt(i, n)},${yAt(v, maxY)}`).join(' ')}
                 fill="none" stroke={x.color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray={x.dashed ? '5 4' : undefined} />
-            ))}
-            {series.flatMap(x => x.values.map((v, i) => (
+            )))}
+            {series.flatMap(x => x.values.map((v, i) => (v == null ? null : (
               <circle key={`${x.label}-${i}`} cx={xAt(i, n)} cy={yAt(v, maxY)} r="3.5" fill="var(--white)" stroke={x.color} strokeWidth="2">
                 <title>{`${months[i]} — ${x.label}: ${v}`}</title>
               </circle>
-            )))}
+            ))))}
           </svg>
           {/* Axis labels are HTML so they keep a fixed size while the SVG scales. */}
           {ticks.map(g => <span key={g.label} className="tc-axis-y" style={{ right: pct(VB_W - 36, VB_W), top: pct(g.y, VB_H) }}>{g.label}</span>)}
