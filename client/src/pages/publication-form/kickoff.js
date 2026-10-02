@@ -3,6 +3,7 @@
 // when the kick-off is saved, so keep the two in step.
 import { AUTHOR_META, CONFERENCE_DIRECTORY, parseDate } from './data';
 import { bylineAuthors } from './state';
+import { contributionsOf, creditMissing, toStored } from './credit';
 
 export const KICKOFF = /kick-?off/i;
 export const needsKickoff = st => st.pubType === 'Abstract' || st.pubType === 'Manuscript';
@@ -13,7 +14,9 @@ export const NO_WRITER = 'No medical writing support';
 
 const filled = v => String(v == null ? '' : v).trim().length > 0;
 /** An author's CRediT roles: what's been set on the Authors tab, else the sample directory. */
-export const creditOf = (st, person) => ((st.authorMetaEdits || {})[person] || {}).credit || (AUTHOR_META[person] || {}).credit || [];
+export const creditOf = (st, person) => contributionsOf(st, person).map(x => x.label);
+/** What the kick-off stores as each author's planned contributions. */
+export const creditSnapshot = (st, person) => toStored(contributionsOf(st, person));
 export const coiOf = (st, person) => ((st.authorMetaEdits || {})[person] || {}).coi || (AUTHOR_META[person] || {}).coi || '';
 /** Plan rows after the kick-off: the timeline the meeting sets. */
 export const timelineRows = st => {
@@ -40,8 +43,7 @@ export function kickoffChecklist(st) {
   const unsigned = authors.filter(x => !(x.a.criteria && x.a.criteria.at)).map(x => x.person);
   if (unsigned.length) a.push('Signed authorship agreement (ICMJE criteria) from ' + unsigned.join(', ') + '.');
   if (!prep.orderConfirmed) a.push('Confirm the author order (at least first and senior author).');
-  const noRole = authors.filter(x => !creditOf(st, x.person).length).map(x => x.person);
-  if (noRole.length) a.push('Expected contribution (CRediT roles, Authors tab) for ' + noRole.join(', ') + '.');
+  creditMissing(st, authors.map(x => x.person)).forEach(m => a.push(m));
   out.push({ key: 'authorship', title: 'Authorship and criteria', missing: a });
 
   const d = [];

@@ -5,10 +5,11 @@ import usePeople from '../../components/usePeople';
 import { REVIEW_METHOD_OPTIONS, TODAY, TODAY_STR } from './data';
 import { auditEntry, bylineAuthors } from './state';
 import {
-  ANALYSIS_LABELS, NO_WRITER, PRESENTATION_PREFS, coiOf, creditOf, kickoffChecklist, kickoffRowOf,
+  ANALYSIS_LABELS, NO_WRITER, PRESENTATION_PREFS, coiOf, creditSnapshot, kickoffChecklist, kickoffRowOf,
   meetingMissing, needsKickoff, timelineRows,
 } from './kickoff';
 import { ProofField, openProof, uploadProof } from './proof';
+import { contributionsOf, creditFlags, summaryOf } from './credit';
 import { Card, FormField, Pair, Stack, TabHead } from './ui';
 import './kickoff.css';
 
@@ -93,7 +94,8 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
     setError('');
     try {
       const up = file ? await uploadProof(record.id, file, 'kickoff', 'Kick-off meeting') : null;
-      const contributions = Object.fromEntries(authors.map(x => [x.person, creditOf(st, x.person)]));
+      // The planned CRediT contributions (confirmed again at final approval).
+      const contributions = Object.fromEntries(authors.map(x => [x.person, creditSnapshot(st, x.person)]));
       const kickoff = { ...meet, others: meet.others.trim(), notes: meet.notes.trim(), minutes: up ? { id: up.id, name: up.name } : null, recordedBy: userName, recordedOn: TODAY_STR, contributions };
       await commit(s => ({
         kickoff,
@@ -158,18 +160,19 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
       <Section n={1} item={sec('authorship')} help="Named authors, their order, each one's signed agreement to the ICMJE criteria and their expected contribution. Being invited to the meeting isn't agreement.">
         <div className="kx-table">
           {authors.map((x, i) => {
-            const roles = creditOf(st, x.person);
+            const roles = contributionsOf(st, x.person);
             return (
               <div key={x.group + x.person} className="kx-row">
                 <span className="kx-cell kx-strong">{i + 1}. {x.person}{i === 0 ? ' · first author' : i === authors.length - 1 && authors.length > 1 ? ' · senior author' : ''}</span>
                 <span className="kx-cell">{x.a.criteria && x.a.criteria.at ? <><Icon name="verified" size={14} color="var(--ok)" /> Signed {x.a.criteria.on}</> : <><Icon name="schedule" size={14} color="var(--warn-text)" /> Not signed</>}</span>
-                <span className="kx-cell kx-faint">{roles.length ? roles.join(', ') : 'No CRediT roles yet'}</span>
+                <span className="kx-cell kx-faint">{roles.length ? summaryOf(roles) : 'No CRediT roles yet'}</span>
               </div>
             );
           })}
         </div>
         <div className="kx-actions">
           <Checkbox checked={!!prep.orderConfirmed} onChange={() => setPrep({ orderConfirmed: !prep.orderConfirmed })} label="Author order agreed (first and senior author as shown)" />
+          {creditFlags(st, authors.map(x => x.person)).length > 0 && <span className="kx-faint">CRediT flags to review: {creditFlags(st, authors.map(x => x.person)).join(' ')}</span>}
           <button type="button" className="yr-link" onClick={() => go('authors')}>Order, roles and invitations are on the Authors tab</button>
         </div>
       </Section>

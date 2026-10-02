@@ -13,6 +13,9 @@ import {
 import { auditEntry } from './state';
 import { ProofField, ProofLink, uploadProof } from './proof';
 import NewExternalAuthor from './NewExternalAuthor';
+import { CreditEditor, ContributionMap } from './CreditEditor';
+import { contributionsOf, summaryOf, toStored } from './credit';
+import { bylineAuthors } from './state';
 import { useAuth } from '../../AuthContext';
 import { Card, Empty, FormField, Pair, Stack, TabHead, Tag, ON_GREY } from './ui';
 import './tabs-b.css';
@@ -155,13 +158,15 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
       const person = ext ? parts[0] : a.name;
       const m = mapAuthor(a, i);
       const meta = { orcid: '', credit: [], coi: '', debar: 'Not checked', ...(AUTHOR_META[person] || {}), ...(st.authorMetaEdits[person] || {}) };
+      // CRediT roles with their extent (credit.js); older records stored role names only.
+      const contrib = contributionsOf(st, person);
       const coiAge = meta.coi ? Math.round((TODAY - new Date(meta.coi)) / 86400000) : null;
       const coiLook = !meta.coi
         ? ['Not submitted', 'radio_button_unchecked', 'var(--fg-faint)']
         : coiAge > 365 ? ['Expired', 'error', 'var(--fatal-text)'] : ['Current', 'verified', 'var(--ok)'];
       const approved = gaveApproval(st, person) || (!!simulateApproval && (!a.invite || a.invite.status === 'accepted'));
       const crit = [
-        { k: 'Substantive contribution', ok: meta.credit.length > 0, src: 'From CRediT roles' },
+        { k: 'Substantive contribution', ok: contrib.length > 0, src: 'From CRediT roles' },
         { k: 'Drafted or revised critically', ok: gaveFeedback(st, person), src: 'From feedback given in draft review rounds' },
         { k: 'Final approval', ok: approved, src: 'From approval given at Author Approval' },
         { k: 'Accountability agreement', ok: !!m.agreementDate && !m.agreementExpired, src: 'From the signed authorship agreement' },
@@ -189,10 +194,11 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
         isPresenting: st.presentingAuthor === person,
         isCorresponding: st.correspondingAuthor === person,
         orcid: meta.orcid,
-        credit: meta.credit,
-        creditCount: meta.credit.length,
-        creditSummary: meta.credit.length ? meta.credit.join(', ') : 'No roles assigned',
-        creditColor: meta.credit.length ? 'var(--text-body)' : 'var(--fg-faint)',
+        credit: contrib,
+        creditCount: contrib.length,
+        creditSummary: contrib.length ? summaryOf(contrib) : 'No roles assigned',
+        creditColor: !contrib.length ? 'var(--fg-faint)' : contrib.some(x => !x.degree) ? 'var(--warn-text)' : 'var(--text-body)',
+        creditNeedsDegree: contrib.some(x => !x.degree),
         creditOpen: st.creditOpen === person,
         coiLabel: coiLook[0], coiGlyph: coiLook[1], coiColor: coiLook[2],
         coiMeta: meta.coi ? 'Last completed ' + meta.coi : 'No disclosure on file',
@@ -326,6 +332,8 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
           </FormField>
         </Pair>
       </Card>
+
+      <ContributionMap st={st} people={bylineAuthors(st).map(x => x.person)} onEdit={p => set({ creditOpen: p })} />
 
       <Card title="Authors" meta={kvFiltered.length + (kvFiltered.length === 1 ? ' author' : ' authors')}>
         <div className="pfxb-addbar">
@@ -500,15 +508,15 @@ function KnowledgeAuthors({ st, set, commit, saving, userName, navigate, simulat
 
                 <div className="pfxb-credit">
                   <span className="pfxb-credit-label">CRediT roles</span>
-                  <span className="pfxb-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}</span>
+                  <span className="pfxb-credit-summary" style={{ color: a.creditColor }}>{a.creditSummary}{a.creditNeedsDegree ? ' · set the extent of each role' : ''}</span>
                   <Button variant="tertiary" onClick={() => set(s => ({ creditOpen: s.creditOpen === a.person ? null : a.person }))}>
                     {a.creditOpen ? 'Done' : 'Edit'}
                   </Button>
                 </div>
                 {a.creditOpen && (
                   <div className="pfxb-credit-editor">
-                    <div className="pfx-label">CRediT roles for {a.person}</div>
-                    <CheckboxGroup options={CREDIT_ROLES} value={a.credit} onChange={v => setMeta(a.person, { credit: v })} columns={3} />
+                    <div className="pfx-label">CRediT roles for {a.person}, and the extent of each</div>
+                    <CreditEditor person={a.person} list={a.credit} onChange={list => setMeta(a.person, { credit: toStored(list) })} />
                   </div>
                 )}
               </article>

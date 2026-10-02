@@ -86,7 +86,112 @@ export const EXTERNAL_AUTHOR_DIRECTORY = [
   { name: "Amara Okafor-Imperial College London", display: "Amara Okafor", agreement: "Authorship_Agreement_Okafor_Signed.pdf", agreementDate: "4/2/2025" },
 ];
 
-export const CREDIT_ROLES = ["Conceptualization", "Data curation", "Formal analysis", "Funding acquisition", "Investigation", "Methodology", "Project administration", "Resources", "Software", "Supervision", "Validation", "Visualization", "Writing – original draft", "Writing – review & editing"];
+// CRediT (Contributor Roles Taxonomy), ANSI/NISO Z39.104-2022 (credit.niso.org). Each author holds
+// roles with a degree relative to others in the same role. Definitions are summaries for help text.
+export const CREDIT_TAXONOMY = [
+  {
+    "id": "conceptualization",
+    "label": "Conceptualization",
+    "definition": "Ideas; formulating or evolving the overarching research goals and aims.",
+    "uri": "https://credit.niso.org/contributor-roles/conceptualization/"
+  },
+  {
+    "id": "data-curation",
+    "label": "Data curation",
+    "definition": "Annotating, cleaning, and maintaining research data for initial use and later reuse.",
+    "uri": "https://credit.niso.org/contributor-roles/data-curation/"
+  },
+  {
+    "id": "formal-analysis",
+    "label": "Formal analysis",
+    "definition": "Applying statistical, mathematical, computational, or other formal techniques to analyze data.",
+    "uri": "https://credit.niso.org/contributor-roles/formal-analysis/"
+  },
+  {
+    "id": "funding-acquisition",
+    "label": "Funding acquisition",
+    "definition": "Acquiring the financial support for the project.",
+    "uri": "https://credit.niso.org/contributor-roles/funding-acquisition/"
+  },
+  {
+    "id": "investigation",
+    "label": "Investigation",
+    "definition": "Conducting the research, including performing experiments and collecting data or evidence.",
+    "uri": "https://credit.niso.org/contributor-roles/investigation/"
+  },
+  {
+    "id": "methodology",
+    "label": "Methodology",
+    "definition": "Developing or designing the methodology; creating models.",
+    "uri": "https://credit.niso.org/contributor-roles/methodology/"
+  },
+  {
+    "id": "project-administration",
+    "label": "Project administration",
+    "definition": "Managing and coordinating the planning and execution of the research activity.",
+    "uri": "https://credit.niso.org/contributor-roles/project-administration/"
+  },
+  {
+    "id": "resources",
+    "label": "Resources",
+    "definition": "Providing study materials, reagents, patients, samples, instruments, computing resources, or other tools.",
+    "uri": "https://credit.niso.org/contributor-roles/resources/"
+  },
+  {
+    "id": "software",
+    "label": "Software",
+    "definition": "Programming and software development; designing, implementing, or testing code.",
+    "uri": "https://credit.niso.org/contributor-roles/software/"
+  },
+  {
+    "id": "supervision",
+    "label": "Supervision",
+    "definition": "Oversight and leadership of the research activity, including mentorship.",
+    "uri": "https://credit.niso.org/contributor-roles/supervision/"
+  },
+  {
+    "id": "validation",
+    "label": "Validation",
+    "definition": "Verifying the replication or reproducibility of results and other research outputs.",
+    "uri": "https://credit.niso.org/contributor-roles/validation/"
+  },
+  {
+    "id": "visualization",
+    "label": "Visualization",
+    "definition": "Preparing and presenting the work through visualization or data presentation.",
+    "uri": "https://credit.niso.org/contributor-roles/visualization/"
+  },
+  {
+    "id": "writing-original-draft",
+    "label": "Writing – original draft",
+    "definition": "Preparing and writing the initial draft of the published work.",
+    "uri": "https://credit.niso.org/contributor-roles/writing-original-draft/"
+  },
+  {
+    "id": "writing-review-editing",
+    "label": "Writing – review & editing",
+    "definition": "Critical review, commentary, or revision of the work, at any stage including post-publication.",
+    "uri": "https://credit.niso.org/contributor-roles/writing-review-editing/"
+  }
+];
+export const CREDIT_DEGREES = [
+  {
+    "id": "lead",
+    "label": "Lead",
+    "definition": "Led this role relative to others who also held it."
+  },
+  {
+    "id": "equal",
+    "label": "Equal",
+    "definition": "Shared this role equally with others who also held it."
+  },
+  {
+    "id": "supporting",
+    "label": "Supporting",
+    "definition": "Contributed to this role in a smaller share than the lead."
+  }
+];
+export const CREDIT_ROLES = CREDIT_TAXONOMY.map(r => r.label);
 export const AUTHOR_META = {
   "Christy PM": { orcid: "0000-0002-4417-8810", credit: ["Conceptualization", "Methodology", "Writing – original draft"], coi: "3/2/2026", debar: "Clear" },
   "Steve Altschuler": { orcid: "0000-0001-7732-1045", credit: ["Investigation", "Writing – review & editing"], coi: "2/11/2026", debar: "Clear" },
