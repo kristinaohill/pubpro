@@ -138,7 +138,7 @@ router.post('/', requireAuth, blockAuthors, requirePerm('pubs.edit'), (req, res)
   ["internal", "external"].forEach(g => { d[g] = (d[g] || []).map(({ criteria, ...a }) => a); });
   delete d.sourcePub;
   delete d.draftStartedAt;
-  const blocked = gates.draftingGate({}, d) || gates.presentationGate(pubType, {}, d);
+  const blocked = gates.draftingGate({}, d, pubType) || gates.kickoffGate(pubType, {}, d) || gates.presentationGate(pubType, {}, d);
   if (blocked) return res.status(400).json({ error: blocked });
   const data = JSON.stringify(d);
   if (!title) return res.status(400).json({ error: 'A title is required to save the publication.' });
@@ -190,7 +190,7 @@ router.put('/:id', requireAuth, (req, res) => {
   if (prevData.sourcePub) d.sourcePub = prevData.sourcePub;
   const proxy = gates.proxyGate(prevData, d, req.user.name, isProofFor(existing.id));
   if (proxy) return res.status(400).json({ error: proxy });
-  const blocked = gates.draftingGate(prevData, d) || gates.presentationGate(existing.pub_type, prevData, d);
+  const blocked = gates.draftingGate(prevData, d, existing.pub_type) || gates.kickoffGate(existing.pub_type, prevData, d) || gates.presentationGate(existing.pub_type, prevData, d);
   if (blocked) return res.status(400).json({ error: blocked });
   db.prepare(`UPDATE pp_publications SET title = ?, product = ?, status = ?, summary = ?, data = ?, updated_at = datetime('now') WHERE id = ?`)
     .run(title, product, status, summary, JSON.stringify(d), req.params.id);
@@ -427,7 +427,7 @@ const SESSION_MS = 30 * 60 * 1000;
  * External authors (doc.edit is fixed on their role) may only edit publications that list them.
  */
 router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => {
-  const existing = db.prepare('SELECT id, data, product FROM pp_publications WHERE id = ?').get(req.params.id);
+  const existing = db.prepare('SELECT id, data, product, pub_type FROM pp_publications WHERE id = ?').get(req.params.id);
   if (!existing || !canSee(req, existing)) return res.status(404).json({ error: 'Publication not found' });
   if (!can(req, 'doc.edit', existing.product)) return res.status(403).json({ error: outOfScope(req, 'doc.edit', existing.product) });
   const data = parse(existing.data, {});
@@ -448,7 +448,7 @@ router.put('/:id/document', requireAuth, requirePerm('doc.edit'), (req, res) => 
   if (canReview && typeof req.body.track === 'boolean') data.pubDocTrack = req.body.track;
   if (!data.pubDoc) {
     const started = { ...data, pubDoc: 'new' };
-    const blocked = gates.draftingGate(data, started);
+    const blocked = gates.draftingGate(data, started, existing.pub_type);
     if (blocked) return res.status(400).json({ error: blocked });
     Object.assign(data, started);
   }

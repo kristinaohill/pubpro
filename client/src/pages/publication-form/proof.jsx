@@ -40,10 +40,10 @@ export async function openProof(pubId, proof) {
 }
 
 /** File picker for the proof. */
-export function ProofField({ id, file, onFile, help }) {
+export function ProofField({ id, file, onFile, help, label = 'Proof (required)' }) {
   return (
     <div className="pf-proof">
-      <label className="pf-proof-label" htmlFor={id}>Proof (required)</label>
+      <label className="pf-proof-label" htmlFor={id}>{label}</label>
       <div className="pf-proof-row">
         <label className="pf-proof-pick" htmlFor={id}>
           <Icon name="upload_file" size={18} />{file ? 'Change file' : 'Choose file'}

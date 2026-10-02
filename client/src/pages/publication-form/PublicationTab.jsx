@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, CommentComposer, DropZone, Icon, IconButton, InlineMessage } from '../../ds/pubpro';
 import { nowStamp } from './data';
 import { criteriaMissing, bylineAuthors } from './state';
+import { kickoffRowOf, needsKickoff } from './KickoffCard';
 import { Card, Stack, TabHead } from './ui';
 import './tabs-a.css';
 
@@ -11,7 +12,9 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
   // Records that already had a document before this rule are left as they are.
   const authors = bylineAuthors(st);
   const waiting = criteriaMissing(st);
-  const blocked = !hasDoc && !st.draftStartedAt && (!record || !authors.length || waiting.length > 0);
+  const kickRow = kickoffRowOf(st);
+  const kickoffPending = needsKickoff(st) && !(kickRow && kickRow.done);
+  const blocked = !hasDoc && !st.draftStartedAt && (!record || !authors.length || waiting.length > 0 || kickoffPending);
   const startedText = st.draftStartedAt ? new Date(st.draftStartedAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' }) : '';
   // pubDocOn is set when the document is started or imported here; the sample record predates it.
   const docName = st.pubDoc === 'new'
@@ -43,7 +46,8 @@ export default function PublicationTab({ st, set, recordId, userName, openDocume
                 <strong>A1, A4 (ICMJE, GPP):</strong> every author signs the authorship agreement, attesting to the four ICMJE criteria, before drafting starts. They sign from their invitation.{' '}
                 {!record ? 'Save the publication and invite its authors first.'
                   : !authors.length ? 'Add the authors first.'
-                    : 'Still waiting on ' + waiting.join(', ') + '.'}
+                    : waiting.length ? 'Still waiting on ' + waiting.join(', ') + '.'
+                      : 'Every author has signed. Next, record the kick-off meeting on the Planning tab (V2, GPP).'}
               </InlineMessage>
             )}
             <div className="pfxa-docstart-actions">

@@ -285,6 +285,8 @@ export function rateCardPatch(s, vendor, rateCard, startStr) {
       days: m.days, start: m.start, end: m.end,
       costed: m.costed, amount: m.amount, paidAmount: 0,
       status: m.costed ? 'pending' : 'notmet',
+      // V2 (GPP): the kick-off can't be removed from the plan.
+      ...(/kick-?off/i.test(m.name) ? { core: true } : {}),
     })),
   };
 }

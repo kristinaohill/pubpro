@@ -71,11 +71,38 @@ function stampCriteria(prev, next, now = new Date()) {
   return next;
 }
 
+// ---- V2 (GPP): the kick-off --------------------------------------------------------------
+// Abstracts and manuscripts hold a kick-off with the authors (key messages, target venue,
+// timeline) before drafting. The kick-off milestone is ticked only by recording the meeting
+// (data.kickoff), and no later step can be completed before it. Posters and slide decks follow
+// their abstract's kick-off.
+const KICKOFF = /kick-?off/i;
+const needsKickoff = pubType => pubType === 'Abstract' || pubType === 'Manuscript';
+const planRows = d => (d.rows || []).filter(r => r.name && !(r.optional && !r.included));
+function kickoffOf(d) {
+  const rows = planRows(d);
+  const i = rows.findIndex(r => KICKOFF.test(r.name));
+  return { rows, i, row: rows[i], done: i >= 0 && !!rows[i].done, recorded: !!(d.kickoff && d.kickoff.heldOn) };
+}
+function kickoffGate(pubType, prev, next) {
+  if (!needsKickoff(pubType)) return null;
+  const k = kickoffOf(next);
+  if (k.i < 0) return null;
+  const before = new Map(planRows(prev).map(r => [r.id, r]));
+  if (k.done && !(before.get(k.row.id) || {}).done && !k.recorded) {
+    return 'V2 (GPP): record the kick-off meeting (date, attendees, what was agreed) on the Planning tab to complete the kick-off.';
+  }
+  if (k.done) return null;
+  const jumped = k.rows.slice(k.i + 1).find(r => r.done && !(before.get(r.id) || {}).done);
+  return jumped ? 'V2 (GPP): record the kick-off meeting before completing “' + jumped.name + '”. Drafting starts after the kick-off.' : null;
+}
+
 /**
- * A1: the document can only be started (created or imported) once every author has agreed to the
- * criteria. Returns an error message, or null and stamps draftStartedAt.
+ * A1, A4 and V2: the document can only be started (created or imported) once every author has
+ * signed and, for abstracts and manuscripts, the kick-off is done. Returns an error message, or
+ * null and stamps draftStartedAt.
  */
-function draftingGate(prev, next, now = new Date()) {
+function draftingGate(prev, next, pubType, now = new Date()) {
   if (prev.draftStartedAt) { next.draftStartedAt = prev.draftStartedAt; return null; }
   if (prev.pubDoc || !next.pubDoc) { delete next.draftStartedAt; return null; }
   const authors = authorsOf(next);
@@ -83,6 +110,11 @@ function draftingGate(prev, next, now = new Date()) {
   const missing = criteriaMissing(next);
   if (missing.length) {
     return 'A1, A4 (ICMJE, GPP): every author must sign the authorship agreement, attesting to the ICMJE criteria, before drafting starts. Still waiting on ' + missing.join(', ') + '.';
+  }
+  if (needsKickoff(pubType)) {
+    const k = kickoffOf(next);
+    if (k.i < 0) return 'V2 (GPP): add the kick-off milestone on the Planning tab and record the kick-off meeting before drafting starts.';
+    if (!k.done) return 'V2 (GPP): record the kick-off meeting on the Planning tab before drafting starts.';
   }
   next.draftStartedAt = now.toISOString();
   const latest = authors.map(x => x.a.criteria.at).sort().pop();
@@ -151,4 +183,4 @@ function proxyGate(prev, next, userName, isProof) {
   return null;
 }
 
-module.exports = { AGREEMENT, proxyGate, PRESENTATION_TYPES, authorsOf, criteriaMissing, stampCriteria, draftingGate, ownApproval, presentationGate, personOf, usDate };
+module.exports = { AGREEMENT, kickoffGate, needsKickoff, proxyGate, PRESENTATION_TYPES, authorsOf, criteriaMissing, stampCriteria, draftingGate, ownApproval, presentationGate, personOf, usDate };

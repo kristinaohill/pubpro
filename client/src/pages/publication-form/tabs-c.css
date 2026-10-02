@@ -108,3 +108,10 @@
   display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: var(--radius-pill);
   background: #EAF2FA; color: var(--nav); font-size: 11px; font-weight: var(--fw-semibold); white-space: nowrap;
 }
+
+/* Kick-off meeting (V2) */
+.pfxc-kick-checks { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.pfxc-kick-done { display: flex; align-items: flex-start; gap: 12px; }
+.pfxc-kick-done > div { display: flex; flex-direction: column; gap: 3px; }
+.pfxc-kick-lock { color: var(--fg-3); font-size: 12px; }
+.pfxc-kick-minutes { max-width: 520px; }

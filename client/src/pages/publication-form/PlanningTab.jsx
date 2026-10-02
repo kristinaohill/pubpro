@@ -9,6 +9,7 @@ import {
 } from './data';
 import { rateCardPatch, stageTemplatePatch } from './state';
 import { BoxCheck } from './shared';
+import KickoffCard, { KICKOFF, needsKickoff } from './KickoffCard';
 import { Card, ColHead, FormField, ListBox, ListRow, Pair, Stack, TabHead } from './ui';
 import './tabs-c.css';
 
@@ -31,7 +32,7 @@ export function planFinancials(st, plan) {
   return { cancelled, spent, returned, committed, remaining, plan };
 }
 
-export default function PlanningTab({ st, set, plans }) {
+export default function PlanningTab({ st, set, plans, commit, saving, userName, record }) {
   const rows = st.rows;
   const hasVendor = !!st.vendor && st.vendor !== NO_VENDOR;
   const billableTotal = rows.filter(r => r.costed).reduce((a, r) => a + (r.amount || 0), 0);
@@ -77,6 +78,13 @@ export default function PlanningTab({ st, set, plans }) {
     nextRowId: s.nextRowId + 1,
     rows: s.rows.concat([{ id: s.nextRowId, name: '', type: 'Milestone', done: false, pct: '', start: '', end: '', costed: false, amount: 0, status: 'notmet' }]),
   }));
+
+  // V2 (GPP): the kick-off milestone is ticked by recording the meeting, and the steps after it
+  // stay locked until it's done (abstracts and manuscripts).
+  const gated = needsKickoff(st);
+  const kickIdx = gated ? rows.findIndex(r => r.name && KICKOFF.test(r.name) && !(r.optional && !r.included)) : -1;
+  const kickDone = kickIdx < 0 || !!rows[kickIdx].done;
+  const lockedByKickoff = i => gated && kickIdx >= 0 && !kickDone && i > kickIdx;
 
   // Dot per row, as in the record header's timeline: included rows in order, the first not-done one is current.
   const stepRows = rows.filter(r => r.name && !(r.optional && !r.included));
@@ -183,6 +191,8 @@ export default function PlanningTab({ st, set, plans }) {
         )}
       </Card>
 
+      <KickoffCard st={st} commit={commit} saving={saving} userName={userName} record={record} />
+
       <Card title="Milestones and stages">
         {rows.length === 0 ? (
           <div className="pfxc-note">Choose a vendor and rate card above — or "No Vendor (In-house)" and a stage template — to populate milestones and stages, or add rows manually.</div>
@@ -227,14 +237,27 @@ export default function PlanningTab({ st, set, plans }) {
                       </div>
 
                       <div className="pfxc-ms-progress">
-                        {r.type === 'Milestone' && (
-                          <span className="pfxc-inline-check">
-                            <BoxCheck on={r.done} onClick={() => patchRow(r.id, { done: !r.done, doneOn: r.done ? '' : TODAY_STR })} size={18} fill="var(--high-emphasis)" tick={15} title="Done" />
-                            Done
+                        {gated && i === kickIdx ? (
+                          <span className="pfxc-inline-check" title="Completed by recording the kick-off meeting above">
+                            <Icon name={r.done ? 'check_circle' : 'event'} size={18} color={r.done ? 'var(--ok)' : 'var(--fg-3)'} />
+                            {r.done ? 'Held' : 'Record above'}
                           </span>
-                        )}
-                        {r.type === 'Stage' && (
-                          <TextField value={r.pct} onChange={e => patchRow(r.id, { pct: e.target.value })} width="100%" align="right" style={{ height: 30 }} aria-label="% Complete" />
+                        ) : lockedByKickoff(i) ? (
+                          <span className="pfxc-inline-check pfxc-kick-lock" title="Record the kick-off meeting first (V2, GPP)">
+                            <Icon name="lock" size={16} color="var(--fg-3)" />After kick-off
+                          </span>
+                        ) : (
+                          <>
+                            {r.type === 'Milestone' && (
+                              <span className="pfxc-inline-check">
+                                <BoxCheck on={r.done} onClick={() => patchRow(r.id, { done: !r.done, doneOn: r.done ? '' : TODAY_STR })} size={18} fill="var(--high-emphasis)" tick={15} title="Done" />
+                                Done
+                              </span>
+                            )}
+                            {r.type === 'Stage' && (
+                              <TextField value={r.pct} onChange={e => patchRow(r.id, { pct: e.target.value })} width="100%" align="right" style={{ height: 30 }} aria-label="% Complete" />
+                            )}
+                          </>
                         )}
                       </div>
 
