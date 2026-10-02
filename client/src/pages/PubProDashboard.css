@@ -221,3 +221,5 @@
 
 /* Empty chart states. */
 .pd-nodata { padding: 18px 4px; font-size: 13px; color: var(--fg-faint); text-wrap: pretty; }
+
+.pd-activity-tc { margin-top: 16px; }

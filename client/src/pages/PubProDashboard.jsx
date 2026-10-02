@@ -5,6 +5,7 @@ import DateField from '../components/DateField';
 import PageHeader from '../components/PageHeader';
 import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
+import TrendChart from '../components/TrendChart';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import { myReview } from './publication-form/YourReview';
@@ -79,27 +80,7 @@ const PIPELINE_FOOTER = [
 
 const UTIL_COLORS = ['var(--chart-3)', 'var(--chart-4)', 'var(--chart-2)', 'var(--chart-1)', 'var(--chart-5)', 'var(--chart-6)'];
 
-const ACTIVITY_PLOT = { left: 46, right: 740, top: 8, bottom: 113 };
-const VB_W = 760, VB_H = 140;
-
 /* ---------- derived data ---------- */
-
-const pct = (n, d) => `${((n / d) * 100).toFixed(3)}%`;
-
-/** Y-axis top and tick step that fit the busiest month. */
-const activityScale = series => {
-  const peak = Math.max(1, ...series.flatMap(x => x.values));
-  const step = peak <= 5 ? 1 : peak <= 10 ? 2 : Math.ceil(peak / 5);
-  return { maxY: Math.ceil(peak / step) * step, step };
-};
-const activityX = (i, n) => {
-  const { left, right } = ACTIVITY_PLOT;
-  return +(left + ((right - left) / Math.max(1, n - 1)) * i).toFixed(1);
-};
-const activityY = (v, maxY) => {
-  const { top, bottom } = ACTIVITY_PLOT;
-  return +(bottom - (v / maxY) * (bottom - top)).toFixed(1);
-};
 
 const barRows = data => {
   const max = Math.max(...data.map(d => d[1])) || 1;
@@ -199,65 +180,6 @@ function HBars({ rows }) {
             <div className="pd-hbar" title={b.tip} style={{ background: b.color, width: b.width }} />
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-function ActivityChart({ data }) {
-  const { months, series, range } = data;
-  const { maxY, step } = activityScale(series);
-  const n = months.length;
-  const ticks = [];
-  for (let v = 0; v <= maxY; v += step) {
-    const y = activityY(v, maxY);
-    ticks.push({ label: String(v), y, right: pct(VB_W - 36, VB_W), top: pct(y, VB_H) });
-  }
-  return (
-    <div className="pd-activity">
-      <div className="pd-activity-head">
-        <Sym name="timeline" className="pd-chart-icon pd-chart-icon--md" />
-        <div className="pd-chart-title">Drafts Started vs Submitted — {range}</div>
-      </div>
-      <div className="pd-activity-body">
-        <div className="pd-activity-plot">
-          <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="pd-activity-svg">
-            {ticks.map(g => (
-              <line key={g.label} x1={ACTIVITY_PLOT.left} y1={g.y} x2={ACTIVITY_PLOT.right} y2={g.y} stroke="var(--border-hairline)" strokeWidth="1" />
-            ))}
-            <line x1={ACTIVITY_PLOT.left} y1={ACTIVITY_PLOT.top} x2={ACTIVITY_PLOT.left} y2={ACTIVITY_PLOT.bottom} stroke="var(--border-divider)" strokeWidth="1" />
-            {series.map(x => (
-              <polyline
-                key={x.label}
-                points={x.values.map((v, i) => `${activityX(i, n)},${activityY(v, maxY)}`).join(' ')}
-                fill="none"
-                stroke={x.color}
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            ))}
-            {series.flatMap(x => x.values.map((v, i) => (
-              <circle key={`${x.label}-${i}`} cx={activityX(i, n)} cy={activityY(v, maxY)} r="3.5" fill="var(--white)" stroke={x.color} strokeWidth="2">
-                <title>{`${months[i]} — ${x.label}: ${v}`}</title>
-              </circle>
-            )))}
-          </svg>
-          {/* Axis labels are HTML so they keep a fixed size while the SVG scales. */}
-          {ticks.map(g => (
-            <span key={g.label} className="pd-axis-y" style={{ right: g.right, top: g.top }}>{g.label}</span>
-          ))}
-          {months.map((m, i) => (
-            <span key={m + i} className="pd-axis-x" style={{ left: pct(activityX(i, n), VB_W), top: pct(128, VB_H) }}>{m}</span>
-          ))}
-        </div>
-        <div className="pd-legend">
-          {series.map(x => (
-            <div key={x.label} className="pd-legend-item">
-              <span className="pd-dot" style={{ background: x.color }} />{x.label}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -608,7 +530,7 @@ export default function PubProDashboard() {
               <div className="pd-block">
                 <SectionTitle icon="show_chart" title="Publication Activity" />
                 <div className="pd-lede">Compare drafts started against submissions across a rolling twelve months. Watch for months where drafting outpaces submission.</div>
-                <ActivityChart data={activityData} />
+                <TrendChart className="pd-activity-tc" title={'Drafts Started vs Submitted — ' + activityData.range} months={activityData.months} series={activityData.series} />
               </div>
 
               {/* Publication Portfolio Overview */}

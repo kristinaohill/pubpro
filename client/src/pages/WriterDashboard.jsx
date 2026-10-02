@@ -6,6 +6,7 @@ import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
+import TrendChart from '../components/TrendChart';
 import { TODAY_STR } from './publication-form/data';
 import { auditEntry, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData } from './publication-form/state';
 import { AuthorBlockersPanel, CongressDeadlinesPanel, ReviewsPanel } from './WriterDashboardPanels';
@@ -26,6 +27,40 @@ const SCOPE_KEY = 'pubpro.pmDashboardScope';
 const readScope = () => { try { return localStorage.getItem(SCOPE_KEY) === 'all' ? 'all' : 'mine'; } catch (e) { return 'mine'; } };
 const sameName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 const firstName = n => String(n || '').trim().split(/\s+/)[0];
+
+/**
+ * Due dates by month over a year: 3 months back, this month and 8 ahead. Counts every workflow
+ * step's due date, the steps completed, and submission or presentation dates, from each
+ * publication's Planning tab (its saved summary).
+ */
+function dueByMonth(pubs, now = new Date()) {
+  const months = [];
+  for (let i = -3; i <= 8; i += 1) months.push(new Date(now.getFullYear(), now.getMonth() + i, 1));
+  const at = iso => {
+    const [y, m] = String(iso || '').split('-').map(Number);
+    return y && m ? months.findIndex(x => x.getFullYear() === y && x.getMonth() === m - 1) : -1;
+  };
+  const due = months.map(() => 0);
+  const done = months.map(() => 0);
+  const subs = months.map(() => 0);
+  pubs.forEach(p => ((p.summary && p.summary.steps) || []).forEach(s => {
+    const a = at(s.d); if (a >= 0) due[a] += 1;
+    const b = at(s.done); if (b >= 0) done[b] += 1;
+    if (/submission|presentation/i.test(s.name) && a >= 0) subs[a] += 1;
+  }));
+  const short = d => d.toLocaleDateString('en-US', { month: 'short' });
+  const long = d => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  return {
+    months: months.map(short),
+    range: long(months[0]) + ' – ' + long(months[months.length - 1]),
+    marker: { index: 3, label: 'This month' },
+    series: [
+      { label: 'Steps Due', color: 'var(--high-emphasis)', values: due },
+      { label: 'Steps Completed', color: 'var(--ok)', values: done },
+      { label: 'Submissions Due', color: 'var(--bpl-teal)', values: subs, dashed: true },
+    ],
+  };
+}
 
 const PUB_COLS = [
   { header: 'Publication', width: 'minmax(220px,2fr)' },
@@ -292,6 +327,21 @@ export default function WriterDashboard() {
           <StatCard key={s.label} label={s.label} value={String(s.value)} icon={s.icon} tone={s.tone} />
         ))}
       </div>
+
+      {(() => {
+        const dd = dueByMonth(live);
+        return (
+          <TrendChart
+            className="wd-due-chart"
+            icon="event_note"
+            title={'Due Dates — ' + dd.range}
+            note="Every step due date on the Planning tab. Watch for months where steps due pull ahead of steps completed."
+            months={dd.months}
+            series={dd.series}
+            marker={dd.marker}
+          />
+        );
+      })()}
 
       {/* One three-column grid: My Publications spans two columns with the side panels in the third,
           and the lower panels sit under those same columns. Each row is one height. */}

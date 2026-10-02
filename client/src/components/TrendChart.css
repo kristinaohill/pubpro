@@ -1,0 +1,15 @@
+.tc { border: 1px solid var(--border-divider); border-radius: var(--radius-input); overflow: hidden; background: var(--white); }
+.tc-head { display: flex; align-items: center; gap: 9px; padding: 11px 14px; border-bottom: 1px solid var(--border-divider); flex-wrap: wrap; }
+.tc .tc-icon { font-size: 20px; color: var(--high-emphasis); }
+.tc-title { font-size: 16px; font-weight: 700; color: var(--text-title); }
+.tc-note { margin-left: auto; font-size: 12px; color: var(--text-meta); }
+.tc-body { padding: 18px 16px 16px; }
+.tc-plot { position: relative; }
+.tc-svg { width: 100%; height: auto; display: block; }
+.tc-axis-y { position: absolute; transform: translateY(-50%); font-size: 12px; color: var(--fg-faint); line-height: 1; }
+.tc-axis-x { position: absolute; transform: translate(-50%, -50%); font-size: 12px; color: var(--fg-faint); line-height: 1; }
+.tc-marker { position: absolute; top: -4px; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: var(--fatal-text); background: var(--white); padding: 0 4px; line-height: 1.2; }
+.tc-legend { display: flex; align-items: center; gap: 18px; margin-top: 10px; font-size: 12px; flex-wrap: wrap; }
+.tc-legend-item { display: flex; align-items: center; gap: 7px; }
+.tc-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; border: 2px solid transparent; box-sizing: border-box; }
+.tc-dot--dashed { border-style: dotted; }
