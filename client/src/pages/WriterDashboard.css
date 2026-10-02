@@ -128,3 +128,5 @@
 .wdp-warn { font-size: 12px; font-weight: 700; color: var(--warn-text); }
 .wdp-pubs { margin-top: 2px; }
 .wdp-actions { margin-top: 6px; }
+
+.wd-link-btn { background: none; border: 0; padding: 0; font: inherit; color: var(--text-link); text-decoration: underline; cursor: pointer; }

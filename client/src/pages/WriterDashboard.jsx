@@ -20,6 +20,12 @@ const TODAY = isoOf(new Date());
 const WEEK_START = (() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return isoOf(d); })();
 
 const FILTERS = ['All', 'Due in 7 Days', 'Overdue', 'Waiting on Others'];
+// Whose publications the whole page shows: the ones you own, or every one your products cover.
+const SCOPES = ['My Publications', 'All Publications'];
+const SCOPE_KEY = 'pubpro.pmDashboardScope';
+const readScope = () => { try { return localStorage.getItem(SCOPE_KEY) === 'all' ? 'all' : 'mine'; } catch (e) { return 'mine'; } };
+const sameName = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+const firstName = n => String(n || '').trim().split(/\s+/)[0];
 
 const PUB_COLS = [
   { header: 'Publication', width: 'minmax(220px,2fr)' },
@@ -57,7 +63,7 @@ const fromSaved = p => {
   const sm = p.summary || {};
   const people = sm.people || [];
   return {
-    id: p.record_id, savedId: p.id, type: p.pub_type, title: p.title,
+    id: p.record_id, savedId: p.id, type: p.pub_type, title: p.title, owner: p.owner || '',
     kind: people.length ? 'reviewers' : 'you', unit: 'reviewers',
     steps: sm.steps || [], people,
   };
@@ -74,10 +80,11 @@ function PubLink({ id, onOpen }) {
   );
 }
 
-function PubRow({ r, onOpen }) {
+function PubRow({ r, onOpen, showOwner, me }) {
   const withYou = r.p.kind === 'you';
+  const yours = !showOwner || sameName(r.p.owner, me);
   const total = r.p.people.length;
-  const progressLabel = withYou ? 'With you' : `${r.done} of ${total} ${r.p.unit}`;
+  const progressLabel = withYou ? (yours ? 'With you' : 'With ' + (firstName(r.p.owner) || 'the owner')) : `${r.done} of ${total} ${r.p.unit}`;
   const progressPct = withYou ? '0%' : `${Math.round((r.done / total) * 100)}%`;
   const progressNote = withYou
     ? 'No responses needed'
@@ -92,6 +99,7 @@ function PubRow({ r, onOpen }) {
           <span className="wd-meta">{r.p.type}</span>
         </div>
         <div className="wd-pub-title">{r.p.title}</div>
+        {showOwner && <div className="wd-meta wd-gap-2">Owner: {r.p.owner ? (yours ? r.p.owner + ' (you)' : r.p.owner) : 'Not set'}</div>}
       </div>
       <div className="wd-cell">
         <div className="wd-step-name">{r.cur.name}</div>
@@ -149,7 +157,12 @@ export default function WriterDashboard() {
   const [liveAll, setLive] = useState([]);
   // The server only sends what this person's roles cover.
   const focus = useScopeFocus();
-  const live = liveAll;
+  // My Publications / All Publications switches everything on the page.
+  const [scope, setScopeState] = useState(readScope);
+  const setScope = v => { const k = v === 'All Publications' ? 'all' : 'mine'; setScopeState(k); try { localStorage.setItem(SCOPE_KEY, k); } catch (e) { /* not saved */ } };
+  const me = (user && user.name) || '';
+  const live = scope === 'all' ? liveAll : liveAll.filter(p => sameName(p.owner, me));
+  const othersCount = liveAll.length - live.length;
   const inFocus = new Set(live.map(p => p.id));
   const saved = savedAll.filter(p => inFocus.has(p.savedId));
   const [message, setMessage] = useState(null);
@@ -254,7 +267,7 @@ export default function WriterDashboard() {
     .filter(g => g.items.length);
 
   const stats = [
-    { label: 'Active Publications', value: model.length, icon: 'library_books' },
+    { label: 'Active Publications', value: model.length, icon: 'library_books', tone: 'positive' },
     { label: 'Steps Due in Next 7 Days', value: model.filter(x => x.n >= 0 && x.n <= 7).length, icon: 'schedule', tone: 'info' },
     { label: 'Overdue Steps', value: model.filter(x => x.n < 0).length, icon: 'error', tone: 'fatal' },
     { label: 'Awaiting Responses', value: outstandingAll.length, icon: 'group', tone: 'warning' },
@@ -264,7 +277,10 @@ export default function WriterDashboard() {
     <div className="wd-page">
       <PageHeader
         title="Publication Manager Dashboard"
-        description={<>Publications you manage · {(user && user.name) || '—'} · Week of {fmt(WEEK_START)}</>}
+        description={scope === 'all'
+          ? <>Every publication on your products · {me || '—'} · Week of {fmt(WEEK_START)}</>
+          : <>Publications you own · {me || '—'} · Week of {fmt(WEEK_START)}</>}
+        actions={<SegmentedToggle options={SCOPES} value={scope === 'all' ? 'All Publications' : 'My Publications'} onChange={setScope} />}
       />
       <ScopeFocusBar focus={focus} />
 
@@ -283,7 +299,7 @@ export default function WriterDashboard() {
         <section className="wd-card wd-main">
           <div className="wd-side-head wd-main-head">
             <Sym name="edit_note" className="wd-side-icon" />
-            <h2 className="wd-side-title">My Publications</h2>
+            <h2 className="wd-side-title">{scope === 'all' ? 'All Publications' : 'My Publications'}</h2>
             <div className="wd-main-tools">
               <div className="wd-count">{rows.length} {rows.length === 1 ? 'publication' : 'publications'}</div>
               <SegmentedToggle options={FILTERS} value={filter} onChange={setFilter} />
@@ -293,12 +309,16 @@ export default function WriterDashboard() {
           <div className="wd-table-scroll">
             <div className="wd-table-inner">
               <DataTable columns={PUB_COLS} headerTone="knowledge">
-                {rows.map(r => <PubRow key={r.p.id} r={r} onOpen={() => openPublication(r.p)} />)}
+                {rows.map(r => <PubRow key={r.p.id} r={r} showOwner={scope === 'all'} me={me} onOpen={() => openPublication(r.p)} />)}
               </DataTable>
             </div>
           </div>
           {rows.length === 0 && (
-            <div className="empty-state">{model.length ? `No publications match "${filter}".` : 'No publications yet. Create one from Create New › Publication.'}</div>
+            <div className="empty-state">
+              {model.length ? `No publications match "${filter}".`
+                : scope === 'mine' && othersCount > 0 ? <>You don&rsquo;t own any open publications. <button type="button" className="wd-link-btn" onClick={() => setScope('All Publications')}>Show all {othersCount} on your products</button>.</>
+                  : 'No publications yet. Create one from Create New › Publication.'}
+            </div>
           )}
         </section>
 
