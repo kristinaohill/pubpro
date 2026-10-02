@@ -365,6 +365,7 @@ export default function WriterDashboard() {
             months={dd.months}
             series={dd.series}
             marker={dd.marker}
+            height={80}
           />
         );
       })()}

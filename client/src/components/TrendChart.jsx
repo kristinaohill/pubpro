@@ -6,9 +6,9 @@ import './TrendChart.css';
 // marker: { index, label } draws a vertical line at that month (e.g. "This month"). A null value
 // leaves a gap, so one series can cover the months behind and another the months ahead.
 
-const PLOT = { left: 46, right: 740, top: 8, bottom: 113 };
+// The chart keeps its width; height (viewBox units) sets how tall it draws. 140 is the standard size.
 const VB_W = 760;
-const VB_H = 140;
+const plotFor = h => ({ left: 46, right: 740, top: 8, bottom: h - 27, axisY: h - 12 });
 const pct = (n, d) => `${((n / d) * 100).toFixed(3)}%`;
 /** Runs of consecutive months that have a value: [[[i, v], ...], ...]. */
 const runs = values => values.reduce((out, v, i) => {
@@ -16,16 +16,21 @@ const runs = values => values.reduce((out, v, i) => {
   else out[out.length - 1].push([i, v]);
   return out;
 }, [[]]).filter(r => r.length);
-const scale = series => {
+const scale = (series, height = 140) => {
   const peak = Math.max(1, ...series.flatMap(x => x.values.filter(v => v != null)));
-  const step = peak <= 5 ? 1 : peak <= 10 ? 2 : Math.ceil(peak / 5);
+  const lines = height < 110 ? 3 : 5;
+  const step = peak <= lines ? 1 : Math.ceil(peak / lines);
   return { maxY: Math.ceil(peak / step) * step, step };
 };
-const xAt = (i, n) => +(PLOT.left + ((PLOT.right - PLOT.left) / Math.max(1, n - 1)) * i).toFixed(1);
-const yAt = (v, maxY) => +(PLOT.bottom - (v / maxY) * (PLOT.bottom - PLOT.top)).toFixed(1);
+const xAtIn = PLOT => (i, n) => +(PLOT.left + ((PLOT.right - PLOT.left) / Math.max(1, n - 1)) * i).toFixed(1);
+const yAtIn = PLOT => (v, maxY) => +(PLOT.bottom - (v / maxY) * (PLOT.bottom - PLOT.top)).toFixed(1);
 
-export default function TrendChart({ title, icon = 'timeline', months, series, marker, note, className = '' }) {
-  const { maxY, step } = scale(series);
+export default function TrendChart({ title, icon = 'timeline', months, series, marker, note, className = '', height = 140 }) {
+  const VB_H = height;
+  const PLOT = plotFor(height);
+  const xAt = xAtIn(PLOT);
+  const yAt = yAtIn(PLOT);
+  const { maxY, step } = scale(series, height);
   const n = months.length;
   const ticks = [];
   for (let v = 0; v <= maxY; v += step) ticks.push({ label: String(v), y: yAt(v, maxY) });
@@ -56,7 +61,7 @@ export default function TrendChart({ title, icon = 'timeline', months, series, m
           </svg>
           {/* Axis labels are HTML so they keep a fixed size while the SVG scales. */}
           {ticks.map(g => <span key={g.label} className="tc-axis-y" style={{ right: pct(VB_W - 36, VB_W), top: pct(g.y, VB_H) }}>{g.label}</span>)}
-          {months.map((m, i) => <span key={m + i} className="tc-axis-x" style={{ left: pct(xAt(i, n), VB_W), top: pct(128, VB_H) }}>{m}</span>)}
+          {months.map((m, i) => <span key={m + i} className="tc-axis-x" style={{ left: pct(xAt(i, n), VB_W), top: pct(PLOT.axisY, VB_H) }}>{m}</span>)}
           {marker && marker.index >= 0 && <span className="tc-marker" style={{ left: pct(xAt(marker.index, n), VB_W) }}>{marker.label}</span>}
         </div>
         <div className="tc-legend">
