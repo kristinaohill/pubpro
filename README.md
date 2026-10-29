@@ -1,67 +1,89 @@
-# PubPlanner — Scientific Publication Management
+# PubPro — Publication Planning (proof of concept)
 
-A full-stack web app for managing scientific publications (manuscripts, congress abstracts, posters, oral presentations) for pharma company clients.
+PubPro plans and tracks scientific publications (manuscripts, congress abstracts, posters,
+presentations) through kick-off, drafting, author and internal review, and submission, with the
+GPP and ICMJE checks built in.
 
-## Setup
+- **Live app:** https://pubpro-production.up.railway.app
+- **Code:** https://github.com/kristinaohill/pubpro (private)
 
-```bash
-# From the project root (Claude Pub Planning/):
-npm install
-npm --prefix server install --ignore-scripts   # uses Node 22+ built-in sqlite
-npm --prefix client install
-```
+Anything merged into `main` goes live within a few minutes, so please work on a branch and open a
+pull request (see [Making changes](#making-changes)).
 
-> **Note:** The server uses Node's built-in `node:sqlite` module (available in Node 22+). No native compilation needed.
+## Getting set up
 
-## Running
+1. **Accept the GitHub invite.** Use the invite email, or go to
+   https://github.com/kristinaohill/pubpro/invitations while signed in. Invites expire after 7 days.
+2. **Install Node.js** 24 or newer from https://nodejs.org (the LTS version). It runs PubPro.
+3. **Install GitHub Desktop** from https://desktop.github.com and sign in with your GitHub account.
+4. **Download the code.** In GitHub Desktop: **File → Clone Repository**, pick
+   `kristinaohill/pubpro`, and choose a folder.
+5. **Install what the app needs** (one time). In Terminal (Command Prompt on Windows), go to that
+   folder and run:
+
+   ```bash
+   npm run install:all
+   ```
+
+## Running it on your computer
 
 ```bash
 npm run dev
 ```
 
-- App: http://localhost:5173
-- API: http://localhost:3001
+Open http://localhost:5173. Press Ctrl+C in Terminal to stop it.
 
-## Deploying (Railway)
+Sign in with your @bplogix.com email and the shared PubPro test password (ask Kristina). The first
+run creates your own database (`server/pubplanning.db`) with sample publications, plans and
+authors. It's private to your computer: nothing you do locally touches the live site, and the live
+site's data isn't copied down.
 
-The server serves the built client, so the app is one Railway service. `railway.json` runs
-`npm run build` and `npm start`, with a health check at `/api/health`.
+To start over with fresh sample data, stop the app, delete `server/pubplanning.db`, and run
+`npm run dev` again.
 
-1. Push this folder to a GitHub repo, then in Railway: **New Project → Deploy from GitHub repo**.
-2. Add a **Volume** to the service, mounted at `/data` (this is where the database lives).
-3. Set these service **Variables**:
-   - `DB_PATH` = `/data/pubplanning.db`
-   - `JWT_SECRET` = any long random string
-   - `ADMIN_PASSWORD` = the password for admin@example.com (used when the database is first created)
-4. **Settings → Networking → Generate Domain** to get the public URL.
+## Making changes
 
-People open the URL and use **Create an account** on the login page. The hosted database starts
-empty apart from the admin account; local data in `server/pubplanning.db` is not uploaded.
+1. In GitHub Desktop, **Fetch origin**, then **Pull**, so you start from the latest code.
+2. **Current Branch → New Branch**, named after the change.
+3. Make and test your changes locally.
+4. **Commit**, then **Publish branch**, then **Create Pull Request**.
+5. Kristina reviews and merges it, and the live site updates.
 
-## Default Login
+Please don't commit straight to `main`.
 
-- **Email:** admin@example.com
-- **Password:** admin123
+## Who can sign in
 
-## Features
+There is no self sign-up.
 
-- **Dashboard** — upcoming milestones and recent publications
-- **Clients** — manage pharma company clients (admin only)
-- **Workflow Config** — define stages/steps/milestones per client + pub type (admin only)
-- **Publication Plans** — group publications by campaign
-- **Publication Detail** — metadata editing + Gantt chart timeline
-- **Gantt Chart** — custom SVG chart with collapsible stages, step bars, milestone diamonds, today line
+- **Internal users** (@bplogix.com) are created by a System Administrator: **Workspaces → System
+  Administrator → Users → Add User**. Each user gets a role and the products they cover.
+- **External authors** are added from a publication's **Authors** tab and sign in from the
+  invitation the system sends them.
 
-## Seeded Data
+## How it's built
 
-On first run, the database auto-creates and seeds:
-- Client: Acme Pharma
-- Workflow templates for all 4 publication types (Manuscript, Congress Abstract, Poster, Oral Presentation)
-- Example plan: Q3 2026 Publications
+- **client/** — React 18 + Vite. Pages are in `client/src/pages`; the publication record's tabs
+  are in `client/src/pages/publication-form`.
+- **server/** — Node.js + Express, with SQLite through Node's built-in `node:sqlite`.
+  - The compliance rules (signed authorship agreements before drafting, kick-off before drafting,
+    proof for proxy approvals, posters approved on their own) are in `server/gates.js` and
+    `server/kickoff.js`.
+  - The client repeats some of these rules to show what's missing (`publication-form/kickoff.js`),
+    so keep the two in step.
+- **Auth** — JWT, stored in the browser.
+- Locally the app runs on port 5173, and the API on port 3001.
 
-## Stack
+## Hosting (Railway)
 
-- **Frontend:** React + Vite (port 5173)
-- **Backend:** Node.js + Express (port 3001)
-- **Database:** SQLite via Node built-in `node:sqlite`
-- **Auth:** JWT (stored in localStorage)
+Railway builds and deploys every push to `main` (`railway.json`). The build runs `npm run build`
+and starts `node server/index.js`; the health check is `/api/health`. The server serves the built
+client, so it's one service.
+
+The service has a volume mounted at `/data` and these variables:
+
+- `DB_PATH` = `/data/pubplanning.db`
+- `JWT_SECRET` = a long random string
+- `ADMIN_PASSWORD` = the starting password for `admin@bplogix.com`. A brand-new database then sets
+  every account to the shared test password once (`server/bplogixPeople.js`).
+
+The hosted database is separate from everyone's local one.
