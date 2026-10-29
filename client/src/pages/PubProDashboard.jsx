@@ -263,12 +263,13 @@ export default function PubProDashboard() {
   const isPublications = module === 'publications';
 
   // Figures from saved records. The range picker filters by the date a publication was created;
-  // the activity chart always covers the last 12 months.
+  // the pipeline is where every publication stands today, and the activity chart always covers
+  // the last 12 months.
   const facts = saved.map(pubFacts);
   const bounds = rangeBounds(range, rangeFrom, rangeTo);
   const scoped = facts.filter(f => inBounds(f.created, bounds));
   const scopeText = rangeLabel(bounds);
-  const counts = pipelineOf(scoped);
+  const counts = pipelineOf(facts);
   const fin = financeOf(scoped);
   const finPct = n => (fin.contracted ? ((n / fin.contracted) * 100).toFixed(1) + '%' : '0%');
   const finRows = [
@@ -422,7 +423,7 @@ export default function PubProDashboard() {
                   <Sym name="filter_alt" className="pd-chart-icon pd-chart-icon--md" />
                   <div className="pd-subtitle">Pipeline By Status</div>
                 </div>
-                <div className="pd-lede">Track publications as they move from draft through approval. Monitor bottlenecks in review or suspension, and see what's been withdrawn or cancelled along the way. Counts cover publications created {scopeText}.</div>
+                <div className="pd-lede">Track publications as they move from draft through approval. Monitor bottlenecks in review or suspension, and see what's been withdrawn or cancelled along the way. Counts show where every publication stands today.</div>
                 <div className="pd-pipeline">
                   {PIPELINE_TILES.map(s => (
                     <div key={s.label} className="pd-tile" style={{ background: s.face, borderColor: s.border }}>
