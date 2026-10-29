@@ -49,3 +49,13 @@
 .kx-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 @keyframes kx-flash-field { 0% { box-shadow: 0 0 0 3px var(--high-emphasis); background: #EEF4FB; } 100% { box-shadow: 0 0 0 0 transparent; background: transparent; } }
 .kx-flash-field { animation: kx-flash-field 1.8s ease-out; border-radius: 8px; }
+
+/* Calmer to-do: plain links in sections, one line per section under the button */
+.kx-fix { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(138, 90, 0, .35); text-underline-offset: 3px; }
+.kx-fix:hover { text-decoration-color: currentColor; }
+.kx-fix-where { white-space: nowrap; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 2px; }
+.kx-todo { background: transparent; border-color: #EEE3B8; }
+.kx-todo-line { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; border-top: 1px solid #F3EBCB; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.kx-todo-line:first-child { border-top: 0; }
+.kx-todo-line:hover { background: #FFFBEB; }
+.kx-todo-title { flex: 1; font-weight: 600; font-size: 13px; }

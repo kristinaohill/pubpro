@@ -36,8 +36,10 @@ function Section({ n, item, children, help, onGo }) {
           {item.missing.map(m => (
             <li key={m.text}>
               <Icon name="radio_button_unchecked" size={14} />
-              <span className="kx-missing-text">{m.text}</span>
-              <Button variant="secondary" icon={m.go.startsWith('tab:') ? 'open_in_new' : 'edit'} onClick={() => onGo(m)}>{m.cta}</Button>
+              <button type="button" className="kx-fix" onClick={() => onGo(m)} title={m.cta}>
+                {m.text}
+                {m.go.startsWith('tab:') && <span className="kx-fix-where"> · {m.cta.replace(/^(Open|Tick roles on) /, '')} <Icon name="north_east" size={12} /></span>}
+              </button>
             </li>
           ))}
         </ul>
@@ -192,17 +194,12 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
             {!canRecord && todo.length > 0 && (
               <div className="kx-todo" role="list" aria-label="Still to do before recording the kick-off">
                 {todo.map(x => (
-                  <div key={x.key} role="listitem" className="kx-todo-group">
-                    <button type="button" className="kx-todo-head" onClick={() => jump(x.key)} title="Go to this section">
-                      <span className="kx-num">{x.n}</span><span className="kx-strong">{x.title}</span>
-                    </button>
-                    {x.missing.map(m => (
-                      <div key={m.text} className="kx-todo-item">
-                        <span className="kx-todo-text">{m.text}</span>
-                        <Button variant="secondary" icon={m.go.startsWith('tab:') ? 'open_in_new' : 'edit'} onClick={() => goTo(m)}>{m.cta}</Button>
-                      </div>
-                    ))}
-                  </div>
+                  <button key={x.key} type="button" role="listitem" className="kx-todo-line" onClick={() => jump(x.key)}>
+                    <span className="kx-num">{x.n}</span>
+                    <span className="kx-todo-title">{x.title}</span>
+                    <span className="kx-faint">{x.missing.length} to do</span>
+                    <Icon name="chevron_right" size={18} color="var(--fg-3)" />
+                  </button>
                 ))}
               </div>
             )}
