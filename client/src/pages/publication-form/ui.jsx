@@ -49,9 +49,9 @@ export function Card({ title, meta, actions, children, className = '' }) {
 }
 
 /** Label above the control, optional counter on the right of the label, help text below. */
-export function FormField({ id, label, help, counter, required, children, className = '' }) {
+export function FormField({ id, label, help, counter, required, error, children, className = '' }) {
   return (
-    <div className={'pfx-field ' + className}>
+    <div className={'pfx-field ' + className + (error ? ' pfx-field--error' : '')}>
       {(label || counter) && (
         <div className="pfx-field-top">
           {label && (
@@ -63,6 +63,7 @@ export function FormField({ id, label, help, counter, required, children, classN
         </div>
       )}
       {children}
+      {error && <div className="pfx-error" role="alert">{error}</div>}
       {help && <div className="pfx-help">{help}</div>}
     </div>
   );

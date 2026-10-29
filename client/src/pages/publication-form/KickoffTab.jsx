@@ -31,11 +31,11 @@ function Section({ n, item, children, help, onGo }) {
     >
       {help && <div className="pfx-help">{help}</div>}
       {children}
-      {!ready && (
-        <ul className="kx-missing">
-          {item.missing.map(m => (
+      {item.missing.some(m => m.go.startsWith('tab:')) && (
+        <ul className="kx-elsewhere">
+          {item.missing.filter(m => m.go.startsWith('tab:')).map(m => (
             <li key={m.text}>
-              <Icon name="radio_button_unchecked" size={14} />
+              <Icon name="info" size={14} />
               <button type="button" className="kx-fix" onClick={() => onGo(m)} title={m.cta}>
                 {m.text}
                 {m.go.startsWith('tab:') && <span className="kx-fix-where"> · {m.cta.replace(/^(Open|Tick roles on) /, '')} <Icon name="north_east" size={12} /></span>}
@@ -58,6 +58,7 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [attempted, setAttempted] = useState(false);
 
   if (!needsKickoff(st)) {
     return (
@@ -96,8 +97,18 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
       if (input) setTimeout(() => input.focus({ preventScroll: true }), 350);
     }, 60);
   };
+  // Required fields: marked *, and flagged once they try to record with something missing.
+  const missingHere = new Map(list.flatMap(x => x.missing).filter(m => m.go.startsWith('#')).map(m => [m.go.slice(1), m.text]));
+  const MEET = { 'kx-date': /date/i, 'kx-attendees': /attended/i };
+  const errOf = id => (attempted ? (MEET[id] ? meetMissing.find(t => MEET[id].test(t)) : missingHere.get(id)) : undefined);
+  const rq = (id, required = true) => ({ required, error: errOf(id) });
+  const tgt = id => ({ className: 'kx-target' + (errOf(id) ? ' kx-target--error' : ''), 'data-error': errOf(id) || undefined });
   const jumpToFirst = () => {
-    if (todo.length) { goTo(todo[0].missing[0]); return; }
+    setAttempted(true);
+    if (meetMissing.length) { goTo({ go: /date/i.test(meetMissing[0]) ? '#kx-date' : '#kx-attendees' }); return; }
+    const first = todo.length ? todo[0].missing[0] : null;
+    if (first && first.go.startsWith('tab:')) { jump(todo[0].key); return; }
+    if (first) { goTo(first); return; }
     setError(meetMissing.join(' ') || 'Add a kick-off milestone on the Planning tab.');
   };
 
@@ -170,11 +181,11 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
             <div className="kx-progress" aria-hidden="true">{list.map(x => <span key={x.key} className={'kx-seg' + (x.missing.length ? '' : ' kx-seg--ok')} title={x.title} />)}</div>
             {!row && <InlineMessage kind="warning">This plan has no kick-off milestone. Add one on the Planning tab (for example &ldquo;Kick-off Complete&rdquo;).</InlineMessage>}
             <Pair>
-              <FormField id="kx-date" label="Date held"><DateField id="kx-date" value={meet.heldOn} onChange={e => setMeet(m => ({ ...m, heldOn: e.target.value }))} width="100%" /></FormField>
+              <FormField id="kx-date" label="Date held" {...rq('kx-date')}><DateField id="kx-date" value={meet.heldOn} onChange={e => setMeet(m => ({ ...m, heldOn: e.target.value }))} width="100%" /></FormField>
               <FormField id="kx-others" label="Others who attended"><TextField id="kx-others" value={meet.others} onChange={e => setMeet(m => ({ ...m, others: e.target.value }))} placeholder="Medical writer, sponsor team…" width="100%" /></FormField>
             </Pair>
-            <div className="pfx-field">
-              <span className="pfx-label">Authors who attended</span>
+            <div id="kx-attendees" {...tgt('kx-attendees')}>
+              <span className="pfx-label">Authors who attended<span className="pfx-required" aria-hidden="true"> *</span></span>
               {authors.length ? (
                 <div className="kx-checks">{authors.map(x => <Checkbox key={x.group + x.person} checked={meet.attendees.includes(x.person)} onChange={() => toggleAtt(x.person)} label={x.person} />)}</div>
               ) : <div className="pfx-meta">Add the authors on the Authors tab.</div>}
@@ -185,24 +196,12 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
             <div className="kx-record">
               <span className="pfx-meta">
                 {canRecord ? 'Everything the kick-off has to settle is in place.'
-                  : ready < list.length ? (list.length - ready) + ' of ' + list.length + ' sections still need work before the kick-off can be recorded.'
+                  : ready < list.length ? 'Fields marked * are required. ' + (list.length - ready) + ' of ' + list.length + ' sections to go.'
                     : meetMissing.join(' ')}
               </span>
-              {/* Clickable even when not ready: it takes them to the first thing still missing. */}
+              {/* Clickable even when not ready: it flags the empty required fields and takes them to the first. */}
               <Button variant="primary" icon="event_available" onClick={canRecord ? recordKickoff : jumpToFirst} disabled={busy || saving}>{busy ? 'Saving…' : 'Record Kick-off'}</Button>
             </div>
-            {!canRecord && todo.length > 0 && (
-              <div className="kx-todo" role="list" aria-label="Still to do before recording the kick-off">
-                {todo.map(x => (
-                  <button key={x.key} type="button" role="listitem" className="kx-todo-line" onClick={() => jump(x.key)}>
-                    <span className="kx-num">{x.n}</span>
-                    <span className="kx-todo-title">{x.title}</span>
-                    <span className="kx-faint">{x.missing.length} to do</span>
-                    <Icon name="chevron_right" size={18} color="var(--fg-3)" />
-                  </button>
-                ))}
-              </div>
-            )}
           </>
         )}
       </Card>
@@ -221,7 +220,7 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
           })}
         </div>
         <div className="kx-actions">
-          <span id="kx-f-order" className="kx-target"><Checkbox checked={!!prep.orderConfirmed} onChange={() => setPrep({ orderConfirmed: !prep.orderConfirmed })} label="Author order agreed (first and senior author as shown)" /></span>
+          <span id="kx-f-order" {...tgt('kx-f-order')}><Checkbox checked={!!prep.orderConfirmed} onChange={() => setPrep({ orderConfirmed: !prep.orderConfirmed })} label="Author order agreed (first and senior author as shown) *" /></span>
           {creditFlags(st, authors.map(x => x.person)).length > 0 && <span className="kx-faint">CRediT flags to review: {creditFlags(st, authors.map(x => x.person)).join(' ')}</span>}
           <button type="button" className="yr-link" onClick={() => go('authors')}>Order, roles and invitations are on the Authors tab</button>
         </div>
@@ -241,20 +240,21 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
           })}
         </div>
         <div className="kx-actions">
-          <span id="kx-f-coi" className="kx-target"><Checkbox checked={!!prep.coiReviewed} onChange={() => setPrep({ coiReviewed: !prep.coiReviewed })} label="COI status reviewed; anyone flagged updates before submission" /></span>
+          <span id="kx-f-coi" {...tgt('kx-f-coi')}><Checkbox checked={!!prep.coiReviewed} onChange={() => setPrep({ coiReviewed: !prep.coiReviewed })} label="COI status reviewed; anyone flagged updates before submission *" /></span>
         </div>
         <Pair>
-          <FormField id="kx-tov" label="Does any external author receive support (writing, travel, honoraria)?">
+          <FormField id="kx-tov" label="Does any external author receive support (writing, travel, honoraria)?" {...rq('kx-tov')}>
             <Select id="kx-tov" options={[{ value: '', label: 'Choose' }, { value: 'no', label: 'No' }, { value: 'yes', label: 'Yes' }]} value={prep.transferOfValue || ''} onChange={e => setPrep({ transferOfValue: e.target.value })} width="100%" />
           </FormField>
           {prep.transferOfValue === 'yes' ? (
-            <FormField id="kx-tov-note" label="What support, for whom"><TextField id="kx-tov-note" value={prep.tovNote || ''} onChange={e => setPrep({ tovNote: e.target.value })} placeholder="Travel and registration for the presenter" width="100%" /></FormField>
+            <FormField id="kx-tov-note" label="What support, for whom" {...rq('kx-tov-note')}><TextField id="kx-tov-note" value={prep.tovNote || ''} onChange={e => setPrep({ tovNote: e.target.value })} placeholder="Travel and registration for the presenter" width="100%" /></FormField>
           ) : <div />}
         </Pair>
       </Section>
 
       <Section onGo={goTo} n={3} item={sec('messages')} help="Two to four statements of what this publication will say, each tied to an endpoint or analysis.">
-        <div id="kx-f-msgs" className="kx-target">
+        <div id="kx-f-msgs" {...tgt('kx-f-msgs')}>
+        <span className="pfx-label">Key messages (two to four, each with its endpoint)<span className="pfx-required" aria-hidden="true"> *</span></span>
         {msgs.map((m, i) => (
           <div key={m.id} className="kx-msg">
             <span className="kx-msg-n">{i + 1}</span>
@@ -269,11 +269,11 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
 
       <Section onGo={goTo} n={4} item={sec('data')} help="Which data cut and analyses, which tables and figures, and who produces them.">
         <Pair>
-          <FormField id="kx-cut" label="Data cut"><TextField id="kx-cut" value={scope.cut || ''} onChange={e => setIn('dataScope', { cut: e.target.value })} placeholder="Week 52 database lock, 3/14/2026" width="100%" /></FormField>
-          <FormField id="kx-final" label={abstract ? 'Data final and approved by' : 'Data final and approved by (optional)'}><DateField id="kx-final" value={scope.finalBy || ''} onChange={e => setIn('dataScope', { finalBy: e.target.value })} width="100%" /></FormField>
+          <FormField id="kx-cut" label="Data cut" {...rq('kx-cut')}><TextField id="kx-cut" value={scope.cut || ''} onChange={e => setIn('dataScope', { cut: e.target.value })} placeholder="Week 52 database lock, 3/14/2026" width="100%" /></FormField>
+          <FormField id="kx-final" label="Data final and approved by" {...rq('kx-final', abstract)}><DateField id="kx-final" value={scope.finalBy || ''} onChange={e => setIn('dataScope', { finalBy: e.target.value })} width="100%" /></FormField>
         </Pair>
-        <div className="pfx-field" id="kx-f-analyses">
-          <span className="pfx-label">Analyses</span>
+        <div id="kx-f-analyses" {...tgt('kx-f-analyses')}>
+          <span className="pfx-label">Analyses, each labelled<span className="pfx-required" aria-hidden="true"> *</span></span>
           {(scope.analyses || []).map(x => (
             <div key={x.id} className="kx-line">
               <TextField value={x.name || ''} onChange={e => scopeOps('analyses').patch(x.id, { name: e.target.value })} placeholder="Change from baseline in SAQ summary score" width="100%" aria-label="Analysis" />
@@ -283,8 +283,8 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
           ))}
           <Button variant="tertiary" icon="add" onClick={scopeOps('analyses').add}>Add Analysis</Button>
         </div>
-        <div className="pfx-field" id="kx-f-outputs">
-          <span className="pfx-label">Tables and figures</span>
+        <div id="kx-f-outputs" {...tgt('kx-f-outputs')}>
+          <span className="pfx-label">Tables and figures, each with an owner<span className="pfx-required" aria-hidden="true"> *</span></span>
           {(scope.outputs || []).map(x => (
             <div key={x.id} className="kx-line">
               <TextField value={x.name || ''} onChange={e => scopeOps('outputs').patch(x.id, { name: e.target.value })} placeholder="Table 1: baseline characteristics" width="100%" aria-label="Table or figure" />
@@ -304,19 +304,21 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
         <div className="kx-actions"><button type="button" className="yr-link" onClick={() => go('details')}>Targets are set on the Target tab</button></div>
         {abstract && (
           <Pair>
-            <FormField id="kx-cat" label="Abstract category"><TextField id="kx-cat" value={venue.category || ''} onChange={e => setIn('venuePlan', { category: e.target.value })} placeholder="Clinical research: cardiology" width="100%" /></FormField>
-            <FormField id="kx-pres" label="Presentation preference">
+            <FormField id="kx-cat" label="Abstract category" {...rq('kx-cat')}><TextField id="kx-cat" value={venue.category || ''} onChange={e => setIn('venuePlan', { category: e.target.value })} placeholder="Clinical research: cardiology" width="100%" /></FormField>
+            <FormField id="kx-pres" label="Presentation preference" {...rq('kx-pres')}>
               <Select id="kx-pres" options={[{ value: '', label: 'Choose' }].concat(PRESENTATION_PREFS.map(p => ({ value: p, label: p })))} value={venue.presentation || ''} onChange={e => setIn('venuePlan', { presentation: e.target.value })} width="100%" />
             </FormField>
           </Pair>
         )}
-        <FormField id="kx-format" label={abstract ? 'Limits and embargo rules' : 'Format: word count, reporting guideline, open access'}>
+        <FormField id="kx-format" label={abstract ? 'Limits and embargo rules' : 'Format: word count, reporting guideline, open access'} {...rq('kx-format')}>
           <TextArea id="kx-format" value={venue.format || ''} onChange={e => setIn('venuePlan', { format: e.target.value })} placeholder={abstract ? '300 words, 2,500 characters; embargo until presentation time' : '3,500 words; CONSORT; open access required by the sponsor'} width="100%" height="52px" />
         </FormField>
       </Section>
 
       <Section onGo={goTo} n={6} item={sec('timeline')} help="Every step after the kick-off, with its date and a named person (not a function). Dates are set on the Planning tab.">
-        <div className="kx-table kx-target" id="kx-f-timeline">
+        <span className="pfx-label">Owner of each step<span className="pfx-required" aria-hidden="true"> *</span></span>
+        <div id="kx-f-timeline" {...tgt('kx-f-timeline')}>
+        <div className="kx-table">
           {tl.map(r => (
             <div key={r.id} className="kx-row kx-row--tl">
               <span className="kx-cell kx-strong">{r.name}</span>
@@ -324,6 +326,7 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
               <Select options={personOpts(r.owner)} value={r.owner || ''} onChange={e => { const v = e.target.value; set(s => ({ rows: s.rows.map(x => (x.id === r.id ? { ...x, owner: v } : x)) })); }} width="100%" aria-label={'Owner of ' + r.name} />
             </div>
           ))}
+        </div>
         </div>
         <div className="kx-actions">
           <span className="kx-inline">
@@ -336,18 +339,18 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
 
       <Section onGo={goTo} n={7} item={sec('roles')} help="The medical writer and how writing support is acknowledged, the corresponding author, how authors review, and the turnaround per round.">
         <Pair>
-          <FormField id="kx-writer" label="Medical writer">
+          <FormField id="kx-writer" label="Medical writer" {...rq('kx-writer')}>
             <Select id="kx-writer" options={personOpts(log.writer === NO_WRITER ? '' : log.writer, [{ value: NO_WRITER, label: NO_WRITER }])} value={log.writer || ''} onChange={e => setIn('logistics', { writer: e.target.value })} width="100%" />
           </FormField>
-          <FormField id="kx-ack" label="How writing support is acknowledged">
+          <FormField id="kx-ack" label="How writing support is acknowledged" {...rq('kx-ack', log.writer !== NO_WRITER)}>
             <TextField id="kx-ack" value={log.writingAck || ''} onChange={e => setIn('logistics', { writingAck: e.target.value })} placeholder="Medical writing support funded by the sponsor, per GPP" width="100%" disabled={log.writer === NO_WRITER} />
           </FormField>
         </Pair>
         <Pair>
-          <FormField id="kx-method" label="How authors will review">
+          <FormField id="kx-method" label="How authors will review" {...rq('kx-method')}>
             <Select id="kx-method" options={[{ value: '', label: 'Choose' }].concat(REVIEW_METHOD_OPTIONS.map(m => ({ value: m, label: m })))} value={log.reviewMethod || ''} onChange={e => setIn('logistics', { reviewMethod: e.target.value })} width="100%" />
           </FormField>
-          <FormField id="kx-turn" label="Turnaround per review round (days)">
+          <FormField id="kx-turn" label="Turnaround per review round (days)" {...rq('kx-turn')}>
             <TextField id="kx-turn" type="number" value={log.turnaroundDays || ''} onChange={e => setIn('logistics', { turnaroundDays: e.target.value })} placeholder="10" width="100%" />
           </FormField>
         </Pair>
@@ -357,7 +360,7 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
       </Section>
 
       <Section onGo={goTo} n={8} item={sec('decisions')} help="Anything unresolved (a disputed analysis, an unconfirmed author, a pending data release) gets an owner and a date. The log stays with the publication.">
-        <div id="kx-f-decisions" className="kx-target">
+        <div id="kx-f-decisions" {...tgt('kx-f-decisions')}>
         {(st.decisions || []).map(x => (
           <div key={x.id} className="kx-line kx-line--log">
             <TextField value={x.item || ''} onChange={e => listOps('decisions').patch(x.id, { item: e.target.value })} placeholder="Confirm whether the post hoc subgroup is in scope" width="100%" aria-label="Issue or decision" />

@@ -59,3 +59,12 @@
 .kx-todo-line:first-child { border-top: 0; }
 .kx-todo-line:hover { background: #FFFBEB; }
 .kx-todo-title { flex: 1; font-weight: 600; font-size: 13px; }
+
+/* Required groups left empty (after trying to record) */
+.kx-target--error { display: block; padding: 8px 10px; border-radius: 8px; box-shadow: 0 0 0 1px var(--fatal-text); }
+.kx-target--error::after { content: attr(data-error); display: block; margin-top: 6px; font-size: 12px; font-weight: 600; color: var(--fatal-text); }
+#kx-f-msgs, #kx-f-analyses, #kx-f-outputs, #kx-f-timeline, #kx-f-decisions { display: flex; flex-direction: column; gap: 6px; }
+/* Items fixed on another tab: a quiet note at the bottom of the section */
+.kx-elsewhere { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--fg-3); }
+.kx-elsewhere li { display: flex; align-items: flex-start; gap: 6px; }
+.kx-elsewhere .kx-fix { text-decoration-color: rgba(0, 0, 0, .25); }

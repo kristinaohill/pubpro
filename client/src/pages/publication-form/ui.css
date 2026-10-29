@@ -231,3 +231,8 @@ button.pfx-fact:focus-visible { outline: 2px solid var(--high-emphasis); outline
 
 /* A tab's top-level column (TabHead, then Cards) when a tab needs one wrapper element. */
 .pfx-stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Required field left empty, shown after a failed save or record */
+.pfx-error { font-size: 12px; font-weight: 600; color: var(--fatal-text); }
+/* Text and date fields draw their border on a wrapper around the input */
+.pfx-field--error div:has(> input), .pfx-field--error select, .pfx-field--error textarea { border-color: var(--fatal-text) !important; box-shadow: 0 0 0 1px var(--fatal-text); }
