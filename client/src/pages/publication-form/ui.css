@@ -90,7 +90,8 @@
 .pfx-shell { width: 95%; margin: 0 auto; padding: 20px 0 28px; display: flex; flex-direction: column; gap: 20px; }
 .pfx-body {
   display: grid;
-  grid-template-columns: 232px minmax(520px, var(--pfx-form-w)) minmax(260px, 320px);
+  /* The middle column takes the rest, so the body spans the same width as the record header. */
+  grid-template-columns: 232px minmax(520px, 1fr) 320px;
   gap: 20px;
   align-items: start;
 }
