@@ -27,3 +27,12 @@
 .kx-line { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
 .kx-line--log { flex-wrap: wrap; }
 @media (max-width: 900px) { .kx-row, .kx-row--tl { grid-template-columns: 1fr; } .kx-msg { grid-template-columns: 24px minmax(0, 1fr) 30px; } .kx-msg > :nth-child(3) { grid-column: 2; } }
+
+.kx-anchor { scroll-margin-top: 90px; }
+.kx-todo { display: flex; flex-direction: column; border: 1px solid #F0DB8C; border-radius: 8px; background: #FFFCEF; overflow: hidden; margin-top: 4px; }
+.kx-todo-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 0; border-top: 1px solid #F3E6B3; background: transparent; text-align: left; font: inherit; cursor: pointer; }
+.kx-todo-item:first-child { border-top: 0; }
+.kx-todo-item:hover { background: #FFF6D6; }
+.kx-todo-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; font-size: 13px; }
+@keyframes kx-flash { 0% { box-shadow: 0 0 0 3px var(--nav); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.kx-flash > .pfx-card { animation: kx-flash 1.6s ease-out; border-radius: 12px; }

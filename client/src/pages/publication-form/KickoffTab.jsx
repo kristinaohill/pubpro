@@ -24,6 +24,7 @@ const daysSince = mdy => { const d = new Date(mdy); return isNaN(d) ? null : Mat
 function Section({ n, item, children, help }) {
   const ready = item.missing.length === 0;
   return (
+    <div id={'kx-' + item.key} className="kx-anchor">
     <Card
       title={<span className="kx-title"><span className={'kx-num' + (ready ? ' kx-num--ok' : '')}>{ready ? <Icon name="check" size={14} /> : n}</span>{item.title}</span>}
       actions={<Pill tone={ready ? 'active' : 'hold'}>{ready ? 'Ready' : item.missing.length + ' to do'}</Pill>}
@@ -36,6 +37,7 @@ function Section({ n, item, children, help }) {
         </ul>
       )}
     </Card>
+    </div>
   );
 }
 
@@ -63,6 +65,16 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
   const sec = key => list.find(x => x.key === key);
   const meetMissing = meetingMissing(meet);
   const canRecord = !done && !!row && ready === list.length && !meetMissing.length;
+  // What's still missing, in order, so the button and the list can take them straight to it.
+  const todo = list.map((x, i) => ({ ...x, n: i + 1 })).filter(x => x.missing.length);
+  const jump = key => {
+    const el = document.getElementById('kx-' + key);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.classList.remove('kx-flash'); void el.offsetWidth; el.classList.add('kx-flash'); }
+  };
+  const jumpToFirst = () => {
+    if (todo.length) { jump(todo[0].key); return; }
+    setError(meetMissing.join(' ') || 'Add a kick-off milestone on the Planning tab.');
+  };
 
   const prep = st.kickoffPrep || {};
   const setPrep = p => set(s => ({ kickoffPrep: { ...(s.kickoffPrep || {}), ...p } }));
@@ -148,11 +160,23 @@ export default function KickoffTab({ st, set, commit, saving, userName, record, 
             <div className="kx-record">
               <span className="pfx-meta">
                 {canRecord ? 'Everything the kick-off has to settle is in place.'
-                  : ready < list.length ? (list.length - ready) + ' section' + (list.length - ready === 1 ? '' : 's') + ' below still need work.'
+                  : ready < list.length ? (list.length - ready) + ' of ' + list.length + ' sections still need work before the kick-off can be recorded.'
                     : meetMissing.join(' ')}
               </span>
-              <Button variant="primary" icon="event_available" onClick={recordKickoff} disabled={!canRecord || busy || saving}>{busy ? 'Saving…' : 'Record Kick-off'}</Button>
+              {/* Clickable even when not ready: it takes them to the first thing still missing. */}
+              <Button variant="primary" icon="event_available" onClick={canRecord ? recordKickoff : jumpToFirst} disabled={busy || saving}>{busy ? 'Saving…' : 'Record Kick-off'}</Button>
             </div>
+            {!canRecord && todo.length > 0 && (
+              <div className="kx-todo" role="list" aria-label="Still to do before recording the kick-off">
+                {todo.map(x => (
+                  <button key={x.key} type="button" role="listitem" className="kx-todo-item" onClick={() => jump(x.key)}>
+                    <span className="kx-num">{x.n}</span>
+                    <span className="kx-todo-text"><span className="kx-strong">{x.title}</span><span className="kx-faint">{x.missing[0]}{x.missing.length > 1 ? ' (+' + (x.missing.length - 1) + ' more)' : ''}</span></span>
+                    <Icon name="arrow_downward" size={16} color="var(--nav)" />
+                  </button>
+                ))}
+              </div>
+            )}
           </>
         )}
       </Card>
