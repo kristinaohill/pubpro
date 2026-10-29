@@ -26,7 +26,10 @@ export const timelineRows = st => {
 };
 const isCongress = name => { const c = CONFERENCE_DIRECTORY.find(x => x.name === name); return c ? c.kind !== 'Journal' : false; };
 
-/** The eight sections, each { key, title, missing: [text] }. Ready when every missing list is empty. */
+/**
+ * The eight sections, each { key, title, missing: [{ text, cta, go }] }. go is where the fix is:
+ * '#field-id' (a field on the Kick-off tab) or 'tab:<id>' (another tab). Ready when nothing's missing.
+ */
 export function kickoffChecklist(st) {
   const prep = st.kickoffPrep || {};
   const authors = bylineAuthors(st);
@@ -36,67 +39,69 @@ export function kickoffChecklist(st) {
   const venue = st.venuePlan || {};
   const log = st.logistics || {};
   const targets = st.targets || [];
+  const it = (text, cta, go) => ({ text, cta, go });
   const out = [];
 
   const a = [];
-  if (!authors.length) a.push('Add the authors on the Authors tab.');
+  if (!authors.length) a.push(it('No authors on the byline yet.', 'Add authors', 'tab:authors'));
   const unsigned = authors.filter(x => !(x.a.criteria && x.a.criteria.at)).map(x => x.person);
-  if (unsigned.length) a.push('Signed authorship agreement (ICMJE criteria) from ' + unsigned.join(', ') + '.');
-  if (!prep.orderConfirmed) a.push('Confirm the author order (at least first and senior author).');
-  creditMissing(st, authors.map(x => x.person)).forEach(m => a.push(m));
+  if (unsigned.length) a.push(it('Waiting on signed authorship agreements from ' + unsigned.join(', ') + '. They sign from their invitation.', 'Open Authors tab', 'tab:authors'));
+  if (!prep.orderConfirmed) a.push(it('Confirm the author order agreed at the meeting.', 'Confirm order', '#kx-f-order'));
+  const noRole = authors.filter(x => !contributionsOf(st, x.person).length).map(x => x.person);
+  if (noRole.length) a.push(it('Tick the CRediT roles for ' + noRole.join(', ') + '.', 'Tick roles on Authors tab', 'tab:authors'));
   out.push({ key: 'authorship', title: 'Authorship and criteria', missing: a });
 
   const d = [];
-  if (!prep.coiReviewed) d.push('Review every author’s COI disclosure status.');
-  if (!prep.transferOfValue) d.push('Say whether any external author receives support (writing, travel, honoraria).');
-  if (prep.transferOfValue === 'yes' && !filled(prep.tovNote)) d.push('Describe the support so it can be reported.');
+  if (!prep.coiReviewed) d.push(it('Confirm you reviewed every author’s COI status.', 'Confirm review', '#kx-f-coi'));
+  if (!prep.transferOfValue) d.push(it('Answer whether any external author gets support (writing, travel, honoraria).', 'Answer', '#kx-tov'));
+  if (prep.transferOfValue === 'yes' && !filled(prep.tovNote)) d.push(it('Describe the support so it can be reported.', 'Describe support', '#kx-tov-note'));
   out.push({ key: 'disclosure', title: 'Disclosures', missing: d });
 
   const k = [];
   const written = msgs.filter(m => filled(m.text));
-  if (written.length < 2) k.push('Write at least two key messages (two to four).');
-  if (written.length > 4) k.push('Keep it to four key messages at most.');
-  if (written.some(m => !filled(m.endpoint))) k.push('Tie each key message to an endpoint or analysis.');
+  if (written.length < 2) k.push(it(written.length ? 'Add at least one more key message (two to four).' : 'Write two to four key messages.', 'Add a key message', '#kx-f-msgs'));
+  if (written.length > 4) k.push(it('Keep it to four key messages at most.', 'Edit messages', '#kx-f-msgs'));
+  if (written.some(m => !filled(m.endpoint))) k.push(it('Tie each key message to an endpoint or analysis.', 'Add endpoints', '#kx-f-msgs'));
   out.push({ key: 'messages', title: 'Key messages', missing: k });
 
   const s = [];
-  if (!filled(scope.cut)) s.push('Name the data cut.');
-  if (!(scope.analyses || []).some(x => filled(x.name) && x.label)) s.push('List the analyses, labelled primary, secondary or post hoc.');
-  if ((scope.analyses || []).some(x => filled(x.name) && !x.label)) s.push('Label every analysis.');
-  if (!(scope.outputs || []).some(x => filled(x.name))) s.push('List the tables and figures in scope.');
-  if ((scope.outputs || []).some(x => filled(x.name) && !filled(x.owner))) s.push('Give every table and figure an owner.');
-  if (abstract && !parseDate(scope.finalBy)) s.push('Confirm the date the data will be final and approved.');
+  if (!filled(scope.cut)) s.push(it('Name the data cut.', 'Enter data cut', '#kx-cut'));
+  if (!(scope.analyses || []).some(x => filled(x.name) && x.label)) s.push(it('List the analyses, labelled primary, secondary or post hoc.', 'Add an analysis', '#kx-f-analyses'));
+  if ((scope.analyses || []).some(x => filled(x.name) && !x.label)) s.push(it('Label every analysis.', 'Label analyses', '#kx-f-analyses'));
+  if (!(scope.outputs || []).some(x => filled(x.name))) s.push(it('List the tables and figures in scope.', 'Add a table or figure', '#kx-f-outputs'));
+  if ((scope.outputs || []).some(x => filled(x.name) && !filled(x.owner))) s.push(it('Give every table and figure an owner.', 'Choose owners', '#kx-f-outputs'));
+  if (abstract && !parseDate(scope.finalBy)) s.push(it('Enter the date the data will be final and approved.', 'Enter date', '#kx-final'));
   out.push({ key: 'data', title: 'Data scope and source', missing: s });
 
   const v = [];
-  if (!targets[0]) v.push('Choose the target ' + (abstract ? 'congress' : 'journal') + ' on the Target tab.');
-  if (!abstract && !targets[1]) v.push('Add a fallback journal on the Target tab.');
-  if (!filled(venue.format)) v.push(abstract ? 'Note the word and character limits and embargo rules.' : 'Note the format: word count, reporting guideline (CONSORT, STROBE, PRISMA), open access.');
-  if (abstract && !filled(venue.category)) v.push('Note the abstract category.');
-  if (abstract && !venue.presentation) v.push('Choose the presentation preference (oral or poster).');
-  if (abstract && targets[0] && !isCongress(targets[0])) v.push('The target for an abstract should be a congress.');
+  if (!targets[0]) v.push(it('Choose the target ' + (abstract ? 'congress' : 'journal') + '.', 'Open Target tab', 'tab:details'));
+  if (!abstract && !targets[1]) v.push(it('Add a fallback journal.', 'Open Target tab', 'tab:details'));
+  if (abstract && targets[0] && !isCongress(targets[0])) v.push(it('The target for an abstract should be a congress.', 'Open Target tab', 'tab:details'));
+  if (!filled(venue.format)) v.push(it(abstract ? 'Note the word and character limits and embargo rules.' : 'Note the format: word count, reporting guideline (CONSORT, STROBE, PRISMA), open access.', 'Enter format notes', '#kx-format'));
+  if (abstract && !filled(venue.category)) v.push(it('Note the abstract category.', 'Enter category', '#kx-cat'));
+  if (abstract && !venue.presentation) v.push(it('Choose oral or poster.', 'Choose preference', '#kx-pres'));
   out.push({ key: 'venue', title: 'Target venue and fallback', missing: v });
 
   const t = [];
   const rows = timelineRows(st);
-  if (!rows.length) t.push('Set up the plan on the Planning tab.');
-  const unowned = rows.filter(r => !filled(r.owner)).map(r => r.name);
-  if (unowned.length) t.push('Name an owner (a person) for ' + unowned.join(', ') + '.');
+  if (!rows.length) t.push(it('Set up the plan.', 'Open Planning tab', 'tab:planning'));
+  const unowned = rows.filter(r => !filled(r.owner));
+  if (unowned.length) t.push(it('Choose an owner for ' + (unowned.length === 1 ? unowned[0].name : unowned.length + ' steps') + '.', 'Choose owners', '#kx-f-timeline'));
   const undated = rows.filter(r => !filled(r.end || r.start)).map(r => r.name);
-  if (undated.length) t.push('Date ' + undated.join(', ') + ' on the Planning tab.');
+  if (undated.length) t.push(it('Date ' + undated.join(', ') + '.', 'Open Planning tab', 'tab:planning'));
   out.push({ key: 'timeline', title: 'Timeline with owners', missing: t });
 
   const r = [];
-  if (!filled(log.writer)) r.push('Name the medical writer, or say there’s no writing support.');
-  if (filled(log.writer) && log.writer !== NO_WRITER && !filled(log.writingAck)) r.push('Say how writing support will be acknowledged.');
-  if (!filled(st.correspondingAuthor)) r.push('Choose the corresponding author (Authors tab).');
-  if (!filled(log.reviewMethod)) r.push('Agree how authors will review.');
-  if (!(Number(log.turnaroundDays) > 0)) r.push('Agree the turnaround per review round (days).');
+  if (!filled(log.writer)) r.push(it('Choose the medical writer, or no writing support.', 'Choose writer', '#kx-writer'));
+  if (filled(log.writer) && log.writer !== NO_WRITER && !filled(log.writingAck)) r.push(it('Say how writing support will be acknowledged.', 'Enter acknowledgment', '#kx-ack'));
+  if (!filled(st.correspondingAuthor)) r.push(it('Choose the corresponding author.', 'Open Authors tab', 'tab:authors'));
+  if (!filled(log.reviewMethod)) r.push(it('Choose how authors will review.', 'Choose method', '#kx-method'));
+  if (!(Number(log.turnaroundDays) > 0)) r.push(it('Enter the turnaround per review round, in days.', 'Enter days', '#kx-turn'));
   out.push({ key: 'roles', title: 'Roles and logistics', missing: r });
 
   const o = [];
   const bad = (st.decisions || []).filter(x => filled(x.item) && (!filled(x.owner) || !parseDate(x.due)));
-  if (bad.length) o.push('Give every open issue an owner and a date.');
+  if (bad.length) o.push(it('Give every open issue an owner and a date.', 'Complete issues', '#kx-f-decisions'));
   out.push({ key: 'decisions', title: 'Open issues and decisions', missing: o });
 
   return out;

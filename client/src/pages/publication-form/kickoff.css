@@ -36,3 +36,16 @@
 .kx-todo-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; font-size: 13px; }
 @keyframes kx-flash { 0% { box-shadow: 0 0 0 3px var(--nav); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .kx-flash > .pfx-card { animation: kx-flash 1.6s ease-out; border-radius: 12px; }
+
+.kx-missing li { align-items: center; }
+.kx-missing-text { flex: 1; min-width: 0; }
+.kx-todo-group { border-top: 1px solid #F3E6B3; padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+.kx-todo-group:first-child { border-top: 0; }
+.kx-todo-head { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; color: var(--nav); }
+.kx-todo .kx-todo-item { padding: 0 0 0 30px; border: 0; cursor: default; background: transparent; }
+.kx-todo .kx-todo-item:hover { background: transparent; }
+.kx-todo-item .kx-todo-text { flex: 1; font-size: 13px; color: var(--text-body); }
+.kx-target, .pfx-field { scroll-margin-top: 100px; }
+.kx-inline { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+@keyframes kx-flash-field { 0% { box-shadow: 0 0 0 3px var(--high-emphasis); background: #EEF4FB; } 100% { box-shadow: 0 0 0 0 transparent; background: transparent; } }
+.kx-flash-field { animation: kx-flash-field 1.8s ease-out; border-radius: 8px; }
