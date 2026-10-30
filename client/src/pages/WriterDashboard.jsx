@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button, DataTable, Pill, SegmentedToggle, StatCard } from '../ds/pubpro';
+import { Button, DataTable, Pill, SegmentedToggle, StatCard, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
 import TrendChart from '../components/TrendChart';
+import { matchesSearch, sortItems, useTableSort } from '../components/tableTools';
 import { CONFERENCE_DIRECTORY, TODAY_STR, toISO } from './publication-form/data';
 import { auditEntry, fromSavedData, openRoundOf, statusOf, summarize, titleOf, toSavedData } from './publication-form/state';
 import { AuthorBlockersPanel, CongressDeadlinesPanel, ReviewsPanel } from './WriterDashboardPanels';
@@ -88,12 +89,13 @@ function draftsAndDue(pubs, now = new Date()) {
   };
 }
 
+// sortKey: what a click on the header sorts by. Step Status sorts by responses still outstanding.
 const PUB_COLS = [
-  { header: 'Publication', width: 'minmax(220px,2fr)' },
-  { header: 'Current Step', width: 'minmax(150px,1.2fr)' },
-  { header: 'Step Due', width: '130px' },
-  { header: 'Step Status', width: 'minmax(140px,1fr)' },
-  { header: 'Next Step', width: 'minmax(140px,1fr)' },
+  { header: 'Publication', width: 'minmax(220px,2fr)', sortable: true, sortKey: x => x.p.id },
+  { header: 'Current Step', width: 'minmax(150px,1.2fr)', sortable: true, sortKey: x => x.cur.name },
+  { header: 'Step Due', width: '130px', sortable: true, sortKey: x => x.due },
+  { header: 'Step Status', width: 'minmax(140px,1fr)', sortable: true, sortKey: x => x.outstanding.length },
+  { header: 'Next Step', width: 'minmax(140px,1fr)', sortable: true, sortKey: x => (x.next ? x.next.d : '') },
   { header: '', width: '28px' },
 ];
 const ROW_TEMPLATE = PUB_COLS.map(c => c.width).join(' ');
@@ -272,6 +274,8 @@ export default function WriterDashboard() {
   };
 
   const [filter, setFilter] = useState('All');
+  const [search, setSearch] = useState('');
+  const sort = useTableSort();
 
 
   const model = saved.map(p => {
@@ -287,11 +291,16 @@ export default function WriterDashboard() {
     };
   });
 
-  const rows = model.filter(x =>
+  const filtered = model.filter(x =>
     filter === 'All' ||
     (filter === 'Due in 7 Days' && x.n >= 0 && x.n <= 7) ||
     (filter === 'Overdue' && x.n < 0) ||
     (filter === 'Waiting on Others' && x.outstanding.length > 0));
+  const matched = filtered.filter(x => matchesSearch(search, [
+    x.p.id, x.p.title, x.p.type, x.p.owner, x.cur.name, x.next && x.next.name,
+  ]));
+  const sortCol = PUB_COLS[sort.sortBy];
+  const rows = sortItems(matched, sortCol && sortCol.sortKey, sort.sortDir);
 
   const outstandingAll = model.flatMap(x => x.outstanding.map(m => ({ m, id: x.p.id })));
 
@@ -378,6 +387,14 @@ export default function WriterDashboard() {
             <Sym name="edit_note" className="wd-side-icon" />
             <h2 className="wd-side-title">{scope === 'all' ? 'All Publications' : 'My Publications'}</h2>
             <div className="wd-main-tools">
+              <TextField
+                iconBefore="search"
+                width={220}
+                placeholder="Search"
+                aria-label="Search publications"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
               <div className="wd-count">{rows.length} {rows.length === 1 ? 'publication' : 'publications'}</div>
               <SegmentedToggle options={FILTERS} value={filter} onChange={setFilter} />
             </div>
@@ -385,14 +402,15 @@ export default function WriterDashboard() {
 
           <div className="wd-table-scroll">
             <div className="wd-table-inner">
-              <DataTable columns={PUB_COLS} headerTone="knowledge">
+              <DataTable columns={PUB_COLS} headerTone="knowledge" {...sort}>
                 {rows.map(r => <PubRow key={r.p.id} r={r} showOwner={scope === 'all'} me={me} onOpen={() => openPublication(r.p)} />)}
               </DataTable>
             </div>
           </div>
           {rows.length === 0 && (
             <div className="empty-state">
-              {model.length ? `No publications match "${filter}".`
+              {filtered.length ? `No publications match "${search.trim()}".`
+                : model.length ? `No publications match "${filter}".`
                 : scope === 'mine' && othersCount > 0 ? <>You don&rsquo;t own any open publications. <button type="button" className="wd-link-btn" onClick={() => setScope('All Publications')}>Show all {othersCount} on your products</button>.</>
                   : 'No publications yet. Create one from Create New › Publication.'}
             </div>
