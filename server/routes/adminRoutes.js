@@ -75,8 +75,10 @@ const userOut = ({ therapeutic_areas, ooo_from, ooo_to, ooo_note, extra_roles, r
 const emailOk = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
 /** A readable one-time password the admin passes on; the user changes it from the account menu. */
+// No look-alikes (0/O, 1/l/I), so it can be read out or typed by hand.
+const TEMP_CHARS = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const tempPassword = () => {
-  const words = crypto.randomBytes(9).toString('base64').replace(/[+/=]/g, '').slice(0, 10);
+  const words = Array.from(crypto.randomBytes(10), b => TEMP_CHARS[b % TEMP_CHARS.length]).join('');
   return words.slice(0, 5) + '-' + words.slice(5);
 };
 
@@ -252,9 +254,12 @@ router.put('/review-types', (req, res) => {
 router.post('/users/:id/reset-password', (req, res) => {
   const u = db.prepare('SELECT id FROM users WHERE id = ?').get(req.params.id);
   if (!u) return res.status(404).json({ error: 'User not found.' });
-  const password = tempPassword();
+  // The admin can type the new password; left blank, they get a temporary one to pass on.
+  const chosen = req.body.password == null ? '' : String(req.body.password);
+  if (chosen && chosen.length < 8) return res.status(400).json({ error: 'Use at least 8 characters for the password.' });
+  const password = chosen || tempPassword();
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(password, 10), u.id);
-  res.json({ tempPassword: password });
+  res.json(chosen ? { chosen: true } : { tempPassword: password });
 });
 
 const rolesPayload = () => ({

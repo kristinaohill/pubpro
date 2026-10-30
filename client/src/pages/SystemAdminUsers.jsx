@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Checkbox, ConfirmModal, Field, Icon, InlineMessage, Pill, Select, TextArea, TextField } from '../ds/pubpro';
 import { api } from '../api';
@@ -23,7 +23,7 @@ const LEVEL_HELP = {
   pub_manager: 'Runs publications and plans for the products you choose below.',
   reviewer: 'Reviews publications for the products you choose below.',
 };
-const copy = text => { try { navigator.clipboard.writeText(text); } catch (e) { /* ignore */ } };
+const copy = async text => { try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; } };
 
 const draftOf = u => ({
   name: u.name || '', email: u.email || '', roles: u.roles || (u.role ? [u.role] : ['pub_manager']), productRoles: { ...(u.productRoles || {}) },
@@ -194,6 +194,14 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
   const [busy, setBusy] = useState(false);
   const [secret, setSecret] = useState(null); // { name, email, password, reset }
   const [confirm, setConfirm] = useState(null); // { kind: 'deactivate' | 'reset', user }
+  const [newPassword, setNewPassword] = useState('');
+  const [copied, setCopied] = useState(null); // true | false (couldn't copy) | null
+  const secretRef = useRef(null);
+  // The banner sits at the top of the list: bring it into view, wherever the reset was clicked.
+  useEffect(() => {
+    setCopied(null);
+    if (secret && secretRef.current) secretRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [secret]);
 
   const opts = options || { therapeuticAreas: [], departments: [] };
   const roleOptions = roles.filter(r => r.key !== 'author' && r.key !== 'library').map(r => ({ value: r.key, label: r.name }));
@@ -249,14 +257,18 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
 
   const runConfirm = async () => {
     const { kind, user: u } = confirm;
-    setConfirm(null);
     if (kind === 'deactivate') {
+      setConfirm(null);
       run(() => api.put('/admin/users/' + u.id, { active: false }), s => s.name + ' is deactivated and can no longer sign in.');
       setEditing(null);
     } else {
+      if (newPassword && newPassword.length < 8) return; // the field says why
+      setConfirm(null);
+      const password = newPassword;
+      setNewPassword('');
       run(async () => {
-        const r = await api.post('/admin/users/' + u.id + '/reset-password', {});
-        setSecret({ name: u.name, email: u.email, password: r.tempPassword, reset: true });
+        const r = await api.post('/admin/users/' + u.id + '/reset-password', password ? { password } : {});
+        setSecret({ name: u.name, email: u.email, password: r.tempPassword, reset: true, chosen: !!r.chosen });
         return null;
       }, '');
     }
@@ -265,19 +277,31 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
   return (
     <>
       {secret && (
-        <div className="sa-secret" role="status">
+        <div className="sa-secret" role="status" ref={secretRef}>
           <Icon name="key" size={20} color="var(--nav)" />
-          <div className="sa-secret-text">
-            <div>
-              {secret.reset ? 'New temporary password for ' : 'Temporary password for '}<strong>{secret.name}</strong> ({secret.email}):{' '}
-              <code className="sa-code">{secret.password}</code>
+          {secret.chosen ? (
+            <div className="sa-secret-text">
+              <div><strong>{secret.name}</strong>&rsquo;s password is changed to the one you entered. They sign in with {secret.email}.</div>
+              <div className="sa-faint">Share it with them privately. They can change it from the account menu (Change password).</div>
             </div>
-            <div className="sa-faint">
-              Share it with them privately. They sign in with it and set their own from the account menu (Change password).
-              It won&rsquo;t be shown again.
+          ) : (
+            <div className="sa-secret-text">
+              <div>
+                {secret.reset ? 'New temporary password for ' : 'Temporary password for '}<strong>{secret.name}</strong> ({secret.email}):{' '}
+                <code className="sa-code">{secret.password}</code>
+              </div>
+              <div className="sa-faint">
+                {copied === false ? 'Couldn’t copy it here. Select the password and copy it yourself. ' : ''}
+                Share it with them privately. They sign in with it and set their own from the account menu (Change password).
+                It won&rsquo;t be shown again.
+              </div>
             </div>
-          </div>
-          <Button variant="secondary" icon="content_copy" onClick={() => copy(secret.password)}>Copy</Button>
+          )}
+          {!secret.chosen && (
+            <Button variant="secondary" icon={copied ? 'check' : 'content_copy'} onClick={async () => setCopied(await copy(secret.password))}>
+              {copied ? 'Copied' : 'Copy'}
+            </Button>
+          )}
           <button type="button" className="sa-x" aria-label="Dismiss" onClick={() => setSecret(null)}><Icon name="close" size={18} /></button>
         </div>
       )}
@@ -417,10 +441,16 @@ export function UsersTab({ kind = 'internal', me, users, roles, options, onChang
           confirmLabel={confirm.kind === 'reset' ? 'Reset Password' : 'Deactivate'}
           cancelLabel="Keep"
           onConfirm={runConfirm}
-          onCancel={() => setConfirm(null)}
+          onCancel={() => { setConfirm(null); setNewPassword(''); }}
         >
-          {confirm.kind === 'reset' ? 'Their current password stops working. You’ll get a temporary one to pass on.'
-              : 'They’re signed out and can’t sign in until you reactivate them. Their name stays on records and audit trails.'}
+          {confirm.kind === 'reset' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>Their current password stops working.</div>
+              <Field label="New password" help={newPassword && newPassword.length < 8 ? 'Use at least 8 characters, or leave it blank.' : 'At least 8 characters. Leave it blank to get a temporary one to pass on.'}>
+                <TextField type="text" autoComplete="off" aria-label="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+              </Field>
+            </div>
+          ) : 'They’re signed out and can’t sign in until you reactivate them. Their name stays on records and audit trails.'}
         </ConfirmModal>
       )}
     </>

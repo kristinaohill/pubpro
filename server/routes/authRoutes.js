@@ -27,7 +27,7 @@ const sessionOf = u => ({ ...claimsOf(u), roles: rolesOf(u), role_name: roleName
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const user = db.prepare('SELECT * FROM users WHERE lower(email) = ?').get(String(email).trim().toLowerCase());
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
