@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill } from '../ds/pubpro';
+import { Button, Checkbox, ConfirmModal, DataTable, IconButton, InlineMessage, Pill, TextField } from '../ds/pubpro';
 import { api } from '../api';
 import { useAuth } from '../AuthContext';
 import PageHeader from '../components/PageHeader';
 import ScopeFocusBar, { useScopeFocus } from '../components/ScopeFocus';
 import Flash from '../components/Flash';
+import { matchesSearch, sortItems, useTableSort } from '../components/tableTools';
 import './Publications.css';
 
+// sortKey: what a click on the header sorts by.
 const COLUMNS = [
-  { header: 'Publication ID', width: 'minmax(150px,1.1fr)' },
-  { header: 'Title', width: 'minmax(200px,2.4fr)' },
-  { header: 'Type', width: 'minmax(90px,.8fr)' },
-  { header: 'Product', width: 'minmax(140px,1.2fr)' },
-  { header: 'Current Step', width: 'minmax(140px,1.2fr)' },
-  { header: 'Step Due', width: '130px' },
-  { header: 'Status', width: '104px' },
-  { header: 'Last Updated', width: '100px' },
+  { header: 'Publication ID', width: 'minmax(150px,1.1fr)', sortable: true, sortKey: p => p.record_id },
+  { header: 'Title', width: 'minmax(200px,2.4fr)', sortable: true, sortKey: p => p.title },
+  { header: 'Type', width: 'minmax(90px,.8fr)', sortable: true, sortKey: p => p.pub_type },
+  { header: 'Product', width: 'minmax(140px,1.2fr)', sortable: true, sortKey: p => p.product },
+  { header: 'Current Step', width: 'minmax(140px,1.2fr)', sortable: true, sortKey: p => (p.summary || {}).stepName },
+  { header: 'Step Due', width: '130px', sortable: true, sortKey: p => (p.status === 'Cancelled' ? '' : (p.summary || {}).due) },
+  { header: 'Status', width: '104px', sortable: true, sortKey: p => p.status },
+  { header: 'Last Updated', width: '120px', sortable: true, sortKey: p => p.updated_at },
   { header: '', width: '40px' },
 ];
 
@@ -61,6 +63,8 @@ export default function Publications() {
   const [notice, setNotice] = useState('');
   const [showCancelled, setShowCancelled] = useState(true);
   const [toDelete, setToDelete] = useState(null);
+  const [search, setSearch] = useState('');
+  const sort = useTableSort();
 
   const load = () => api.get('/pp-publications').then(setPubs).catch(err => setError(err.message));
   useEffect(() => { load(); }, []);
@@ -77,7 +81,12 @@ export default function Publications() {
     }
   };
 
-  const visible = (pubs || []).filter(p => showCancelled || p.status !== 'Cancelled');
+  const shown = (pubs || []).filter(p => showCancelled || p.status !== 'Cancelled');
+  const matched = shown.filter(p => matchesSearch(search, [
+    p.record_id, p.title, p.pub_type, p.product, (p.summary || {}).stepName, p.status, p.owner,
+  ]));
+  const sortCol = COLUMNS[sort.sortBy];
+  const visible = sortItems(matched, sortCol && sortCol.sortKey, sort.sortDir);
   const cancelledCount = (pubs || []).filter(p => p.status === 'Cancelled').length;
 
   const rows = visible.map(p => {
@@ -111,6 +120,14 @@ export default function Publications() {
         description={pubs ? `${pubs.length} saved ${pubs.length === 1 ? 'publication' : 'publications'}` : 'Saved publication records'}
         actions={(
           <>
+            <TextField
+              iconBefore="search"
+              width={260}
+              placeholder="Search publications"
+              aria-label="Search publications"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
             {cancelledCount > 0 && (
               <Checkbox checked={showCancelled} onChange={() => setShowCancelled(v => !v)} label={`Show cancelled (${cancelledCount})`} />
             )}
@@ -126,14 +143,18 @@ export default function Publications() {
 
       <div className="pl-card">
         {pubs === null && !error && <div className="empty-state">Loading…</div>}
-        {pubs && visible.length === 0 && (
+        {pubs && shown.length === 0 && (
           <div className="empty-state">No publications yet. Use Create New Publication to add the first one.</div>
+        )}
+        {shown.length > 0 && visible.length === 0 && (
+          <div className="empty-state">No publications match &ldquo;{search.trim()}&rdquo;.</div>
         )}
         {visible.length > 0 && (
           <DataTable
             columns={COLUMNS}
             rows={rows}
             headerTone="knowledge"
+            {...sort}
             onRowClick={r => navigate('/publication/' + r.id)}
           />
         )}

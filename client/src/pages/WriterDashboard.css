@@ -62,7 +62,7 @@
 .wd-badge { width: 26px; height: 26px; border-radius: 5px; background: var(--nav); display: flex; align-items: center; justify-content: center; flex: none; }
 .wd-page .wd-badge-icon { font-size: 18px; color: var(--text-button); }
 .wd-main-title { font-size: 20px; font-weight: 700; color: var(--text-heading); }
-.wd-main-tools { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.wd-main-tools { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .wd-main .wd-table-scroll { flex: 1; }
 .wd-count { font-size: 13px; color: var(--fg-faint); }
 
