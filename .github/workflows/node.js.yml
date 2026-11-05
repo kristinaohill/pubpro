@@ -16,8 +16,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        # Same Node as package.json "engines" and Railway.
+        node-version: [24.x]
 
     steps:
     - uses: actions/checkout@v4
@@ -28,4 +28,4 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: npm run build --if-present
-    - run: npm test
+    # No test suite yet; add "npm test" here once package.json has a test script.
