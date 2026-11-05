@@ -120,7 +120,11 @@ export default function Layout() {
       {chrome && (
         <div className="layout-chrome">
           <div className="layout-topnav" ref={navRef}>
-            <TopNav key={navKey} items={chrome.nav} active={chrome.active} tenant={tenant} onNavigate={go} onMenuSelect={handleMenuSelect} />
+            {/* The DS TopNav has the BP Logix wordmark built in; Layout.css hides it and this Approvia logo takes its slot. */}
+            <button type="button" className="layout-brand" onClick={() => go('Home')} aria-label="Approvia home">
+              <img src="/brand/approvia-logo-white.svg" alt="Approvia" />
+            </button>
+            <TopNav key={navKey} items={chrome.nav} active={chrome.active} tenant={tenant} onNavigate={go} onMenuSelect={handleMenuSelect} style={{ paddingLeft: 'var(--layout-brand-slot)' }} />
             <AccountMenu userName={user && user.name} onLogout={handleLogout} showProfile={!isAuthor && !isLibrary} />
           </div>
           <div className="layout-wstabs" ref={tabsRef}>

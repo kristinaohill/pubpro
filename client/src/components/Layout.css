@@ -48,7 +48,28 @@
 .layout-topnav {
   position: relative;
   z-index: 20;
+  /* Room for the Approvia logo: TopNav's 22px edge padding + logo width + TopNav's 30px gap. */
+  --layout-brand-h: 30px;
+  --layout-brand-slot: calc(22px + var(--layout-brand-h) * 1049 / 303 + 30px);
 }
+
+/* Approvia replaces the BP Logix wordmark TopNav renders on its own. */
+.layout-topnav img[alt="BP Logix"] { display: none !important; } /* beats BrandMark's inline display */
+.layout-brand {
+  position: absolute;
+  z-index: 21;
+  left: 22px;
+  top: 0;
+  height: var(--topnav-h);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.layout-brand img { height: var(--layout-brand-h); width: auto; display: block; }
+.layout-brand:focus-visible { outline: 2px solid var(--white); outline-offset: 2px; border-radius: var(--radius-check); }
 
 /* Sign In As banner (System Administrator): always visible while impersonating. */
 .layout-imp {
