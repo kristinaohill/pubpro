@@ -133,6 +133,7 @@ export default function CoordinatorDashboard() {
   const [menu, setMenu] = useState(params.get('menu'));
   const [reviewOpen, setReviewOpen] = useState(true);
   const [showAll, setShowAll] = useState(false);
+  const [showAllQueue, setShowAllQueue] = useState(false);
 
   useEffect(() => {
     if (!menu) return undefined;
@@ -144,6 +145,8 @@ export default function CoordinatorDashboard() {
   const match = r => type === 'All' || r.type === type;
   const queue = useMemo(() => AWAITING.filter(match).sort(byDue), [type]);
   const review = useMemo(() => IN_REVIEW.filter(match).sort(byDue), [type]);
+  const QUEUE_SHOWN = 5; // keeps the dashboard on one screen; the rest sit behind "Show more"
+  const shownQueue = showAllQueue ? queue : queue.slice(0, QUEUE_SHOWN);
   const shownReview = showAll ? review : review.slice(0, 6);
 
   const weekEnd = new Date(TODAY); weekEnd.setDate(TODAY.getDate() + (7 - TODAY.getDay()) % 7);
@@ -181,7 +184,7 @@ export default function CoordinatorDashboard() {
           )}
         >
           <DataTable columns={QUEUE_COLS} headerTone="knowledge" style={{ overflow: 'visible' }}>
-            {queue.map(r => (
+            {shownQueue.map(r => (
               <QueueRow
                 key={r.id}
                 r={r}
@@ -191,6 +194,11 @@ export default function CoordinatorDashboard() {
                 onMenu={() => setMenu(m => (m === r.id ? null : r.id))}
               />
             ))}
+            {queue.length > QUEUE_SHOWN && (
+              <div className="rgm-more">
+                <button type="button" className="rgm-linkbtn" onClick={() => setShowAllQueue(v => !v)}>{showAllQueue ? 'Show fewer' : 'Show ' + (queue.length - QUEUE_SHOWN) + ' more'}</button>
+              </div>
+            )}
           </DataTable>
         </Panel>
 
