@@ -147,7 +147,8 @@ export default function CoordinatorDashboard() {
   const review = useMemo(() => IN_REVIEW.filter(match).sort(byDue), [type]);
   const QUEUE_SHOWN = 5; // keeps the dashboard on one screen; the rest sit behind "Show more"
   const shownQueue = showAllQueue ? queue : queue.slice(0, QUEUE_SHOWN);
-  const shownReview = showAll ? review : review.slice(0, 6);
+  // Only at-risk records show until the coordinator asks for the rest.
+  const shownReview = showAll ? review : review.filter(r => r.risk);
 
   const weekEnd = new Date(TODAY); weekEnd.setDate(TODAY.getDate() + (7 - TODAY.getDay()) % 7);
   const dueThisWeek = [...AWAITING, ...IN_REVIEW].filter(r => daysFrom(r.due) >= 0 && r.due <= weekEnd).length;
@@ -208,15 +209,15 @@ export default function CoordinatorDashboard() {
           iconColor="var(--blue-chip)"
           title="In review"
           count={review.length}
-          description="Sorted by due date. Only records at risk are highlighted."
+          description={showAll ? "Sorted by due date. Only records at risk are highlighted." : "Records at risk, sorted by due date. The rest are on track."}
           actions={<button type="button" className="rgm-linkbtn" aria-expanded={reviewOpen} onClick={() => setReviewOpen(o => !o)}>{reviewOpen ? 'Collapse' : 'Expand'}</button>}
         >
           {reviewOpen && (
             <DataTable columns={REVIEW_COLS} headerTone="knowledge" style={{ overflow: 'visible' }}>
               {shownReview.map(r => <ReviewRow key={r.id} r={r} />)}
-              {review.length > 6 && (
+              {review.length > review.filter(r => r.risk).length && (
                 <div className="rgm-more">
-                  <button type="button" className="rgm-linkbtn" onClick={() => setShowAll(s => !s)}>{showAll ? 'Show fewer' : 'Show ' + (review.length - 6) + ' more'}</button>
+                  <button type="button" className="rgm-linkbtn" onClick={() => setShowAll(s => !s)}>{showAll ? 'Show at-risk only' : 'Show ' + (review.length - review.filter(r => r.risk).length) + ' on track'}</button>
                 </div>
               )}
             </DataTable>
