@@ -24,6 +24,7 @@ import UserProfile from './pages/UserProfile';
 import SystemAdmin from './pages/SystemAdmin';
 import PublicationLibrary, { LibraryPublication } from './pages/PublicationLibrary';
 import AuthorInvitation from './pages/AuthorInvitation';
+import RegeneronMockups from './pages/mockups/regeneron';
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -44,6 +45,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          {/* Static sales mockups: no sign-in, no data. */}
+          <Route path="/mockups/regeneron/*" element={<RegeneronMockups />} />
           <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
             {/* Staff land on the Publication Manager Dashboard. */}
             <Route index element={<Navigate to="/publication-manager" replace />} />
