@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Icon, Pill, Tooltip } from '../../../ds/pubpro';
+import { Pill, Tooltip } from '../../../ds/pubpro';
 import { STATUS_TONE, STEPS, fmt } from './data';
+// The record timeline's chevron classes (pfx-tl-*), so these progress bars match it exactly.
+import '../../publication-form/ui.css';
 import './mockups.css';
 
 /** Page wrapper. The signed-in app Layout supplies the top bar and workspace tabs. */
@@ -8,14 +10,12 @@ export function Shell({ children }) {
   return <div className="rgm">{children}</div>;
 }
 
-/** Named status pill, one tone per status everywhere. Approved uses the positive tint. */
+/** Named status pill, one DS tone per status everywhere. */
 export function StatusPill({ status }) {
-  const tone = STATUS_TONE[status] || 'draft';
-  if (tone === 'approved') return <Pill tone="draft" style={{ background: 'var(--tint-positive-bg)' }}>{status}</Pill>;
-  return <Pill tone={tone}>{status}</Pill>;
+  return <Pill tone={STATUS_TONE[status] || 'draft'}>{status}</Pill>;
 }
 
-/** Hover or focus explainer anchored to an element. */
+/** Hover or focus explainer: the DS Tooltip anchored to its child. */
 export function Hover({ tip, title, align = 'left', width = 250, className = '', children, ...rest }) {
   const [on, setOn] = useState(false);
   return (
@@ -34,24 +34,15 @@ export function Hover({ tip, title, align = 'left', width = 250, className = '',
   );
 }
 
-/** Info icon whose tooltip says what an answer triggers downstream. */
-export function InfoTip({ title, children, align = 'left' }) {
-  return (
-    <Hover title={title} tip={children} align={align} width={280} className="rgm-info" aria-label={title}>
-      <Icon name="info" size={16} color="var(--high-emphasis)" />
-    </Hover>
-  );
-}
-
 /**
- * Compact lifecycle chevrons: Submitted → Triage → In Review → Holding → Approved.
- * `dates` holds the date each reached step was reached; the last one is current.
+ * Lifecycle chevrons: Submitted → Triage → In Review → Holding → Approved, drawn with the record
+ * timeline's classes. `dates` holds the date each reached step was reached; the last one is current.
  * `returnedAt` marks a step that sent the record back to the requester.
  */
-export function StepChevrons({ dates = [], returnedAt = -1, size = 'sm' }) {
+export function StepChevrons({ dates = [], returnedAt = -1 }) {
   const current = dates.length - 1;
   return (
-    <div className={'rgm-chev rgm-chev--' + size} role="list" aria-label={'Step ' + (current + 1) + ' of ' + STEPS.length + ': ' + STEPS[current]}>
+    <div className="pfx-tl rgm-tl" role="list" aria-label={'Step ' + (current + 1) + ' of ' + STEPS.length + ': ' + STEPS[current]}>
       {STEPS.map((name, i) => {
         const state = i === returnedAt ? 'returned' : i < current ? 'done' : i === current ? 'current' : 'todo';
         const tip = state === 'returned' ? 'Sent back for revisions on ' + fmt(dates[i])
@@ -62,14 +53,14 @@ export function StepChevrons({ dates = [], returnedAt = -1, size = 'sm' }) {
           <Hover
             key={name}
             role="listitem"
-            title={'Step ' + (i + 1) + ': ' + name}
+            title={'Step ' + (i + 1) + ' of ' + STEPS.length + ': ' + name}
             tip={tip}
             align={i < 3 ? 'left' : 'right'}
             width={230}
-            className={'rgm-chev-step rgm-chev-step--' + state}
+            className={'pfx-tl-step pfx-tl-step--' + (state === 'returned' ? 'current rgm-tl-returned' : state)}
             aria-label={name + ': ' + tip}
           >
-            <span className="rgm-chev-seg" />
+            <div className="pfx-tl-seg" />
           </Hover>
         );
       })}

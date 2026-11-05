@@ -14,7 +14,7 @@ export const STATUS_TONE = {
   'Revisions Required': 'nav',
   'In Review': 'active',
   Holding: 'hold',
-  Approved: 'approved',
+  Approved: 'outline',
   Cancelled: 'cancelled',
 };
 
