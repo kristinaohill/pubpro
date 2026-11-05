@@ -150,13 +150,7 @@ export default function CoordinatorDashboard() {
   const toggleFlag = id => setOpenFlags(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   return (
-    <Shell
-      nav={['Home', 'Submissions', 'Reviewers', 'Settings']}
-      activeNav="Home"
-      workspace="Clearance Coordinator"
-      tabs={['Dashboard', 'All Submissions', 'Reviewer Assignments', { label: 'Searches', menu: true }]}
-      activeTab="Dashboard"
-    >
+    <Shell>
       <main className="rgm-page">
         <header className="rgm-head">
           <div>

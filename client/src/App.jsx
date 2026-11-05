@@ -24,7 +24,9 @@ import UserProfile from './pages/UserProfile';
 import SystemAdmin from './pages/SystemAdmin';
 import PublicationLibrary, { LibraryPublication } from './pages/PublicationLibrary';
 import AuthorInvitation from './pages/AuthorInvitation';
-import RegeneronMockups from './pages/mockups/regeneron';
+import ClearanceCoordinator from './pages/mockups/regeneron/CoordinatorDashboard';
+import ClearanceRequester from './pages/mockups/regeneron/RequesterDashboard';
+import ClearanceSppForm from './pages/mockups/regeneron/SppIntakeForm';
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -45,8 +47,6 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          {/* Static sales mockups: no sign-in, no data. */}
-          <Route path="/mockups/regeneron/*" element={<RegeneronMockups />} />
           <Route path="/" element={<RequireAuth><Layout /></RequireAuth>}>
             {/* Staff land on the Publication Manager Dashboard. */}
             <Route index element={<Navigate to="/publication-manager" replace />} />
@@ -73,6 +73,10 @@ export default function App() {
             <Route path="vendor" element={<VendorProfile />} />
             <Route path="financial-report" element={<FinancialReport />} />
             <Route path="workflows" element={<PublicationWorkflows />} />
+            {/* Clearance screens (static sample data, built for the Regeneron steering committee deck). */}
+            <Route path="clearance/coordinator" element={<ClearanceCoordinator />} />
+            <Route path="clearance/requester" element={<ClearanceRequester />} />
+            <Route path="clearance/new-spp" element={<ClearanceSppForm />} />
             <Route path="*" element={<Navigate to="/publication-manager" replace />} />
           </Route>
         </Routes>

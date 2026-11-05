@@ -69,7 +69,7 @@ export default function SppIntakeForm() {
   ].filter(Boolean);
 
   return (
-    <Shell nav={['Home', 'Help']} activeNav="Home" workspace="My Clearance" tabs={['My Submissions', 'New Submission']} activeTab="New Submission">
+    <Shell>
       <main className="rgm-page">
         <header className="rgm-form-head">
           <div>

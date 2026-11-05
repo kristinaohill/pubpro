@@ -17,7 +17,7 @@ const template = COLS.map(c => c.width).join(' ');
 
 export default function RequesterDashboard() {
   return (
-    <Shell nav={['Home', 'Help']} activeNav="Home" workspace="My Clearance" tabs={['My Submissions']} activeTab="My Submissions">
+    <Shell>
       <main className="rgm-page">
         <section className="rgm-hero" aria-label="Start a submission">
           <div className="rgm-hero-copy">
@@ -25,7 +25,7 @@ export default function RequesterDashboard() {
             <span className="pp-section">Need something cleared?</span>
             <p>Publications, student project proposals and open-source releases all start here. Answer a few questions and we route it to the right reviewers.</p>
           </div>
-          <Link to="../intake?state=a" tabIndex={-1}>
+          <Link to="/clearance/new-spp" tabIndex={-1}>
             <Button icon="add_circle" className="rgm-start">Start New Submission</Button>
           </Link>
         </section>

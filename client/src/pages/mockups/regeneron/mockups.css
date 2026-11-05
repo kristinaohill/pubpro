@@ -1,8 +1,7 @@
 /* Clearance mockups for the Regeneron steering committee deck. Layout only: every colour,
    size and radius comes from the PubPro design system tokens. Holds from 1,200px to 1,920px. */
 
-.rgm { min-height: 100vh; display: flex; flex-direction: column; background: var(--surface-page); font-family: var(--font-sans); color: var(--text-body); }
-.rgm-chrome { position: sticky; top: 0; z-index: 30; }
+.rgm { min-height: calc(100vh - var(--topnav-h) - var(--wstabs-h)); display: flex; flex-direction: column; background: var(--surface-page); font-family: var(--font-sans); color: var(--text-body); }
 .rgm-page { flex: 1 0 auto; padding: var(--space-11) var(--page-gutter) var(--space-14); display: flex; flex-direction: column; gap: var(--section-gap); }
 
 .rgm-hover { position: relative; display: inline-flex; outline: none; }
@@ -129,10 +128,3 @@
 
 .rgm-bar { position: sticky; bottom: 0; z-index: 20; background: var(--white); box-shadow: var(--shadow-bar), 0 -1px 0 var(--border-divider); }
 .rgm-saved { display: inline-flex; align-items: center; gap: var(--space-3); font-size: var(--fs-sm); color: var(--text-meta); }
-
-/* ---------- Index ---------- */
-.rgm-index { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-8); }
-.rgm-index a { display: flex; flex-direction: column; gap: var(--space-3); text-decoration: none; background: var(--white);
-  border: 1px solid var(--border-divider); border-radius: var(--radius-panel); padding: var(--space-9); color: var(--text-body); }
-.rgm-index a:hover { border-color: var(--high-emphasis); }
-.rgm-index strong { color: var(--text-title); font-size: var(--fs-lg); }

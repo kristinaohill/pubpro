@@ -5,12 +5,12 @@ const HELP = { label: 'Help', icon: 'info' };
 // One product nav on every staff page (menu items without a page yet are placeholders).
 const FULL_NAV = [
   'Home', 'Content List',
-  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'Executive Dashboard', 'External Author Dashboard', 'Publication Library', 'Reports', HELP] },
+  { label: 'Workspaces', menuItems: ['Publication Manager Dashboard', 'Executive Dashboard', 'External Author Dashboard', 'Publication Library', 'Clearance Coordinator', 'Clearance Requester', 'Reports', HELP] },
   // System Administrator lives under Settings (only people who can manage users see it).
   { label: 'Settings', menuItems: ['System Administrator'] },
 ];
 
-const CREATE_FULL = { label: 'Create New', menuItems: ['Publication', 'Publication Planning', 'External Author', 'IIS Request', 'Grants Management', 'Medical Information Request', 'Review Process Form', 'Standard Medical Response'] };
+const CREATE_FULL = { label: 'Create New', menuItems: ['Publication', 'Publication Planning', 'External Author', 'Student Project Proposal', 'IIS Request', 'Grants Management', 'Medical Information Request', 'Review Process Form', 'Standard Medical Response'] };
 const SEARCH_FULL = { label: 'Searches', menuItems: ['Publications', 'Publication Plans', 'Conferences', 'Journals', 'Studies', 'External Authors', 'Approvia', 'Medical Information Requests'] };
 
 // Layout adds the live unread count from the notifications bell to this tab.
@@ -20,6 +20,12 @@ const EXECUTIVE_DASHBOARD = {
   nav: FULL_NAV, active: 'Home',
   workspace: 'Executive Dashboard', tabs: [ALERTS_TAB, CREATE_FULL, SEARCH_FULL],
 };
+
+// Requesters see only their submissions and the new-submission form.
+const CLEARANCE_REQUESTER = activeTab => ({
+  nav: FULL_NAV, active: 'Workspaces',
+  workspace: 'Clearance Requester', tabs: ['My Submissions', 'New Submission'], activeTab,
+});
 
 export const CHROME = {
   '/dashboard': {
@@ -54,6 +60,13 @@ export const CHROME = {
     nav: FULL_NAV, active: 'Settings',
     workspace: 'System Administrator', tabs: [ALERTS_TAB, CREATE_FULL, SEARCH_FULL],
   },
+  // Clearance screens (static sample data).
+  '/clearance/coordinator': {
+    nav: FULL_NAV, active: 'Workspaces',
+    workspace: 'Clearance Coordinator', tabs: [ALERTS_TAB, CREATE_FULL, SEARCH_FULL],
+  },
+  '/clearance/requester': CLEARANCE_REQUESTER('My Submissions'),
+  '/clearance/new-spp': CLEARANCE_REQUESTER('New Submission'),
   // The Financial Report design has its own navy back bar and no app chrome.
   '/financial-report': null,
 };
@@ -73,6 +86,10 @@ export const MENU_ROUTES = {
   'External Author Dashboard': '/author-dashboard',
   'Publication Library': '/library',
   'System Administrator': '/admin',
+  'Clearance Coordinator': '/clearance/coordinator',
+  'Clearance Requester': '/clearance/requester',
+  'My Submissions': '/clearance/requester',
+  'New Submission': '/clearance/new-spp',
 };
 
 export const SEARCH_ROUTES = {
@@ -94,4 +111,5 @@ export const CREATE_ROUTES = {
   'Publication': '/publication/new',
   'Publication Planning': '/publication-plan/new',
   'External Author': '/external-author/new',
+  'Student Project Proposal': '/clearance/new-spp',
 };

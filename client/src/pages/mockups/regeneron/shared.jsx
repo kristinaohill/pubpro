@@ -1,19 +1,11 @@
 import React, { useState } from 'react';
-import { Icon, Pill, Tooltip, TopNav, WorkspaceTabs } from '../../../ds/pubpro';
+import { Icon, Pill, Tooltip } from '../../../ds/pubpro';
 import { STATUS_TONE, STEPS, fmt } from './data';
 import './mockups.css';
 
-/** App chrome: the design system's top bar and workspace tabs. No customer logo. */
-export function Shell({ nav, activeNav, workspace, tabs, activeTab, children }) {
-  return (
-    <div className="rgm">
-      <div className="rgm-chrome">
-        <TopNav items={nav} active={activeNav} tenant="Approvia Clearance" />
-        <WorkspaceTabs workspace={workspace} tabs={tabs} active={activeTab} />
-      </div>
-      {children}
-    </div>
-  );
+/** Page wrapper. The signed-in app Layout supplies the top bar and workspace tabs. */
+export function Shell({ children }) {
+  return <div className="rgm">{children}</div>;
 }
 
 /** Named status pill, one tone per status everywhere. Approved uses the positive tint. */

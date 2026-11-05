@@ -34,6 +34,8 @@ const WORKSPACE_HOME = {
   'External Author Dashboard': '/author-dashboard',
   'Publication Library': '/library',
   'System Administrator': '/admin',
+  'Clearance Coordinator': '/clearance/coordinator',
+  'Clearance Requester': '/clearance/requester',
 };
 
 export default function Layout() {
