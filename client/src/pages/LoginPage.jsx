@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BrandMark, Button, Field, InlineMessage, TextField } from '../ds/pubpro';
+import { Button, Field, InlineMessage, TextField } from '../ds/pubpro';
 import { useAuth } from '../AuthContext';
 import './LoginPage.css';
 
@@ -31,7 +31,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <BrandMark variant="white" height={30} />
+      <img src="/brand/approvia-logo-white.svg" alt="Approvia" className="login-logo" />
 
       <div className="login-card">
         <div className="login-brand">

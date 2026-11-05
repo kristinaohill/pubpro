@@ -1,4 +1,4 @@
-/* Sign-in page in PubPro DS tokens: the BP Logix mark on the navy brand colour above a white card. */
+/* Sign-in page in PubPro DS tokens: the Approvia logo on the navy brand colour above a white card. */
 .login-page {
   min-height: 100vh;
   background: var(--nav);
@@ -11,6 +11,8 @@
   font-family: var(--font-sans);
   color: var(--text-body);
 }
+
+.login-logo { height: 44px; width: auto; display: block; }
 
 .login-card {
   width: 420px;
