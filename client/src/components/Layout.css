@@ -49,7 +49,7 @@
   position: relative;
   z-index: 20;
   /* Room for the Approvia logo: TopNav's 22px edge padding + logo width + TopNav's 30px gap. */
-  --layout-brand-h: 30px;
+  --layout-brand-h: 40px;
   --layout-brand-slot: calc(22px + var(--layout-brand-h) * 1049 / 303 + 30px);
 }
 
